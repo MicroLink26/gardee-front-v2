@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/astro/Navbar.astro';
+import Footer from '../components/astro/Footer.astro';
+import Classement from '../components/vue/Classement.vue';
+---
+<BaseLayout title="Classement des prestataires" description="Les jardiniers les mieux notés sur Gardee.">
+  <Navbar />
+  <main>
+    <Classement client:load />
+  </main>
+  <Footer />
+</BaseLayout>

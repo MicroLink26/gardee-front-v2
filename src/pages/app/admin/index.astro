@@ -1,0 +1,10 @@
+---
+import AppLayout from '../../../layouts/AppLayout.astro';
+import AppShell from '../../../components/vue/dashboard/AppShell.vue';
+import AdminDashboard from '../../../components/vue/admin/AdminDashboard.vue';
+---
+<AppLayout title="Administration">
+  <AppShell client:load requireRole="staff">
+    <AdminDashboard client:load />
+  </AppShell>
+</AppLayout>

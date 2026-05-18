@@ -1,0 +1,30 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/astro/Navbar.astro';
+import Footer from '../components/astro/Footer.astro';
+import MapView from '../components/vue/MapView.vue';
+
+const API_URL = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3000/api';
+
+let users: unknown[] = [];
+try {
+  const res = await fetch(`${API_URL}/users/search?pageSize=200`);
+  if (res.ok) {
+    const data = await res.json() as { items: unknown[] };
+    users = data.items.filter((u: unknown) => (u as { location?: unknown }).location);
+  }
+} catch { /* silencieux */ }
+---
+<BaseLayout title="Carte des prestataires" description="Retrouvez tous les jardiniers Gardee sur la carte.">
+  <Navbar />
+  <main class="carte-page">
+    <h1>Carte des prestataires</h1>
+    <MapView client:load users={users as Parameters<typeof MapView>[0]['users']} />
+  </main>
+  <Footer />
+</BaseLayout>
+
+<style>
+.carte-page { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+h1 { font-size: 1.75rem; margin-bottom: 1.5rem; }
+</style>

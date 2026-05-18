@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import RequestConfirm from '../../../components/vue/RequestConfirm.vue';
+
+const token = Astro.url.searchParams.get('token') ?? '';
+---
+<BaseLayout title="Confirmation de demande">
+  <RequestConfirm client:load token={token} />
+</BaseLayout>

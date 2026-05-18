@@ -1,0 +1,10 @@
+---
+import AppLayout from '../../../layouts/AppLayout.astro';
+import AppShell from '../../../components/vue/dashboard/AppShell.vue';
+import AdminPending from '../../../components/vue/admin/AdminPending.vue';
+---
+<AppLayout title="Prestataires en attente">
+  <AppShell client:load requireRole="staff">
+    <AdminPending client:load />
+  </AppShell>
+</AppLayout>

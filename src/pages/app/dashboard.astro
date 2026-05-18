@@ -1,0 +1,10 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import AppShell from '../../components/vue/dashboard/AppShell.vue';
+import DashboardHome from '../../components/vue/dashboard/DashboardHome.vue';
+---
+<AppLayout title="Tableau de bord">
+  <AppShell client:load>
+    <DashboardHome client:load />
+  </AppShell>
+</AppLayout>

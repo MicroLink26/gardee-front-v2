@@ -1,0 +1,32 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/astro/Navbar.astro';
+import Footer from '../components/astro/Footer.astro';
+import ContactForm from '../components/vue/ContactForm.vue';
+---
+<BaseLayout title="Contact" description="Contactez l'équipe Gardee pour toute question ou demande d'information.">
+  <Navbar />
+  <main class="contact-page">
+    <div class="contact-layout">
+      <div class="contact-info">
+        <h1>Nous contacter</h1>
+        <p>Une question, une suggestion ou besoin d'aide ? Notre équipe vous répond sous 24h.</p>
+        <div class="info-items">
+          <p>📧 contact@gardee.fr</p>
+          <p>🌿 Gardee — mise en relation jardiniers / particuliers</p>
+        </div>
+      </div>
+      <ContactForm client:load />
+    </div>
+  </main>
+  <Footer />
+</BaseLayout>
+
+<style>
+.contact-page { padding: 4rem 2rem; max-width: 1000px; margin: 0 auto; }
+.contact-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+h1 { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; }
+.contact-info p { color: #6b7280; line-height: 1.7; margin-bottom: 1rem; }
+.info-items p { color: #374151; font-size: 0.95rem; }
+@media (max-width: 640px) { .contact-layout { grid-template-columns: 1fr; } }
+</style>

@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import RatingForm from '../../../components/vue/RatingForm.vue';
+
+const token = Astro.url.searchParams.get('token') ?? '';
+---
+<BaseLayout title="Laisser un avis">
+  <RatingForm client:load token={token} />
+</BaseLayout>

@@ -1,0 +1,150 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/astro/Navbar.astro';
+import Footer from '../components/astro/Footer.astro';
+import SearchBar from '../components/vue/SearchBar.vue';
+
+const API_URL = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3002/api';
+
+let featured: unknown[] = [];
+try {
+  const res = await fetch(`${API_URL}/users/ranking?pageSize=6`);
+  if (res.ok) {
+    const data = await res.json() as { items: unknown[] };
+    featured = data.items;
+  }
+} catch { /* silencieux en dev */ }
+
+interface Prestataire {
+  _id: string;
+  prenom: string;
+  nom: string;
+  ville: string;
+  prestations: string[];
+  averageRating: number;
+  numberOfReviews: number;
+  tarifHoraire?: number;
+  profil_image?: { secure_url: string };
+}
+---
+<BaseLayout
+  title="Trouvez votre jardinier"
+  description="Gardee met en relation les particuliers avec des jardiniers professionnels vérifiés. Tonte, taille, élagage, entretien."
+>
+  <Navbar />
+
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Trouvez un jardinier<br />près de chez vous</h1>
+      <p class="hero-sub">Des prestataires vérifiés pour l'entretien de votre jardin</p>
+      <SearchBar client:load />
+    </div>
+    <div class="hero-image">
+      <img src="/hero.png" alt="Jardinier au travail" width="560" height="400" loading="eager" />
+    </div>
+  </section>
+
+  <section class="services">
+    <div class="container">
+      <h2>Nos services</h2>
+      <div class="services-grid">
+        {['Tonte', 'Taille de haies', 'Élagage', 'Débroussaillage', 'Plantation', 'Entretien'].map(s => (
+          <a href={`/recherche?q=${encodeURIComponent(s)}`} class="service-chip">{s}</a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  {featured.length > 0 && (
+    <section class="featured">
+      <div class="container">
+        <h2>Prestataires les mieux notés</h2>
+        <div class="featured-grid">
+          {(featured as Prestataire[]).map((u) => (
+            <a href={`/prestataires/${u._id}`} class="featured-card">
+              {u.profil_image?.secure_url
+                ? <img src={u.profil_image.secure_url} alt={`${u.prenom} ${u.nom}`} width="280" height="180" loading="lazy" />
+                : <div class="featured-placeholder">{u.prenom[0]}{u.nom[0]}</div>
+              }
+              <div class="featured-info">
+                <p class="featured-name">{u.prenom} {u.nom}</p>
+                <p class="featured-ville">📍 {u.ville}</p>
+                {u.tarifHoraire && <p class="featured-tarif">{u.tarifHoraire} €/h</p>}
+              </div>
+            </a>
+          ))}
+        </div>
+        <div class="featured-cta">
+          <a href="/classement" class="btn-outline">Voir le classement complet →</a>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="how-it-works">
+    <div class="container">
+      <h2>Comment ça marche ?</h2>
+      <div class="steps">
+        <div class="step"><span class="step-num">1</span><strong>Cherchez</strong><p>Trouvez un jardinier par service ou par ville</p></div>
+        <div class="step"><span class="step-num">2</span><strong>Contactez</strong><p>Envoyez une demande directement au prestataire</p></div>
+        <div class="step"><span class="step-num">3</span><strong>Planifiez</strong><p>Confirmez la date et profitez de votre jardin</p></div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; color: #111827; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 5rem 2rem;
+}
+.hero-content { flex: 1; }
+h1 { font-size: 3rem; font-weight: 800; line-height: 1.15; margin-bottom: 1rem; }
+.hero-sub { color: #6b7280; font-size: 1.15rem; margin-bottom: 2rem; }
+.hero-image { flex: 1; }
+.hero-image img { width: 100%; height: auto; border-radius: 16px; object-fit: cover; }
+.services { padding: 4rem 0; background: #f9fafb; }
+.services h2 { font-size: 1.75rem; margin-bottom: 2rem; }
+.services-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.service-chip {
+  padding: 0.6rem 1.25rem;
+  background: #fff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #374151;
+  font-weight: 500;
+  transition: border-color 0.15s, color 0.15s;
+}
+.service-chip:hover { border-color: #16a34a; color: #16a34a; }
+.featured { padding: 4rem 0; }
+.featured h2 { font-size: 1.75rem; margin-bottom: 2rem; }
+.featured-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+.featured-card { text-decoration: none; color: inherit; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; transition: box-shadow 0.2s; }
+.featured-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+.featured-card img { width: 100%; height: 180px; object-fit: cover; }
+.featured-placeholder { height: 180px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #9ca3af; font-weight: 700; }
+.featured-info { padding: 0.875rem; }
+.featured-name { font-weight: 700; }
+.featured-ville { color: #6b7280; font-size: 0.85rem; }
+.featured-tarif { font-weight: 600; color: #16a34a; }
+.featured-cta { text-align: center; }
+.btn-outline { display: inline-block; padding: 0.7rem 1.75rem; border: 2px solid #16a34a; border-radius: 8px; color: #16a34a; text-decoration: none; font-weight: 600; }
+.btn-outline:hover { background: #16a34a; color: #fff; }
+.how-it-works { padding: 4rem 0; background: #f0fdf4; }
+.how-it-works h2 { font-size: 1.75rem; text-align: center; margin-bottom: 2rem; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+.step { text-align: center; }
+.step-num { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #16a34a; color: #fff; border-radius: 50%; font-size: 1.25rem; font-weight: 800; margin-bottom: 0.75rem; }
+.step strong { display: block; font-size: 1.1rem; margin-bottom: 0.35rem; }
+.step p { color: #6b7280; font-size: 0.9rem; }
+</style>

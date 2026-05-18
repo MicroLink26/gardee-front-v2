@@ -1,0 +1,104 @@
+---
+const year = new Date().getFullYear();
+---
+<footer class="footer">
+  <div class="footer-inner">
+
+    <div class="footer-brand">
+      <img src="/logo.png" alt="Gardee" height="40" />
+      <p>La plateforme qui connecte les particuliers avec des jardiniers professionnels vérifiés.</p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Trouver</h4>
+      <a href="/recherche">Jardiniers près de moi</a>
+      <a href="/classement">Classement</a>
+      <a href="/carte">Carte interactive</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Rejoindre</h4>
+      <a href="/postuler">Devenir prestataire</a>
+      <a href="/app/login">Mon espace</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Informations</h4>
+      <a href="/contact">Contact</a>
+      <a href="/faq">FAQ</a>
+      <a href="/mentions-legales">Mentions légales</a>
+    </div>
+
+  </div>
+
+  <div class="footer-bottom">
+    <p>© {year} Gardee — Tous droits réservés</p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background: #111827;
+    color: #9ca3af;
+    margin-top: 4rem;
+  }
+
+  .footer-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 2.5rem;
+  }
+
+  .footer-brand img { display: block; margin-bottom: 0.875rem; }
+  .footer-brand p {
+    font-size: 0.875rem;
+    color: #6b7280;
+    line-height: 1.6;
+    max-width: 240px;
+  }
+
+  .footer-col h4 {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #f9fafb;
+    margin-bottom: 0.875rem;
+  }
+  .footer-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .footer-col a {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: color 0.15s;
+  }
+  .footer-col a:hover { color: #d1d5db; }
+
+  .footer-bottom {
+    border-top: 1px solid #1f2937;
+    padding: 1.25rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    font-size: 0.8rem;
+    color: #4b5563;
+  }
+
+  @media (max-width: 768px) {
+    .footer-inner {
+      grid-template-columns: 1fr 1fr;
+    }
+    .footer-brand {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (max-width: 480px) {
+    .footer-inner { grid-template-columns: 1fr; }
+  }
+</style>
