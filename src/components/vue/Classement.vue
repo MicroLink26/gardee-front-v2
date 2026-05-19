@@ -60,7 +60,11 @@ function goPage(p: number) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-onMounted(load);
+onMounted(() => {
+  const q = new URLSearchParams(window.location.search).get('q');
+  if (q) prestation.value = q;
+  load();
+});
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 

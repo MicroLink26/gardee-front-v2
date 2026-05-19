@@ -5,7 +5,7 @@ const isActive = (path: string) => currentPath === path ? 'nav-active' : '';
 <nav class="navbar">
   <div class="navbar-brand">
     <a href="/">
-      <img src="/logo.png" alt="Gardee" height="52" style="display:block;object-fit:contain;" />
+      <img src="/logo.png" alt="Gardee" height="44" style="display:block;object-fit:contain;" />
     </a>
   </div>
   <ul class="navbar-links">
@@ -15,7 +15,7 @@ const isActive = (path: string) => currentPath === path ? 'nav-active' : '';
     <li><a href="/contact" class={isActive('/contact')}>Contact</a></li>
   </ul>
   <div class="navbar-auth">
-    <a href="/app/login" class="btn-outline">Connexion</a>
+    <a href="/app/login" class="btn-signin">S'identifier</a>
   </div>
 </nav>
 
@@ -24,35 +24,47 @@ const isActive = (path: string) => currentPath === path ? 'nav-active' : '';
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 2rem;
-    height: 68px;
+    padding: 0 2.5rem;
+    height: 56px;
     background: #d6cda4;
     border-bottom: 1px solid #c4ba8e;
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 200;
   }
   .navbar-links {
     display: flex;
     list-style: none;
-    gap: 1.5rem;
+    gap: 2rem;
     margin: 0;
     padding: 0;
   }
   .navbar-links a {
     text-decoration: none;
-    color: #374151;
-    font-size: 0.95rem;
-  }
-  .navbar-links a:hover, .nav-active { color: #16a34a; font-weight: 600; }
-  .btn-outline {
-    padding: 0.4rem 1rem;
-    border: 1.5px solid #16a34a;
-    border-radius: 6px;
-    color: #16a34a;
-    text-decoration: none;
-    font-size: 0.9rem;
+    color: #3d3820;
+    font-size: 0.875rem;
     font-weight: 500;
+    letter-spacing: 0.01em;
+    transition: color 0.15s;
   }
-  .btn-outline:hover { background: #16a34a; color: #fff; }
+  .navbar-links a:hover { color: #515F37; }
+  .nav-active { color: #515F37 !important; font-weight: 700; }
+  .btn-signin {
+    padding: 0.35rem 1.1rem;
+    border: 1.5px solid #515F37;
+    border-radius: 6px;
+    color: #515F37;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: transparent;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .btn-signin:hover { background: #515F37; color: #d6cda4; }
+
+  @media (max-width: 768px) {
+    .navbar-links { display: none; }
+    .navbar { padding: 0 1.25rem; }
+  }
 </style>
