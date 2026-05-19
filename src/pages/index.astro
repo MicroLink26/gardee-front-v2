@@ -11,9 +11,10 @@ import Footer from '../components/astro/Footer.astro';
 
   <!-- ══ HERO — plein écran ══════════════════════════════════════ -->
   <section class="hero">
-    <div class="hero-inner">
-      <span class="hero-label">La plateforme jardinage de confiance</span>
+    <div class="hero-left">
+      <span class="hero-eyebrow">La plateforme jardinage de confiance</span>
       <h1>Trouvez votre<br /><em>jardinier</em></h1>
+
       <form class="hero-search" action="/classement" method="get">
         <div class="search-wrap">
           <svg class="search-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -21,142 +22,103 @@ import Footer from '../components/astro/Footer.astro';
           <button type="submit">Rechercher</button>
         </div>
       </form>
-      <p class="hero-hint">Aidez-vous de la barre de recherche pour trouver le jardinier qu'il vous faut — nous vous fournirons un classement adapté à votre recherche.</p>
-      <div class="hero-actions">
+
+      <div class="hero-links">
         <a href="/carte" class="action-link">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
           Voir la carte
         </a>
-        <span class="action-sep">·</span>
+        <span class="sep">·</span>
         <a href="/classement" class="action-link">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           Classement
         </a>
-        <span class="action-sep">·</span>
-        <a href="/postuler" class="action-link action-link--muted">Vous êtes jardinier ?</a>
+        <span class="sep">·</span>
+        <a href="/postuler" class="action-link action-muted">Vous êtes jardinier ?</a>
       </div>
     </div>
 
-    <!-- Décoratif : feuille arrière-plan -->
-    <div class="hero-deco" aria-hidden="true">
-      <img src="/feuillage.svg" alt="" />
+    <div class="hero-right">
+      <img src="/findContent.png" alt="Trouvez votre jardinier" class="hero-illus" />
     </div>
 
-    <!-- Indicateur de scroll -->
-    <div class="scroll-hint" aria-hidden="true">
-      <div class="scroll-dot"></div>
-    </div>
+    <div class="scroll-hint" aria-hidden="true"><div class="scroll-dot"></div></div>
   </section>
 
   <!-- ══ NOS SERVICES ═══════════════════════════════════════════ -->
   <section class="services-section" data-reveal>
     <div class="container">
-      <p class="section-eyebrow">NOS SERVICES</p>
+      <p class="eyebrow">NOS SERVICES</p>
       <div class="services-grid">
 
         <div class="svc-card">
-          <div class="svc-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <div class="svc-illus">
+            <img src="/futur-left.png" alt="Détenteurs de jardins" />
           </div>
-          <h3>Pour les détenteurs de jardins</h3>
-          <p>Pour sublimer votre jardin, choisissez le meilleur jardinier, paysagiste, élagueur ou pisciniste de votre région. Ou faites confiance à vos voisins ou aux jeunes novices qui pourront réaliser des travaux à moindre coût.</p>
-          <a href="/carte" class="svc-cta">Trouver un jardinier <span>→</span></a>
+          <div class="svc-text">
+            <h3>Pour les détenteurs de jardins</h3>
+            <p>Pour sublimer votre jardin, choisissez le meilleur jardinier, paysagiste, élagueur ou pisciniste de votre région. Ou faites confiance à vos voisins ou aux jeunes novices qui pourront réaliser des travaux à moindre coût.</p>
+            <a href="/carte" class="svc-cta">Trouver un jardinier <span>→</span></a>
+          </div>
         </div>
 
-        <div class="svc-divider" aria-hidden="true"></div>
-
-        <div class="svc-card">
-          <div class="svc-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <div class="svc-card svc-card--reverse">
+          <div class="svc-illus">
+            <img src="/futur-right.png" alt="Pour les jardiniers" />
           </div>
-          <h3>Pour les jardiniers</h3>
-          <p>Postulez et devenez le meilleur dans votre activité, et dans votre région. Gagnez le plus d'avis positifs pour monter dans le classement et acquérir un maximum de visibilité.</p>
-          <a href="/postuler" class="svc-cta">Postuler <span>→</span></a>
+          <div class="svc-text">
+            <h3>Pour les jardiniers</h3>
+            <p>Postulez et devenez le meilleur dans votre activité, et dans votre région. Gagnez le plus d'avis positifs pour monter dans le classement et acquérir un maximum de visibilité.</p>
+            <a href="/postuler" class="svc-cta">Postuler <span>→</span></a>
+          </div>
         </div>
 
       </div>
     </div>
   </section>
 
-  <!-- ══ FAQ ════════════════════════════════════════════════════ -->
+  <!-- ══ FAQ — arbres pictos ════════════════════════════════════ -->
   <section class="faq-section" data-reveal>
-    <div class="container">
-      <p class="section-eyebrow">LES QUESTIONS COURANTES</p>
-      <h2 class="faq-title">Et le but dans l'avenir ?</h2>
-
-      <div class="faq-list">
-
-        <details class="faq-item">
-          <summary>
-            <span>Comment utiliser Gardee</span>
-            <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="faq-body">
-            <p>Utilisez la barre de recherche ou la carte pour trouver un jardinier près de chez vous. Consultez son profil, ses avis, et réservez directement un créneau depuis la plateforme — sans échange de coordonnées personnelles.</p>
-          </div>
-        </details>
-
-        <details class="faq-item">
-          <summary>
-            <span>Pourquoi postuler sur Gardee</span>
-            <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="faq-body">
-            <p>Gardee vous offre une visibilité locale immédiate, un système d'avis vérifiés qui valorise votre expertise, et une interface pour gérer vos réservations. Plus vous avez d'avis positifs, plus vous montez dans le classement régional.</p>
-          </div>
-        </details>
-
-        <details class="faq-item">
-          <summary>
-            <span>Peut-on faire confiance aux jardiniers sur la plateforme</span>
-            <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="faq-body">
-            <p>Tous les prestataires sont vérifiés manuellement par notre équipe avant d'apparaître sur la plateforme. Les avis clients sont également modérés pour garantir leur authenticité. Seuls les clients ayant réellement utilisé le service peuvent laisser un avis.</p>
-          </div>
-        </details>
-
-        <details class="faq-item">
-          <summary>
-            <span>Quel but dans l'avenir</span>
-            <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="faq-body">
-            <p>Nous développons une messagerie sécurisée intégrée, un système de paiement en ligne, et un calendrier de disponibilités en temps réel. L'objectif est de rendre l'ensemble du parcours — de la recherche au paiement — disponible directement sur Gardee, sans jamais quitter la plateforme.</p>
-          </div>
-        </details>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ══ SECTION ARBRE ══════════════════════════════════════════ -->
-  <section class="tree-section">
-    <!-- Feuilles animées -->
-    <div class="leaves" aria-hidden="true">
-      <div class="leaf leaf-1">
-        <svg viewBox="0 0 22 30" xmlns="http://www.w3.org/2000/svg"><path d="M11 0C5 4 1 11 2 20c1 6 5 10 9 10s8-4 9-10c1-9-3-16-9-20z" fill="#515F37"/><line x1="11" y1="30" x2="11" y2="4" stroke="#7a8f55" stroke-width="1" stroke-linecap="round"/></svg>
-      </div>
-      <div class="leaf leaf-2">
-        <svg viewBox="0 0 22 30" xmlns="http://www.w3.org/2000/svg"><path d="M11 0C5 4 1 11 2 20c1 6 5 10 9 10s8-4 9-10c1-9-3-16-9-20z" fill="#515F37"/><line x1="11" y1="30" x2="11" y2="4" stroke="#7a8f55" stroke-width="1" stroke-linecap="round"/></svg>
-      </div>
-      <div class="leaf leaf-3">
-        <svg viewBox="0 0 22 30" xmlns="http://www.w3.org/2000/svg"><path d="M11 0C5 4 1 11 2 20c1 6 5 10 9 10s8-4 9-10c1-9-3-16-9-20z" fill="#515F37" opacity="0.7"/><line x1="11" y1="30" x2="11" y2="4" stroke="#7a8f55" stroke-width="1" stroke-linecap="round"/></svg>
-      </div>
+    <div class="faq-header">
+      <p class="eyebrow eyebrow--light">LES QUESTIONS COURANTES</p>
+      <h2>Et le but dans l'avenir ?</h2>
     </div>
 
-    <div class="tree-content">
-      <a href="/classement" class="tree-wrap" aria-label="Voir le classement">
-        <img src="/tree.svg" alt="Arbre Gardee" class="tree-img" />
-        <span class="tree-hover-label">En savoir plus</span>
+    <div class="trees-row">
+
+      <a href="/contact" class="tree-item" data-answer="Utilisez la carte ou la barre de recherche pour trouver un jardinier. Consultez son profil, ses avis, et réservez un créneau directement sur la plateforme.">
+        <img src="/arbreUtiliser.png" alt="Comment utiliser Gardee ?" />
       </a>
-      <div class="tree-text">
-        <h3>Rejoignez la communauté</h3>
-        <p>Des jardiniers passionnés, des jardins sublimés.<br />Toute la France à portée de clic.</p>
-        <a href="/classement" class="tree-btn">Découvrir les jardiniers</a>
-      </div>
+
+      <a href="/postuler" class="tree-item" data-answer="Gardee vous offre une visibilité locale, des avis vérifiés qui valorisent votre expertise, et une interface simple pour gérer vos réservations.">
+        <img src="/arbrePostuler.png" alt="Pourquoi postuler sur Gardee ?" />
+      </a>
+
+      <a href="/contact" class="tree-item" data-answer="Notre équipe est disponible via la page contact. Vous pouvez aussi nous écrire à contact@gardee.fr pour toute question.">
+        <img src="/arbreContacter.png" alt="Qui contacter ?" />
+      </a>
+
+      <a href="/contact" class="tree-item" data-answer="Nous développons une messagerie sécurisée, un paiement en ligne, et un calendrier en temps réel. L'objectif : gérer tout votre parcours sans quitter Gardee.">
+        <img src="/arbreBut.png" alt="Quel but sur le long terme ?" />
+      </a>
+
+    </div>
+
+    <!-- Bulle réponse dynamique -->
+    <div class="faq-answer" id="faqAnswer"></div>
+
+    <!-- Illustration de fond -->
+    <div class="faq-ground">
+      <img src="/bg-faq.png" alt="" aria-hidden="true" />
     </div>
   </section>
+
+  <!-- ══ Feuilles animées (séparateur) ═════════════════════════ -->
+  <div class="leaves-separator" aria-hidden="true">
+    <div class="leaf leaf-1"><svg viewBox="0 0 22 30"><path d="M11 0C5 4 1 11 2 20c1 6 5 10 9 10s8-4 9-10C21 11 17 4 11 0z" fill="#515F37"/><line x1="11" y1="30" x2="11" y2="4" stroke="#7a8f55" stroke-width="1" stroke-linecap="round"/></svg></div>
+    <div class="leaf leaf-2"><svg viewBox="0 0 22 30"><path d="M11 0C5 4 1 11 2 20c1 6 5 10 9 10s8-4 9-10C21 11 17 4 11 0z" fill="#515F37"/><line x1="11" y1="30" x2="11" y2="4" stroke="#7a8f55" stroke-width="1" stroke-linecap="round"/></svg></div>
+    <div class="leaf leaf-3"><svg viewBox="0 0 22 30"><path d="M11 0C5 4 1 11 2 20c1 6 5 10 9 10s8-4 9-10C21 11 17 4 11 0z" fill="#515F37" opacity="0.7"/><line x1="11" y1="30" x2="11" y2="4" stroke="#7a8f55" stroke-width="1" stroke-linecap="round"/></svg></div>
+  </div>
 
   <Footer />
 </BaseLayout>
@@ -172,472 +134,344 @@ import Footer from '../components/astro/Footer.astro';
   display: flex;
   align-items: center;
   overflow: hidden;
-  background: linear-gradient(150deg, #faf8f2 0%, #f4f0e4 40%, #edeae0 100%);
+  background: linear-gradient(150deg, #faf8f2 0%, #f2ede0 60%, #ebe5d0 100%);
 }
 
-.hero-inner {
+.hero-left {
   position: relative;
   z-index: 2;
-  max-width: 640px;
-  padding: 0 3rem 0 max(3rem, calc((100vw - 1100px) / 2 + 2rem));
+  flex: 0 0 auto;
+  width: min(580px, 55%);
+  padding-left: max(3rem, calc((100vw - 1100px) / 2 + 2rem));
+  padding-right: 3rem;
   animation: fadeUp 0.8s ease both;
 }
 
-.hero-label {
+.hero-eyebrow {
   display: inline-block;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #515F37;
   margin-bottom: 1.25rem;
 }
 
 h1 {
-  font-size: clamp(3rem, 6.5vw, 5rem);
+  font-size: clamp(2.75rem, 5.5vw, 4.5rem);
   font-weight: 900;
-  line-height: 1.05;
+  line-height: 1.06;
   letter-spacing: -0.03em;
   color: #1a1a0e;
   margin-bottom: 2rem;
 }
+h1 em { font-style: normal; color: #515F37; }
 
-h1 em {
-  font-style: normal;
-  color: #515F37;
-}
-
-/* Search bar */
+/* Search */
 .hero-search { margin-bottom: 1.25rem; }
-
 .search-wrap {
   display: flex;
   align-items: center;
   background: #fff;
-  border: 2px solid #e0d9c4;
+  border: 2px solid #e0d8c2;
   border-radius: 14px;
   padding: 0.4rem 0.4rem 0.4rem 1rem;
   gap: 0.75rem;
-  box-shadow: 0 4px 20px rgba(81,95,55,0.1);
+  box-shadow: 0 6px 24px rgba(81,95,55,0.12);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-
 .search-wrap:focus-within {
   border-color: #515F37;
-  box-shadow: 0 4px 24px rgba(81,95,55,0.18);
+  box-shadow: 0 6px 28px rgba(81,95,55,0.2);
 }
-
-.search-ico { color: #9ca3af; flex-shrink: 0; }
-
+.search-ico { color: #b0a480; flex-shrink: 0; }
 .search-wrap input {
-  flex: 1;
-  border: none;
-  outline: none;
-  font-size: 0.975rem;
-  color: #1a1a0e;
-  background: transparent;
+  flex: 1; border: none; outline: none;
+  font-size: 0.975rem; color: #1a1a0e; background: transparent;
 }
-
-.search-wrap input::placeholder { color: #b0a88a; }
-
+.search-wrap input::placeholder { color: #b0a480; }
 .search-wrap button {
   padding: 0.65rem 1.5rem;
-  background: #515F37;
-  color: #d6cda4;
-  border: none;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-  white-space: nowrap;
+  background: #515F37; color: #d6cda4;
+  border: none; border-radius: 10px;
+  font-weight: 700; font-size: 0.9rem;
+  cursor: pointer; white-space: nowrap;
   transition: background 0.15s;
 }
-
 .search-wrap button:hover { background: #3d4829; }
 
-.hero-hint {
-  font-size: 0.82rem;
-  color: #8a7f5e;
-  line-height: 1.65;
-  margin-bottom: 1.75rem;
-  max-width: 480px;
+/* Links */
+.hero-links {
+  display: flex; align-items: center;
+  gap: 0.6rem; flex-wrap: wrap;
 }
-
-.hero-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
-
 .action-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #515F37;
-  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.82rem; font-weight: 600;
+  color: #515F37; text-decoration: none;
   transition: opacity 0.15s;
 }
-.action-link:hover { opacity: 0.7; }
-.action-link--muted { color: #9ca3af; font-weight: 400; }
-.action-link--muted:hover { color: #515F37; opacity: 1; }
-.action-sep { color: #d1c9aa; font-size: 0.75rem; }
+.action-link:hover { opacity: 0.65; }
+.action-muted { color: #9ca3af; font-weight: 400; }
+.action-muted:hover { color: #515F37; opacity: 1; }
+.sep { color: #c9bfa0; font-size: 0.7rem; }
 
-/* Decorative feuillage */
-.hero-deco {
-  position: absolute;
-  right: -4%;
-  bottom: -5%;
-  width: 55%;
-  max-width: 620px;
-  opacity: 0.18;
-  pointer-events: none;
+/* Hero illustration */
+.hero-right {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
   z-index: 1;
 }
-.hero-deco img { width: 100%; height: auto; }
+.hero-illus {
+  max-height: 75%;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  animation: fadeUp 0.9s 0.15s ease both;
+}
 
 /* Scroll hint */
 .scroll-hint {
-  position: absolute;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
+  position: absolute; bottom: 1.75rem; left: 50%;
+  transform: translateX(-50%); z-index: 3;
 }
 .scroll-dot {
-  width: 6px;
-  height: 6px;
-  background: #515F37;
-  border-radius: 50%;
-  opacity: 0.5;
-  animation: scrollBounce 2s ease-in-out infinite;
+  width: 6px; height: 6px;
+  background: #515F37; border-radius: 50%; opacity: 0.4;
+  animation: bounce 2s ease-in-out infinite;
 }
-@keyframes scrollBounce {
-  0%, 100% { transform: translateY(0); opacity: 0.5; }
-  50% { transform: translateY(8px); opacity: 1; }
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50% { transform: translateY(7px); opacity: 0.8; }
 }
 
 /* ══ REVEAL ══════════════════════════════════════════════════════ */
 [data-reveal] {
-  opacity: 0;
-  transform: translateY(32px);
+  opacity: 0; transform: translateY(28px);
   transition: opacity 0.7s ease, transform 0.7s ease;
 }
-[data-reveal].revealed {
-  opacity: 1;
-  transform: translateY(0);
-}
+[data-reveal].revealed { opacity: 1; transform: none; }
 
 /* ══ NOS SERVICES ════════════════════════════════════════════════ */
-.services-section {
-  padding: 6rem 0;
-  background: #fff;
-}
+.services-section { padding: 6rem 0; background: #fff; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 3rem; }
 
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 3rem;
+.eyebrow {
+  font-size: 0.68rem; font-weight: 800;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: #515F37; margin-bottom: 2.5rem;
 }
+.eyebrow--light { color: #d6cda4; }
 
-.section-eyebrow {
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #515F37;
-  margin-bottom: 2.5rem;
-}
-
-.services-grid {
-  display: flex;
-  gap: 0;
-  align-items: stretch;
-}
+.services-grid { display: flex; flex-direction: column; gap: 3.5rem; }
 
 .svc-card {
-  flex: 1;
-  padding: 2.5rem;
-}
-
-.svc-divider {
-  width: 1px;
-  background: linear-gradient(to bottom, transparent, #d6cda4 20%, #d6cda4 80%, transparent);
-  flex-shrink: 0;
-  margin: 1rem 0;
-}
-
-.svc-icon {
-  width: 52px;
-  height: 52px;
-  background: #f5f2ea;
-  border-radius: 14px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: #515F37;
-  margin-bottom: 1.25rem;
+  gap: 4rem;
 }
+.svc-card--reverse { flex-direction: row-reverse; }
 
-.svc-card h3 {
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: #1a1a0e;
-  margin-bottom: 0.875rem;
-  line-height: 1.3;
+.svc-illus {
+  flex: 0 0 auto;
+  width: 200px;
 }
-
-.svc-card p {
-  font-size: 0.9rem;
-  color: #6b6347;
-  line-height: 1.8;
-  margin-bottom: 1.75rem;
+.svc-illus img {
+  width: 100%; height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 20px rgba(81,95,55,0.15));
+  transition: transform 0.3s ease;
 }
+.svc-card:hover .svc-illus img { transform: translateY(-6px); }
 
+.svc-text { flex: 1; }
+.svc-text h3 {
+  font-size: 1.3rem; font-weight: 800;
+  color: #1a1a0e; margin-bottom: 0.875rem;
+  letter-spacing: -0.01em;
+}
+.svc-text p {
+  font-size: 0.9rem; color: #6b6347;
+  line-height: 1.8; margin-bottom: 1.5rem;
+}
 .svc-cta {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #515F37;
-  text-decoration: none;
+  font-size: 0.875rem; font-weight: 700;
+  color: #515F37; text-decoration: none;
   border-bottom: 2px solid #d6cda4;
   padding-bottom: 0.15rem;
   transition: border-color 0.15s;
 }
 .svc-cta:hover { border-color: #515F37; }
-.svc-cta span { transition: transform 0.15s; display: inline-block; }
+.svc-cta span { display: inline-block; transition: transform 0.15s; }
 .svc-cta:hover span { transform: translateX(4px); }
 
-/* ══ FAQ ══════════════════════════════════════════════════════════ */
+/* ══ FAQ — ARBRES ════════════════════════════════════════════════ */
 .faq-section {
-  padding: 6rem 0;
-  background: #faf8f2;
+  position: relative;
+  background: #d6cda4;
+  padding: 4rem 0 0;
+  overflow: hidden;
   transition-delay: 0.1s;
 }
 
-.faq-title {
+.faq-header {
+  text-align: center;
+  padding: 0 2rem;
+  margin-bottom: 2.5rem;
+}
+.faq-header h2 {
   font-size: clamp(1.5rem, 3vw, 2.25rem);
   font-weight: 900;
   color: #1a1a0e;
   letter-spacing: -0.02em;
-  margin-bottom: 2.5rem;
 }
 
-.faq-list {
-  max-width: 720px;
+/* Trees row */
+.trees-row {
   display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.faq-item {
-  border-bottom: 1px solid #e8e2d0;
-}
-
-.faq-item summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.25rem 0;
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
-}
-
-.faq-item summary::-webkit-details-marker { display: none; }
-
-.faq-item summary span {
-  font-size: 0.975rem;
-  font-weight: 600;
-  color: #1a1a0e;
-  transition: color 0.15s;
-}
-
-.faq-item summary:hover span { color: #515F37; }
-
-.faq-chevron {
-  color: #9ca3af;
-  flex-shrink: 0;
-  transition: transform 0.25s ease, color 0.15s;
-}
-
-.faq-item[open] summary span { color: #515F37; }
-.faq-item[open] .faq-chevron {
-  transform: rotate(180deg);
-  color: #515F37;
-}
-
-.faq-body {
-  padding: 0 0 1.5rem;
-}
-
-.faq-body p {
-  font-size: 0.875rem;
-  color: #6b6347;
-  line-height: 1.8;
-}
-
-/* ══ TREE SECTION ════════════════════════════════════════════════ */
-.tree-section {
-  position: relative;
-  background: #d6cda4;
-  padding: 5rem 0;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  overflow: hidden;
-  min-height: 400px;
+  align-items: flex-end;
+  gap: 1.5rem;
+  padding: 0 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
-/* Leaves */
-.leaves { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-
-.leaf {
-  position: absolute;
-  top: -60px;
-  animation: fallLeaf linear infinite;
-}
-
-.leaf svg { width: 22px; height: 30px; }
-
-.leaf-1 { left: 15%; animation-duration: 7s; animation-delay: 0s; }
-.leaf-2 { left: 55%; animation-duration: 9s; animation-delay: 2.5s; }
-.leaf-3 { left: 78%; animation-duration: 6.5s; animation-delay: 5s; }
-
-@keyframes fallLeaf {
-  0% {
-    transform: translateY(0) rotate(-15deg) translateX(0);
-    opacity: 0;
-  }
-  10% { opacity: 1; }
-  50% {
-    transform: translateY(45vh) rotate(200deg) translateX(30px);
-  }
-  90% { opacity: 0.8; }
-  100% {
-    transform: translateY(calc(100% + 100px)) rotate(400deg) translateX(-20px);
-    opacity: 0;
-  }
-}
-
-/* Tree content */
-.tree-content {
-  position: relative;
-  z-index: 2;
+.tree-item {
+  flex: 0 0 auto;
+  width: 200px;
   display: flex;
-  align-items: center;
-  gap: 5rem;
-  padding: 0 3rem;
-}
-
-.tree-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   cursor: pointer;
   text-decoration: none;
-  flex-shrink: 0;
+  transition: transform 0.25s ease, filter 0.25s ease;
+  transform-origin: bottom center;
 }
 
-.tree-img {
-  width: 200px;
+.tree-item img {
+  width: 100%;
   height: auto;
-  filter: drop-shadow(0 4px 12px rgba(81,95,55,0.2));
-  transition: filter 0.3s ease, transform 0.3s ease;
-}
-
-.tree-wrap:hover .tree-img {
-  filter: drop-shadow(0 12px 32px rgba(81,95,55,0.45));
-  transform: translateY(-6px) scale(1.03);
-}
-
-.tree-hover-label {
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%) translateY(8px);
-  background: #515F37;
-  color: #d6cda4;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 0.3rem 0.9rem;
-  border-radius: 999px;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  display: block;
   pointer-events: none;
 }
 
-.tree-wrap:hover .tree-hover-label {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
+.tree-item:hover {
+  transform: scale(1.08) translateY(-6px);
+  filter: drop-shadow(0 12px 24px rgba(81,95,55,0.35));
 }
 
-.tree-text h3 {
-  font-size: 1.75rem;
-  font-weight: 900;
-  color: #1a1a0e;
-  letter-spacing: -0.02em;
-  margin-bottom: 0.75rem;
-}
-
-.tree-text p {
+/* Answer bubble */
+.faq-answer {
+  min-height: 60px;
+  text-align: center;
+  padding: 1rem 3rem;
   font-size: 0.9rem;
-  color: #5a5234;
-  line-height: 1.75;
-  margin-bottom: 1.75rem;
+  color: #3d3820;
+  line-height: 1.7;
+  max-width: 640px;
+  margin: 1.5rem auto 0;
+  background: rgba(255,255,255,0.55);
+  border-radius: 16px;
+  backdrop-filter: blur(4px);
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+.faq-answer.visible { opacity: 1; }
+
+/* Ground illustration */
+.faq-ground {
+  margin-top: 2rem;
+  overflow: hidden;
+  line-height: 0;
+}
+.faq-ground img {
+  width: 100%;
+  max-width: 900px;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
 }
 
-.tree-btn {
-  display: inline-block;
-  padding: 0.75rem 1.75rem;
-  background: #515F37;
-  color: #d6cda4;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  font-weight: 700;
-  text-decoration: none;
-  transition: background 0.15s, transform 0.15s;
+/* ══ FEUILLES SÉPARATEUR ═════════════════════════════════════════ */
+.leaves-separator {
+  position: relative;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.leaf {
+  position: absolute;
+  animation: fallLeaf linear infinite;
+}
+.leaf svg { width: 20px; height: 27px; }
+
+.leaf-1 { left: 12%; top: -40px; animation-duration: 7s; animation-delay: 0s; }
+.leaf-2 { left: 50%; top: -40px; animation-duration: 9.5s; animation-delay: 3s; }
+.leaf-3 { left: 80%; top: -40px; animation-duration: 6s; animation-delay: 6s; }
+
+@keyframes fallLeaf {
+  0% { transform: translateY(0) rotate(-10deg); opacity: 0; }
+  8% { opacity: 1; }
+  45% { transform: translateY(40vh) rotate(220deg) translateX(25px); }
+  92% { opacity: 0.7; }
+  100% { transform: translateY(90vh) rotate(400deg) translateX(-15px); opacity: 0; }
 }
 
-.tree-btn:hover { background: #3d4829; transform: translateY(-2px); }
-
-/* ══ ANIMATION ENTRÉE ════════════════════════════════════════════ */
+/* ══ ANIMATION ═══════════════════════════════════════════════════ */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* ══ RESPONSIVE ══════════════════════════════════════════════════ */
 @media (max-width: 900px) {
-  .hero-inner { padding: 0 2rem; }
-  .services-grid { flex-direction: column; }
-  .svc-divider { width: 100%; height: 1px; background: linear-gradient(to right, transparent, #d6cda4, transparent); margin: 0; }
-  .tree-content { flex-direction: column; gap: 2rem; text-align: center; }
-  .tree-img { width: 140px; }
+  .hero { flex-direction: column; justify-content: center; height: auto; min-height: calc(100vh - 56px); }
+  .hero-left { width: 100%; padding: 3rem 2rem 1.5rem; }
+  .hero-right { width: 100%; height: 280px; }
+  .hero-illus { max-height: 100%; }
+  .svc-card, .svc-card--reverse { flex-direction: column; gap: 1.5rem; text-align: center; }
+  .svc-illus { width: 140px; }
+  .trees-row { gap: 1rem; }
+  .tree-item { width: 150px; }
 }
 
 @media (max-width: 600px) {
   h1 { font-size: 2.75rem; }
   .container { padding: 0 1.5rem; }
-  .services-section, .faq-section { padding: 4rem 0; }
-  .svc-card { padding: 1.5rem; }
+  .services-section { padding: 4rem 0; }
+  .trees-row { flex-wrap: wrap; justify-content: center; }
+  .tree-item { width: 140px; }
 }
 </style>
 
 <script>
-// Intersection Observer — scroll reveal
-const observer = new IntersectionObserver(
+// Scroll reveal
+const revealObserver = new IntersectionObserver(
   entries => entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.classList.add('revealed');
-      observer.unobserve(e.target);
-    }
+    if (e.isIntersecting) { e.target.classList.add('revealed'); revealObserver.unobserve(e.target); }
   }),
-  { threshold: 0.12 }
+  { threshold: 0.1 }
 );
-document.querySelectorAll('[data-reveal]').forEach(el => observer.observe(el));
+document.querySelectorAll('[data-reveal]').forEach(el => revealObserver.observe(el));
+
+// FAQ trees — afficher la réponse au hover
+const faqAnswer = document.getElementById('faqAnswer');
+document.querySelectorAll('.tree-item').forEach(tree => {
+  tree.addEventListener('mouseenter', () => {
+    const answer = tree.getAttribute('data-answer');
+    if (faqAnswer && answer) {
+      faqAnswer.textContent = answer;
+      faqAnswer.classList.add('visible');
+    }
+  });
+  tree.addEventListener('mouseleave', () => {
+    if (faqAnswer) faqAnswer.classList.remove('visible');
+  });
+});
 </script>
