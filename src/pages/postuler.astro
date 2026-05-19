@@ -9,12 +9,6 @@ import PostulerForm from '../components/vue/PostulerForm.vue';
   description="Rejoignez Gardee et proposez vos services de jardinage à des particuliers près de chez vous."
 >
   <Navbar />
-  <main class="page-main">
-    <PostulerForm client:load />
-  </main>
+  <PostulerForm client:load />
   <Footer />
 </BaseLayout>
-
-<style>
-.page-main { padding: 3rem 0; min-height: 60vh; background: #f9fafb; }
-</style>
