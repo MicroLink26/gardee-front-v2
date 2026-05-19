@@ -39,7 +39,6 @@ const year = new Date().getFullYear();
 <style>
   .footer {
     background: #111827;
-    color: #9ca3af;
     margin-top: 4rem;
   }
 
@@ -52,51 +51,47 @@ const year = new Date().getFullYear();
     gap: 2.5rem;
   }
 
-  .footer-brand img { display: block; margin-bottom: 0.875rem; }
+  .footer-brand img { display: block; margin-bottom: 0.875rem; background: #d6cda4; border-radius: 6px; padding: 4px 8px; }
   .footer-brand p {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: #9ca3af;
     line-height: 1.6;
     max-width: 240px;
   }
 
+  .footer-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
   .footer-col h4 {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: #f9fafb;
-    margin-bottom: 0.875rem;
-  }
-  .footer-col {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    margin-bottom: 0.25rem;
   }
   .footer-col a {
-    color: #6b7280;
+    color: #d1d5db;
     text-decoration: none;
-    font-size: 0.875rem;
+    font-size: 0.9rem;
     transition: color 0.15s;
   }
-  .footer-col a:hover { color: #d1d5db; }
+  .footer-col a:hover { color: #fff; }
 
   .footer-bottom {
-    border-top: 1px solid #1f2937;
+    border-top: 1px solid #374151;
     padding: 1.25rem 2rem;
     max-width: 1100px;
     margin: 0 auto;
     font-size: 0.8rem;
-    color: #4b5563;
+    color: #9ca3af;
   }
 
   @media (max-width: 768px) {
-    .footer-inner {
-      grid-template-columns: 1fr 1fr;
-    }
-    .footer-brand {
-      grid-column: 1 / -1;
-    }
+    .footer-inner { grid-template-columns: 1fr 1fr; }
+    .footer-brand { grid-column: 1 / -1; }
   }
   @media (max-width: 480px) {
     .footer-inner { grid-template-columns: 1fr; }
