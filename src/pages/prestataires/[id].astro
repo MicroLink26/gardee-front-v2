@@ -5,7 +5,7 @@ import Footer from '../../components/astro/Footer.astro';
 import PrestataireProfile from '../../components/vue/PrestataireProfile.vue';
 
 const { id } = Astro.params;
-const API_URL = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3000/api';
+const API_URL = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3002/api';
 
 interface User {
   _id: string; nom: string; prenom: string; ville: string;
