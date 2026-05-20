@@ -123,7 +123,9 @@ function addTrees() {
     const z = -4 - i * 5.2
     for (const side of [-1, 1]) {
       const g = new THREE.Group()
-      g.add(Object.assign(new THREE.Mesh(trunkGeo, trunkMat), { position: new THREE.Vector3(0, 1.5, 0) }))
+      const trunk = new THREE.Mesh(trunkGeo, trunkMat)
+      trunk.position.set(0, 1.5, 0)
+      g.add(trunk)
       cones.forEach((cg, ci) => {
         const m = new THREE.Mesh(cg, foliageMat)
         m.position.y = coneY[ci]
@@ -149,7 +151,9 @@ function addFlowers() {
     const z = -2 - r() * 100
     const x = (r() > 0.5 ? 1 : -1) * (2.8 + r() * 5.5)
     const g = new THREE.Group()
-    g.add(Object.assign(new THREE.Mesh(stemGeo, stemMat), { position: new THREE.Vector3(0, 0.45, 0) }))
+    const stem = new THREE.Mesh(stemGeo, stemMat)
+    stem.position.set(0, 0.45, 0)
+    g.add(stem)
     const hm = new THREE.Mesh(headGeo, new THREE.MeshStandardMaterial({
       color: COLORS[Math.floor(r() * COLORS.length)], roughness: 0.7
     }))
