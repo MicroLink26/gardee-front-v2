@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
 
 const auth = useAuthStore();
@@ -12,6 +12,13 @@ const loading = ref(false);
 const redirect = typeof window !== 'undefined'
   ? (new URLSearchParams(window.location.search).get('redirect') ?? '/app/dashboard')
   : '/app/dashboard';
+
+onMounted(async () => {
+  if (auth.accessToken) {
+    await auth.fetchMe();
+    if (auth.isLoggedIn) window.location.href = '/app/dashboard';
+  }
+});
 
 async function submit() {
   error.value = '';
