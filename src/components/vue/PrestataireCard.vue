@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { User } from '../../types';
 import { getAvatar } from '../../composables/useAvatar';
+import { useCategoryName } from '../../composables/useCategoryName';
 
 defineProps<{ user: User }>();
+
+const { categoryName } = useCategoryName();
 
 function stars(rating: number) {
   const full = Math.round(rating);
@@ -36,7 +39,7 @@ function stars(rating: number) {
       </div>
 
       <div class="card-tags">
-        <span v-for="p in user.prestations.slice(0, 3)" :key="p" class="tag">{{ p }}</span>
+        <span v-for="p in user.prestations.slice(0, 3)" :key="p" class="tag">{{ categoryName(p) }}</span>
       </div>
 
       <div class="card-footer">

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { getRanking } from '../../services/users';
-import { useCategoriesStore } from '../../stores/categories';
+import { useCategoryName } from '../../composables/useCategoryName';
 import { getAvatar } from '../../composables/useAvatar';
 import type { User } from '../../types';
+
+const { categoryName, categoriesStore } = useCategoryName();
 
 const users = ref<User[]>([]);
 const total = ref(0);
@@ -19,7 +21,6 @@ const loading = ref(false);
 const totalPages = computed(() => Math.ceil(total.value / pageSize));
 const resultsRef = ref<HTMLElement | null>(null);
 
-const categoriesStore = useCategoriesStore();
 const RATINGS = [
   { label: 'Toutes', val: 0 },
   { label: '3+', val: 3 },
@@ -287,7 +288,7 @@ function stars(n: number) {
                     <span class="no-rating">Nouveau</span>
                   </div>
                   <div class="podium-tags">
-                    <span v-for="p in user.prestations.slice(0, 2)" :key="p" class="tag">{{ p }}</span>
+                    <span v-for="p in user.prestations.slice(0, 2)" :key="p" class="tag">{{ categoryName(p) }}</span>
                   </div>
                 </div>
               </a>
@@ -324,7 +325,7 @@ function stars(n: number) {
                   <span class="rating-count-sm">({{ user.numberOfReviews }})</span>
                 </div>
                 <div class="rank-tags">
-                  <span v-for="p in user.prestations.slice(0, 2)" :key="p" class="tag-sm">{{ p }}</span>
+                  <span v-for="p in user.prestations.slice(0, 2)" :key="p" class="tag-sm">{{ categoryName(p) }}</span>
                 </div>
               </div>
               <div class="rank-right">

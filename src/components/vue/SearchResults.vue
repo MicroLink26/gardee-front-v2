@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { searchPrestataires } from '../../services/users';
+import { useCategoriesStore } from '../../stores/categories';
 import type { User } from '../../types';
 import PrestataireCard from './PrestataireCard.vue';
+
+const categoriesStore = useCategoriesStore();
 
 const props = defineProps<{ initialQuery?: string }>();
 
@@ -48,7 +51,10 @@ function goPage(p: number) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-onMounted(load);
+onMounted(() => {
+  categoriesStore.load();
+  load();
+});
 </script>
 
 <template>

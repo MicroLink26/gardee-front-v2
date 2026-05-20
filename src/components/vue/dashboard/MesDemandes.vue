@@ -2,8 +2,11 @@
 import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
 import { listMyRequests, listMyClientRequests, providerAccept, providerRefuse, providerCancel } from '../../../services/requests';
+import { useCategoryName } from '../../../composables/useCategoryName';
 import type { ServiceRequest } from '../../../types';
 import { REQUEST_STATUS_LABELS } from '../../../types';
+
+const { categoryName, categoriesStore } = useCategoryName();
 
 const auth = useAuthStore();
 const requests = ref<ServiceRequest[]>([]);
@@ -68,7 +71,10 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-onMounted(load);
+onMounted(() => {
+  categoriesStore.load();
+  load();
+});
 </script>
 
 <template>
@@ -119,7 +125,7 @@ onMounted(load);
         </div>
 
         <div class="request-services">
-          <span v-for="p in req.prestations" :key="p" class="service-tag">{{ p }}</span>
+          <span v-for="p in req.prestations" :key="p" class="service-tag">{{ categoryName(p) }}</span>
         </div>
 
         <div class="request-meta">

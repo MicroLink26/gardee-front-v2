@@ -2,7 +2,10 @@
 import { ref, onMounted } from 'vue';
 import { api } from '../../../services/api';
 import { getAvatar } from '../../../composables/useAvatar';
+import { useCategoryName } from '../../../composables/useCategoryName';
 import type { User } from '../../../types';
+
+const { categoryName, categoriesStore } = useCategoryName();
 
 const users = ref<User[]>([]);
 const loading = ref(true);
@@ -19,7 +22,10 @@ async function validate(id: string) {
   users.value = users.value.filter(u => u._id !== id);
 }
 
-onMounted(load);
+onMounted(() => {
+  categoriesStore.load();
+  load();
+});
 </script>
 
 <template>
@@ -62,7 +68,7 @@ onMounted(load);
             </span>
           </div>
           <div class="user-tags">
-            <span v-for="p in user.prestations.slice(0, 3)" :key="p" class="tag">{{ p }}</span>
+            <span v-for="p in user.prestations.slice(0, 3)" :key="p" class="tag">{{ categoryName(p) }}</span>
             <span v-if="user.tarifHoraire" class="tag tag--price">{{ user.tarifHoraire }} €/h</span>
           </div>
         </div>
