@@ -490,9 +490,14 @@ textarea { resize: vertical; }
 .btn-primary:hover:not(:disabled) { background: #3d4a28; }
 
 @media (max-width: 600px) {
+  .section-card { padding: 1.125rem; border-radius: 12px; }
   .field-row { grid-template-columns: 1fr; }
   .photo-section { flex-direction: column; align-items: flex-start; }
   .save-row { flex-direction: column; align-items: stretch; }
+  .pw-save-row { flex-direction: column; align-items: stretch; }
   .btn-primary { width: 100%; text-align: center; }
+  .btn-secondary { width: 100%; text-align: center; }
+  .chip-group { gap: 0.4rem; }
+  .service-chip { font-size: 0.78rem; padding: 0.28rem 0.65rem; }
 }
 </style>
