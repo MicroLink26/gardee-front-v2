@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import * as THREE from 'three'
 import { FontLoader } from 'three/addons/loaders/FontLoader.js'
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
+import { Timer } from 'three'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SCROLL_MULTIPLIER = 5        // wrapper height = N × 100vh
@@ -257,7 +258,7 @@ function onScroll() {
 }
 
 // ── Animation loop ────────────────────────────────────────────────────────────
-const timer = new THREE.Timer()
+const timer = new Timer()
 let t0 = 0   // absolute time for particles
 
 function tick() {
