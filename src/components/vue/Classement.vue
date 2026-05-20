@@ -637,24 +637,43 @@ h1 { font-size: 2.25rem; font-weight: 900; color: #fff; margin: 0 0 0.4rem; lett
 
 .podium-photo {
   position: relative;
-  height: 220px;
-  background: linear-gradient(135deg, #eae8de, #d6cda4);
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.podium-first .podium-photo { height: 260px; }
-
-.podium-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
-.podium-card:hover .podium-photo img { transform: scale(1.04); }
-
-.podium-initials {
-  height: 100%;
+  height: 180px;
+  background: linear-gradient(135deg, #eae8de 0%, #d6cda4 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3.5rem;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.podium-first .podium-photo { height: 210px; }
+
+.podium-photo img {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center top;
+  border: 4px solid rgba(255,255,255,0.9);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+.podium-first .podium-photo img {
+  width: 130px;
+  height: 130px;
+}
+.podium-card:hover .podium-photo img { transform: scale(1.06); }
+
+.podium-initials {
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
   font-weight: 900;
   color: #515F37;
+  background: rgba(255,255,255,0.6);
 }
 
 .price-badge {
