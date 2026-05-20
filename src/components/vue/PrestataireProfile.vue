@@ -3,7 +3,10 @@ import { ref, computed, onMounted } from 'vue';
 import { getPrestataire, getReviews } from '../../services/users';
 import { createRequest } from '../../services/requests';
 import { getAvatar } from '../../composables/useAvatar';
+import { useCategoriesStore } from '../../stores/categories';
 import type { User } from '../../types';
+
+const categoriesStore = useCategoriesStore();
 
 const props = defineProps<{ prestataireId?: string }>();
 
@@ -90,12 +93,18 @@ const selectedDateLabel = computed(() => {
 });
 
 // ── Data loading ──────────────────────────────────
+const categoryName = computed(() => {
+  const map = new Map(categoriesStore.categories.map(c => [c._id, c.name]));
+  return (id: string) => map.get(id) ?? id;
+});
+
 onMounted(async () => {
   const id = props.prestataireId || new URLSearchParams(window.location.search).get('id') || '';
   if (!id) return;
   const [u, r] = await Promise.all([
     getPrestataire(id),
     getReviews(id, { pageSize: 5 }),
+    categoriesStore.load(),
   ]);
   user.value = u;
   reviews.value = r.items as Record<string, unknown>[];
@@ -196,7 +205,7 @@ const DAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
           </div>
 
           <div class="profile-tags">
-            <span v-for="p in user.prestations" :key="p" class="tag">{{ p }}</span>
+            <span v-for="p in user.prestations" :key="p" class="tag">{{ categoryName(p) }}</span>
           </div>
         </div>
 
@@ -234,7 +243,7 @@ const DAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
                   <div class="service-icon">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                   </div>
-                  <span>{{ p }}</span>
+                  <span>{{ categoryName(p) }}</span>
                 </div>
               </div>
             </div>
@@ -379,7 +388,7 @@ const DAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
                     type="button"
                     :class="['service-chip', { active: form.prestations.includes(s) }]"
                     @click="toggleService(s)"
-                  >{{ s }}</button>
+                  >{{ categoryName(s) }}</button>
                 </div>
               </div>
 
