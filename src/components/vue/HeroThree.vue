@@ -257,12 +257,13 @@ function onScroll() {
 }
 
 // ── Animation loop ────────────────────────────────────────────────────────────
-const clock = new THREE.Clock()
+const timer = new THREE.Timer()
 let t0 = 0   // absolute time for particles
 
 function tick() {
   animId = requestAnimationFrame(tick)
-  const dt = clock.getDelta()
+  timer.update()
+  const dt = timer.getDelta()
   t0 += dt
 
   // ── Camera ──────────────────────────────────────────────────
