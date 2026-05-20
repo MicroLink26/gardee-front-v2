@@ -167,13 +167,15 @@ function stars(n: number) {
           </div>
 
           <!-- Service chips -->
-          <div class="chip-group">
-            <button
-              v-for="cat in categoriesStore.categories" :key="cat._id"
-              :class="['chip', { active: prestation === cat._id }]"
-              @click="toggleService(cat._id)"
-              type="button"
-            >{{ cat.name }}</button>
+          <div class="chip-scroll-wrap">
+            <div class="chip-group">
+              <button
+                v-for="cat in categoriesStore.categories" :key="cat._id"
+                :class="['chip', { active: prestation === cat._id }]"
+                @click="toggleService(cat._id)"
+                type="button"
+              >{{ cat.name }}</button>
+            </div>
           </div>
 
           <!-- Rating + Price + Sort -->
@@ -460,7 +462,29 @@ h1 { font-size: 2.25rem; font-weight: 900; color: #fff; margin: 0 0 0.4rem; lett
 .map-btn svg { width: 15px; height: 15px; }
 .map-btn:hover { background: rgba(214, 205, 164, 0.15); border-color: #d6cda4; }
 
-.chip-group { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.chip-scroll-wrap {
+  position: relative;
+}
+.chip-scroll-wrap::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 48px;
+  background: linear-gradient(to right, transparent, rgba(65,78,40,0.85));
+  pointer-events: none;
+  border-radius: 0 999px 999px 0;
+}
+
+.chip-group {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.chip-group::-webkit-scrollbar { display: none; }
 
 .chip {
   padding: 0.3rem 0.8rem;
@@ -472,6 +496,8 @@ h1 { font-size: 2.25rem; font-weight: 900; color: #fff; margin: 0 0 0.4rem; lett
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .chip:hover { border-color: #d6cda4; color: #d6cda4; }
 .chip.active { background: #d6cda4; border-color: #d6cda4; color: #1a1a0e; font-weight: 700; }
