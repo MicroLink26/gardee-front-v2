@@ -12,6 +12,10 @@ import Footer from '../components/astro/Footer.astro';
   <!-- ══ HERO — plein écran ══════════════════════════════════════ -->
   <section class="hero">
     <div class="hero-left">
+      <img src="/findContent.png" alt="Trouvez votre jardinier" class="hero-illus" />
+    </div>
+
+    <div class="hero-right">
       <span class="hero-eyebrow">La plateforme jardinage de confiance</span>
       <h1>Trouvez votre<br /><em>jardinier</em></h1>
 
@@ -36,10 +40,6 @@ import Footer from '../components/astro/Footer.astro';
         <span class="sep">·</span>
         <a href="/postuler" class="action-link action-muted">Vous êtes jardinier ?</a>
       </div>
-    </div>
-
-    <div class="hero-right">
-      <img src="/findContent.png" alt="Trouvez votre jardinier" class="hero-illus" />
     </div>
 
     <div class="scroll-hint" aria-hidden="true"><div class="scroll-dot"></div></div>
@@ -125,6 +125,7 @@ import Footer from '../components/astro/Footer.astro';
 
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
+body { margin: 0; padding: 0; }
 
 /* ══ HERO ═══════════════════════════════════════════════════════ */
 .hero {
@@ -138,13 +139,27 @@ import Footer from '../components/astro/Footer.astro';
 }
 
 .hero-left {
+  flex: 0 0 auto;
+  width: min(480px, 45%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-right {
+  flex: 1;
   position: relative;
   z-index: 2;
-  flex: 0 0 auto;
-  width: min(580px, 55%);
-  padding-left: max(3rem, calc((100vw - 1100px) / 2 + 2rem));
-  padding-right: 3rem;
+  padding-left: 3rem;
+  padding-right: max(3rem, calc((100vw - 1100px) / 2 + 2rem));
   animation: fadeUp 0.8s ease both;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .hero-eyebrow {
@@ -217,19 +232,10 @@ h1 em { font-style: normal; color: #515F37; }
 .sep { color: #c9bfa0; font-size: 0.7rem; }
 
 /* Hero illustration */
-.hero-right {
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  height: 100%;
-  overflow: hidden;
-  position: relative;
-  z-index: 1;
-}
 .hero-illus {
-  max-height: 75%;
+  max-height: 80%;
   max-width: 100%;
+  width: 100%;
   object-fit: contain;
   object-position: bottom center;
   animation: fadeUp 0.9s 0.15s ease both;
@@ -431,10 +437,10 @@ h1 em { font-style: normal; color: #515F37; }
 
 /* ══ RESPONSIVE ══════════════════════════════════════════════════ */
 @media (max-width: 900px) {
-  .hero { flex-direction: column; justify-content: center; height: auto; min-height: calc(100vh - 56px); }
-  .hero-left { width: 100%; padding: 3rem 2rem 1.5rem; }
-  .hero-right { width: 100%; height: 280px; }
-  .hero-illus { max-height: 100%; }
+  .hero { flex-direction: column-reverse; justify-content: flex-end; height: auto; min-height: calc(100vh - 56px); }
+  .hero-left { width: 100%; height: 260px; }
+  .hero-right { width: 100%; padding: 2rem 2rem 1.5rem; }
+  .hero-illus { max-height: 100%; object-position: center bottom; }
   .svc-card, .svc-card--reverse { flex-direction: column; gap: 1.5rem; text-align: center; }
   .svc-illus { width: 140px; }
   .trees-row { gap: 1rem; }

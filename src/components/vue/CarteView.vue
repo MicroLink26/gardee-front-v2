@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { getRanking } from '../../services/users';
+import { useCategoriesStore } from '../../stores/categories';
+import { getAvatar } from '../../composables/useAvatar';
 import type { User } from '../../types';
 
 const service = ref('');
@@ -11,6 +13,7 @@ const users = ref<User[]>([]);
 const loading = ref(false);
 const selectedId = ref<string | null>(null);
 const mapEl = ref<HTMLDivElement>();
+const sidebarOpen = ref(true);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let map: any = null;
@@ -19,7 +22,7 @@ let L: any = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let markers: any[] = [];
 
-const SERVICES = ['Tonte', 'Taille de haies', 'Élagage', 'Débroussaillage', 'Plantation', 'Arrosage', 'Potager'];
+const categoriesStore = useCategoriesStore();
 const RATINGS = [
   { label: 'Toutes', val: 0 },
   { label: '3+', val: 3 },
@@ -63,9 +66,7 @@ function updateMarkers() {
 
     const icon = L.divIcon({
       html: `<div class="gd-marker${isSel ? ' gd-marker--sel' : ''}">
-        ${user.profil_image?.secure_url
-          ? `<img src="${user.profil_image.secure_url}" alt="" />`
-          : `<span>${user.prenom[0]}${user.nom[0]}</span>`}
+        <img src="${getAvatar(user._id, user.profil_image?.secure_url)}" alt="" />
       </div>`,
       className: '',
       iconSize: [42, 42],
@@ -80,7 +81,7 @@ function updateMarkers() {
           <strong>${user.prenom} ${user.nom}</strong>
           <span>${user.ville}</span>
           ${user.tarifHoraire ? `<span class="gd-popup-tarif">${user.tarifHoraire} €/h</span>` : ''}
-          <a href="/prestataires/${user._id}">Voir le profil →</a>
+          <a href="/prestataires/?id=${user._id}">Voir le profil →</a>
         </div>
       `)
       .on('click', () => {
@@ -104,6 +105,8 @@ watch(filtered, updateMarkers);
 watch(selectedId, updateMarkers);
 
 onMounted(async () => {
+  categoriesStore.load();
+
   L = (await import('leaflet')).default;
   await import('leaflet/dist/leaflet.css');
 
@@ -112,6 +115,29 @@ onMounted(async () => {
     attribution: '© OpenStreetMap contributors',
     maxZoom: 18,
   }).addTo(map);
+
+  // Try to geolocate the user and zoom in
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        map.flyTo([latitude, longitude], 12, { duration: 1.2 });
+
+        // Show a small "you are here" marker
+        const youIcon = L.divIcon({
+          html: '<div class="you-marker"></div>',
+          className: '',
+          iconSize: [16, 16],
+          iconAnchor: [8, 8],
+        });
+        L.marker([latitude, longitude], { icon: youIcon })
+          .addTo(map)
+          .bindPopup('<div class="gd-popup"><strong>Votre position</strong></div>');
+      },
+      () => { /* permission denied or unavailable — keep default France view */ },
+      { timeout: 6000, maximumAge: 300000 }
+    );
+  }
 
   await load();
   updateMarkers();
@@ -141,8 +167,15 @@ function stars(n: number) {
 
 <template>
   <div class="carte-layout">
+    <!-- ── MOBILE TOGGLE ── -->
+    <button class="map-toggle-btn" @click="sidebarOpen = !sidebarOpen" type="button">
+      <svg v-if="sidebarOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      {{ sidebarOpen ? 'Masquer les filtres' : `${filtered.length} jardinier${filtered.length > 1 ? 's' : ''} — Voir les filtres` }}
+    </button>
+
     <!-- ── SIDEBAR ── -->
-    <aside class="sidebar">
+    <aside :class="['sidebar', { 'sidebar--hidden': !sidebarOpen }]">
       <!-- Filters -->
       <div class="filters">
         <h2>Trouver un jardinier</h2>
@@ -167,12 +200,12 @@ function stars(n: number) {
           <label class="filter-label">Service</label>
           <div class="chip-group">
             <button
-              v-for="s in SERVICES"
-              :key="s"
-              :class="['chip', { active: service === s }]"
-              @click="toggleService(s)"
+              v-for="cat in categoriesStore.categories"
+              :key="cat._id"
+              :class="['chip', { active: service === cat._id }]"
+              @click="toggleService(cat._id)"
               type="button"
-            >{{ s }}</button>
+            >{{ cat.name }}</button>
           </div>
         </div>
 
@@ -248,8 +281,7 @@ function stars(n: number) {
           type="button"
         >
           <div class="scard-photo">
-            <img v-if="user.profil_image?.secure_url" :src="user.profil_image.secure_url" :alt="`${user.prenom} ${user.nom}`" />
-            <div v-else class="scard-initials">{{ user.prenom[0] }}{{ user.nom[0] }}</div>
+            <img :src="getAvatar(user._id, user.profil_image?.secure_url)" :alt="`${user.prenom} ${user.nom}`" />
           </div>
           <div class="scard-body">
             <div class="scard-name">{{ user.prenom }} {{ user.nom }}</div>
@@ -262,7 +294,7 @@ function stars(n: number) {
           </div>
           <div class="scard-right">
             <span v-if="user.tarifHoraire" class="scard-price">{{ user.tarifHoraire }} €/h</span>
-            <a :href="`/prestataires/${user._id}`" class="scard-link" @click.stop>Profil →</a>
+            <a :href="`/prestataires/?id=${user._id}`" class="scard-link" @click.stop>Profil →</a>
           </div>
         </button>
       </div>
@@ -320,7 +352,7 @@ function stars(n: number) {
 
 .filter-value {
   font-weight: 700;
-  color: #16a34a;
+  color: #515F37;
   text-transform: none;
   letter-spacing: 0;
   font-size: 0.8rem;
@@ -341,12 +373,12 @@ function stars(n: number) {
   transition: border-color 0.15s;
 }
 
-.text-input:focus { border-color: #16a34a; }
+.text-input:focus { border-color: #515F37; }
 
 .search-btn {
   width: 36px;
   height: 36px;
-  background: #16a34a;
+  background: #515F37;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -358,7 +390,7 @@ function stars(n: number) {
   transition: background 0.15s;
 }
 
-.search-btn:hover { background: #15803d; }
+.search-btn:hover { background: #3d4a28; }
 
 .chip-group { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 
@@ -374,8 +406,8 @@ function stars(n: number) {
   transition: all 0.15s;
 }
 
-.chip:hover { border-color: #16a34a; color: #16a34a; }
-.chip.active { background: #16a34a; border-color: #16a34a; color: #fff; }
+.chip:hover { border-color: #515F37; color: #515F37; }
+.chip.active { background: #515F37; border-color: #515F37; color: #fff; }
 
 .rating-group { display: flex; gap: 0.35rem; }
 
@@ -392,12 +424,12 @@ function stars(n: number) {
   transition: all 0.15s;
 }
 
-.rating-btn:hover { border-color: #16a34a; color: #16a34a; }
-.rating-btn.active { background: #16a34a; border-color: #16a34a; color: #fff; }
+.rating-btn:hover { border-color: #515F37; color: #515F37; }
+.rating-btn.active { background: #515F37; border-color: #515F37; color: #fff; }
 
 .range-slider {
   width: 100%;
-  accent-color: #16a34a;
+  accent-color: #515F37;
   cursor: pointer;
 }
 
@@ -434,7 +466,7 @@ function stars(n: number) {
   width: 14px;
   height: 14px;
   border: 2px solid #e5e7eb;
-  border-top-color: #16a34a;
+  border-top-color: #515F37;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   display: inline-block;
@@ -519,7 +551,7 @@ function stars(n: number) {
 }
 
 .scard:hover { background: #f9fafb; border-color: #e5e7eb; }
-.scard.selected { border-color: #16a34a; background: #f0fdf4; }
+.scard.selected { border-color: #515F37; background: #f0ede3; }
 
 .scard-photo {
   width: 52px;
@@ -527,7 +559,7 @@ function stars(n: number) {
   border-radius: 10px;
   overflow: hidden;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  background: linear-gradient(135deg, #f0ede3, #d6cda4);
 }
 
 .scard-photo img { width: 100%; height: 100%; object-fit: cover; }
@@ -540,7 +572,7 @@ function stars(n: number) {
   justify-content: center;
   font-size: 1rem;
   font-weight: 800;
-  color: #065f46;
+  color: #515F37;
 }
 
 .scard-body { flex: 1; min-width: 0; }
@@ -569,13 +601,13 @@ function stars(n: number) {
 }
 
 .scard.selected .scard-price {
-  background: #dcfce7;
-  color: #15803d;
+  background: #f0ede3;
+  color: #3d4a28;
 }
 
 .scard-link {
   font-size: 0.75rem;
-  color: #16a34a;
+  color: #515F37;
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
@@ -589,6 +621,61 @@ function stars(n: number) {
   height: 100%;
   z-index: 0;
 }
+
+/* ── MOBILE TOGGLE ── */
+.map-toggle-btn { display: none; }
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  .carte-layout {
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100vh - 56px);
+  }
+
+  .map-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    background: #515F37;
+    color: #fff;
+    border: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    position: sticky;
+    top: 56px;
+    z-index: 100;
+  }
+  .map-toggle-btn svg { width: 16px; height: 16px; }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e5e2d3;
+    max-height: 70vh;
+    overflow-y: auto;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+  }
+
+  .sidebar--hidden {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    border-bottom: none;
+  }
+
+  .map-area {
+    height: 55vh;
+    min-height: 300px;
+    flex: none;
+    width: 100%;
+  }
+}
 </style>
 
 <!-- Global styles for Leaflet custom markers (not scoped) -->
@@ -599,7 +686,7 @@ function stars(n: number) {
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
   background: #fff;
-  border: 3px solid #16a34a;
+  border: 3px solid #515F37;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
   transition: transform 0.2s, border-color 0.2s;
@@ -621,8 +708,8 @@ function stars(n: number) {
   justify-content: center;
   font-size: 0.9rem;
   font-weight: 800;
-  color: #065f46;
-  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #515F37;
+  background: linear-gradient(135deg, #f0ede3, #d6cda4);
 }
 
 .gd-marker--sel {
@@ -641,7 +728,22 @@ function stars(n: number) {
 
 .gd-popup strong { font-size: 0.9rem; color: #111827; }
 .gd-popup span { color: #6b7280; font-size: 0.8rem; }
-.gd-popup-tarif { font-weight: 700; color: #16a34a !important; }
-.gd-popup a { color: #16a34a; font-weight: 600; font-size: 0.8rem; text-decoration: none; margin-top: 0.25rem; }
+.gd-popup-tarif { font-weight: 700; color: #515F37 !important; }
+.gd-popup a { color: #515F37; font-weight: 600; font-size: 0.8rem; text-decoration: none; margin-top: 0.25rem; }
 .gd-popup a:hover { text-decoration: underline; }
+
+.you-marker {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.35), 0 2px 8px rgba(0,0,0,0.25);
+  animation: pulse-you 2s ease-in-out infinite;
+}
+
+@keyframes pulse-you {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(59,130,246,0.35), 0 2px 8px rgba(0,0,0,0.25); }
+  50%       { box-shadow: 0 0 0 8px rgba(59,130,246,0.15), 0 2px 8px rgba(0,0,0,0.25); }
+}
 </style>

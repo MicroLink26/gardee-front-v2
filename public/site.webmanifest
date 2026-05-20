@@ -1,0 +1,47 @@
+{
+  "name": "Gardee — Votre jardinier professionnel",
+  "short_name": "Gardee",
+  "description": "Trouvez un jardinier professionnel près de chez vous. Tonte, taille de haies, élagage et plus encore.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf8f2",
+  "theme_color": "#515F37",
+  "lang": "fr",
+  "categories": ["lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/findContent.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Accueil Gardee"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Trouver un jardinier",
+      "short_name": "Classement",
+      "url": "/classement",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Carte des jardiniers",
+      "short_name": "Carte",
+      "url": "/carte",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    }
+  ]
+}

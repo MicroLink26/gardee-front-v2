@@ -15,40 +15,137 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
-    <h2>Administration</h2>
+  <div class="admin-home">
+    <div class="page-header">
+      <h1>Administration</h1>
+      <p class="header-sub">Vue d'ensemble de la plateforme Gardee</p>
+    </div>
+
     <div class="stats-grid">
-      <a href="/app/admin/pending" class="stat-card">
-        <span class="stat-icon">⏳</span>
-        <div>
-          <p class="stat-value">{{ stats?.pending ?? '…' }}</p>
-          <p class="stat-label">Prestataires en attente</p>
+      <a href="/app/admin/pending" class="stat-card stat-card--alert">
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
+        <div class="stat-body">
+          <div class="stat-value">{{ stats?.pending ?? '…' }}</div>
+          <div class="stat-label">En attente de validation</div>
+        </div>
+        <svg class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
+
       <a href="/app/admin/users" class="stat-card">
-        <span class="stat-icon">👥</span>
-        <div>
-          <p class="stat-value">{{ stats?.total ?? '…' }}</p>
-          <p class="stat-label">Utilisateurs au total</p>
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
         </div>
+        <div class="stat-body">
+          <div class="stat-value">{{ stats?.total ?? '…' }}</div>
+          <div class="stat-label">Utilisateurs inscrits</div>
+        </div>
+        <svg class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
     </div>
-    <div class="quick-links">
-      <a href="/app/admin/pending" class="quick-link">Valider des prestataires →</a>
-      <a href="/app/admin/users" class="quick-link">Gérer les utilisateurs →</a>
+
+    <h2 class="section-title">Actions rapides</h2>
+    <div class="actions-grid">
+      <a href="/app/admin/pending" class="action-card">
+        <div class="action-icon action-icon--orange">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+          <div class="action-label">Valider des prestataires</div>
+          <div class="action-desc">Examiner les candidatures en attente</div>
+        </div>
+        <span class="action-arrow">→</span>
+      </a>
+      <a href="/app/admin/users" class="action-card">
+        <div class="action-icon action-icon--blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <div>
+          <div class="action-label">Gérer les utilisateurs</div>
+          <div class="action-desc">Modifier les rôles et les comptes</div>
+        </div>
+        <span class="action-arrow">→</span>
+      </a>
+      <a href="/classement" target="_blank" class="action-card">
+        <div class="action-icon action-icon--green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div>
+          <div class="action-label">Voir le classement public</div>
+          <div class="action-desc">Page visible par les visiteurs</div>
+        </div>
+        <span class="action-arrow">↗</span>
+      </a>
     </div>
   </div>
 </template>
 
 <style scoped>
-h2 { margin-bottom: 1.5rem; font-size: 1.5rem; }
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-.stat-card { display: flex; align-items: center; gap: 1rem; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.25rem; text-decoration: none; color: inherit; transition: box-shadow 0.15s; }
-.stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-.stat-icon { font-size: 2rem; }
-.stat-value { font-size: 1.75rem; font-weight: 800; color: #111827; }
-.stat-label { font-size: 0.875rem; color: #6b7280; }
-.quick-links { display: flex; flex-direction: column; gap: 0.5rem; }
-.quick-link { color: #16a34a; text-decoration: none; font-weight: 500; font-size: 0.95rem; }
-.quick-link:hover { text-decoration: underline; }
+* { box-sizing: border-box; }
+
+.admin-home { display: flex; flex-direction: column; gap: 1.75rem; }
+
+.page-header h1 { font-size: 1.5rem; font-weight: 900; color: #1a1a0e; margin: 0 0 0.25rem; }
+.header-sub { font-size: 0.875rem; color: #9ca3af; margin: 0; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+
+.stat-card {
+  display: flex; align-items: center; gap: 1rem;
+  background: #fff; border: 1.5px solid #e5e2d3; border-radius: 16px; padding: 1.25rem;
+  text-decoration: none; color: inherit; transition: all 0.15s;
+}
+.stat-card:hover {
+  border-color: #d6cda4;
+  box-shadow: 0 4px 16px rgba(81,95,55,0.08);
+  transform: translateY(-2px);
+}
+.stat-card--alert { border-color: #fde68a; background: #fffbeb; }
+.stat-card--alert:hover { border-color: #f59e0b; }
+
+.stat-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: #f0ede3; color: #515F37;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.stat-icon svg { width: 22px; height: 22px; }
+.stat-card--alert .stat-icon { background: #fef3c7; color: #d97706; }
+
+.stat-body { flex: 1; }
+.stat-value { font-size: 2rem; font-weight: 900; color: #1a1a0e; line-height: 1; }
+.stat-label { font-size: 0.8rem; color: #9ca3af; margin-top: 0.2rem; }
+
+.stat-arrow { width: 18px; height: 18px; color: #c8c4b4; flex-shrink: 0; }
+.stat-card:hover .stat-arrow { color: #515F37; }
+
+.section-title {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: #515F37; margin: 0;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: #e5e2d3; }
+
+.actions-grid { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.action-card {
+  display: flex; align-items: center; gap: 1rem;
+  background: #fff; border: 1.5px solid #e5e2d3; border-radius: 14px; padding: 1rem 1.25rem;
+  text-decoration: none; color: inherit; transition: all 0.15s;
+}
+.action-card:hover { border-color: #d6cda4; box-shadow: 0 4px 16px rgba(81,95,55,0.07); }
+
+.action-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.action-icon svg { width: 18px; height: 18px; }
+.action-icon--green { background: #f0ede3; color: #515F37; }
+.action-icon--orange { background: #fff7ed; color: #ea580c; }
+.action-icon--blue { background: #eff6ff; color: #3b82f6; }
+
+.action-label { font-size: 0.875rem; font-weight: 700; color: #1a1a0e; }
+.action-desc { font-size: 0.775rem; color: #9ca3af; margin-top: 0.1rem; }
+.action-arrow { font-size: 0.875rem; color: #c8c4b4; margin-left: auto; transition: color 0.15s; }
+.action-card:hover .action-arrow { color: #515F37; }
 </style>

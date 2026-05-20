@@ -2,9 +2,14 @@
 import { ref, computed, onMounted } from 'vue';
 import { getPrestataire, getReviews } from '../../services/users';
 import { createRequest } from '../../services/requests';
+import { getAvatar } from '../../composables/useAvatar';
 import type { User } from '../../types';
 
-const props = defineProps<{ prestataireId: string }>();
+const props = defineProps<{ prestataireId?: string }>();
+
+const resolvedId = typeof window !== 'undefined'
+  ? (props.prestataireId || new URLSearchParams(window.location.search).get('id') || '')
+  : (props.prestataireId ?? '');
 
 const user = ref<User | null>(null);
 const reviews = ref<Record<string, unknown>[]>([]);
@@ -86,9 +91,11 @@ const selectedDateLabel = computed(() => {
 
 // ── Data loading ──────────────────────────────────
 onMounted(async () => {
+  const id = props.prestataireId || new URLSearchParams(window.location.search).get('id') || '';
+  if (!id) return;
   const [u, r] = await Promise.all([
-    getPrestataire(props.prestataireId),
-    getReviews(props.prestataireId, { pageSize: 5 }),
+    getPrestataire(id),
+    getReviews(id, { pageSize: 5 }),
   ]);
   user.value = u;
   reviews.value = r.items as Record<string, unknown>[];
@@ -100,7 +107,8 @@ async function loadMoreReviews() {
   loadingReviews.value = true;
   reviewPage.value++;
   try {
-    const r = await getReviews(props.prestataireId, { page: reviewPage.value, pageSize: 5 });
+    const id = props.prestataireId || new URLSearchParams(window.location.search).get('id') || '';
+    const r = await getReviews(id, { page: reviewPage.value, pageSize: 5 });
     reviews.value.push(...(r.items as Record<string, unknown>[]));
   } finally {
     loadingReviews.value = false;
@@ -164,8 +172,7 @@ const DAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
     <div class="container">
       <div class="profile-header">
         <div class="profile-avatar">
-          <img v-if="user.profil_image?.secure_url" :src="user.profil_image.secure_url" :alt="`${user.prenom} ${user.nom}`" />
-          <div v-else class="avatar-placeholder">{{ user.prenom[0] }}{{ user.nom[0] }}</div>
+          <img :src="getAvatar(user._id, user.profil_image?.secure_url)" :alt="`${user.prenom} ${user.nom}`" />
         </div>
 
         <div class="profile-meta">
@@ -775,5 +782,7 @@ textarea { resize: vertical; }
   h1 { font-size: 1.4rem; }
   .profile-header { margin-top: -40px; gap: 1rem; }
   .profile-avatar { width: 90px; height: 90px; }
+  .field-row { grid-template-columns: 1fr; }
+  .container { padding: 0 1rem 4rem; }
 }
 </style>

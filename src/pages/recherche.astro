@@ -3,24 +3,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/astro/Navbar.astro';
 import Footer from '../components/astro/Footer.astro';
 import SearchResults from '../components/vue/SearchResults.vue';
-
-const q = Astro.url.searchParams.get('q') ?? '';
 ---
 <BaseLayout
-  title={q ? `"${q}" — Jardiniers` : 'Rechercher un jardinier'}
+  title="Rechercher un jardinier"
   description="Trouvez un jardinier professionnel près de chez vous."
 >
   <Navbar />
 
   <div class="page-header">
     <div class="page-header-inner">
-      <h1>{q ? `Jardiniers pour "${q}"` : 'Tous les jardiniers'}</h1>
+      <h1>Trouvez votre jardinier</h1>
       <p>Des professionnels vérifiés, disponibles près de chez vous</p>
     </div>
   </div>
 
   <main class="page-content">
-    <SearchResults client:load initialQuery={q} />
+    <SearchResults client:load />
   </main>
 
   <Footer />
@@ -28,8 +26,7 @@ const q = Astro.url.searchParams.get('q') ?? '';
 
 <style>
 .page-header {
-  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-  border-bottom: 1px solid #d1fae5;
+  background: linear-gradient(160deg, #515F37 0%, #3d4a28 100%);
   padding: 2.5rem 2rem;
 }
 .page-header-inner {
@@ -39,11 +36,11 @@ const q = Astro.url.searchParams.get('q') ?? '';
 .page-header h1 {
   font-size: 1.75rem;
   font-weight: 800;
-  color: #111827;
+  color: #fff;
   margin: 0 0 0.35rem;
 }
 .page-header p {
-  color: #6b7280;
+  color: rgba(255,255,255,0.7);
   font-size: 0.95rem;
   margin: 0;
 }

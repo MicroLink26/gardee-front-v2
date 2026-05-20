@@ -17,7 +17,65 @@ const isActive = (path: string) => currentPath === path ? 'nav-active' : '';
   <div class="navbar-auth">
     <a href="/app/login" class="btn-signin">S'identifier</a>
   </div>
+  <button class="burger" id="burger-btn" aria-label="Menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
+
+<!-- Mobile overlay menu -->
+<div class="mobile-overlay" id="mobile-overlay">
+  <div class="mobile-menu" id="mobile-menu">
+    <div class="mobile-menu-header">
+      <img src="/logo.png" alt="Gardee" height="36" />
+      <button class="mobile-close" id="mobile-close" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <nav class="mobile-nav">
+      <a href="/carte" class={isActive('/carte') ? 'mobile-link mobile-link--active' : 'mobile-link'}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        Trouver un jardinier
+      </a>
+      <a href="/classement" class={isActive('/classement') ? 'mobile-link mobile-link--active' : 'mobile-link'}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        Classement
+      </a>
+      <a href="/postuler" class={isActive('/postuler') ? 'mobile-link mobile-link--active' : 'mobile-link'}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Devenir prestataire
+      </a>
+      <a href="/contact" class={isActive('/contact') ? 'mobile-link mobile-link--active' : 'mobile-link'}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Contact
+      </a>
+    </nav>
+    <a href="/app/login" class="mobile-signin">S'identifier</a>
+  </div>
+</div>
+
+<script>
+  const burgerBtn = document.getElementById('burger-btn');
+  const overlay = document.getElementById('mobile-overlay');
+  const closeBtn = document.getElementById('mobile-close');
+
+  function openMenu() {
+    overlay?.classList.add('open');
+    burgerBtn?.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMenu() {
+    overlay?.classList.remove('open');
+    burgerBtn?.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
+  burgerBtn?.addEventListener('click', openMenu);
+  closeBtn?.addEventListener('click', closeMenu);
+  overlay?.addEventListener('click', (e) => {
+    if (e.target === overlay) closeMenu();
+  });
+</script>
 
 <style>
   .navbar {
@@ -63,8 +121,133 @@ const isActive = (path: string) => currentPath === path ? 'nav-active' : '';
   }
   .btn-signin:hover { background: #515F37; color: #d6cda4; }
 
+  /* Burger button */
+  .burger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .burger:hover { background: rgba(81,95,55,0.1); }
+  .burger span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: #515F37;
+    border-radius: 2px;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+
+  /* Mobile overlay */
+  .mobile-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,26,14,0.5);
+    z-index: 500;
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .mobile-overlay.open {
+    opacity: 1;
+  }
+
+  .mobile-menu {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(320px, 85vw);
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1.25rem;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+  }
+  .mobile-overlay.open .mobile-menu {
+    transform: translateX(0);
+  }
+
+  .mobile-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e2d3;
+  }
+
+  .mobile-close {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #faf8f2;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #515F37;
+    transition: background 0.15s;
+  }
+  .mobile-close:hover { background: #f0ede3; }
+  .mobile-close svg { width: 18px; height: 18px; }
+
+  .mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+  }
+
+  .mobile-link {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.875rem 1rem;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #374151;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+  }
+  .mobile-link svg { width: 20px; height: 20px; flex-shrink: 0; color: #9ca3af; }
+  .mobile-link:hover { background: #faf8f2; color: #515F37; }
+  .mobile-link:hover svg { color: #515F37; }
+  .mobile-link--active { color: #515F37; font-weight: 700; background: #f0ede3; }
+  .mobile-link--active svg { color: #515F37; }
+
+  .mobile-signin {
+    display: block;
+    margin-top: 1.5rem;
+    padding: 0.875rem;
+    background: #515F37;
+    color: #fff;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: background 0.15s;
+  }
+  .mobile-signin:hover { background: #3d4a28; }
+
   @media (max-width: 768px) {
     .navbar-links { display: none; }
+    .navbar-auth { display: none; }
     .navbar { padding: 0 1.25rem; }
+    .burger { display: flex; }
+    .mobile-overlay { display: block; }
   }
 </style>
