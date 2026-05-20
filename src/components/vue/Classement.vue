@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { getRanking } from '../../services/users';
 import { useCategoriesStore } from '../../stores/categories';
 import { getAvatar } from '../../composables/useAvatar';
@@ -17,6 +17,7 @@ const sortBy = ref<'rating' | 'price' | 'reviews'>('rating');
 const loading = ref(false);
 
 const totalPages = computed(() => Math.ceil(total.value / pageSize));
+const resultsRef = ref<HTMLElement | null>(null);
 
 const categoriesStore = useCategoriesStore();
 const RATINGS = [
@@ -88,10 +89,11 @@ function toggleService(s: string) {
   search();
 }
 
-function goPage(p: number) {
+async function goPage(p: number) {
   page.value = p;
-  load();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  await load();
+  await nextTick();
+  resultsRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function resetFilters() {
@@ -202,7 +204,7 @@ function stars(n: number) {
       </div>
     </div>
 
-    <div class="container main-content">
+    <div ref="resultsRef" class="container main-content">
 
       <!-- Results meta -->
       <div class="results-meta">
