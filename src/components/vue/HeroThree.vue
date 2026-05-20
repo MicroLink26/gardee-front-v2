@@ -16,6 +16,8 @@ const LETTER_SIZE = 3.8
 const PHASE_FLY  = 0.80            // 0→PHASE_FLY: camera flies through letters
 const PHASE_PANO = 1.0             // PHASE_FLY→PHASE_PANO: rise to panoramic view
 
+const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
+
 // ── Refs ──────────────────────────────────────────────────────────────────────
 const wrapperRef = ref<HTMLDivElement | null>(null)
 const canvasRef  = ref<HTMLCanvasElement | null>(null)
@@ -52,11 +54,11 @@ function initRenderer() {
   const canvas = canvasRef.value!
   renderer = new THREE.WebGLRenderer({
     canvas,
-    antialias: true,
+    antialias: !isMobile,
     alpha: true,
     powerPreference: 'high-performance',
   })
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2))
   renderer.toneMapping  = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.3
   renderer.setClearColor(0x000000, 0)
@@ -107,19 +109,22 @@ function addGround() {
 
 // ── Trees ─────────────────────────────────────────────────────────────────────
 function addTrees() {
-  const trunkMat   = new THREE.MeshStandardMaterial({ color: 0x6b3a1f, roughness: 0.9 })
-  const foliageMat = new THREE.MeshStandardMaterial({ color: 0x2a5518, roughness: 0.85 })
+  const MatClass = isMobile ? THREE.MeshLambertMaterial : THREE.MeshStandardMaterial
+  const trunkMat   = new MatClass({ color: 0x6b3a1f, roughness: 0.9 } as any)
+  const foliageMat = new MatClass({ color: 0x2a5518, roughness: 0.85 } as any)
 
+  const segs = isMobile ? 5 : 7
   const trunkGeo = new THREE.CylinderGeometry(0.2, 0.32, 3.0, 6)
   const cones = [
-    new THREE.ConeGeometry(2.2, 4.5, 7),
-    new THREE.ConeGeometry(1.6, 3.8, 7),
-    new THREE.ConeGeometry(0.95, 2.8, 7),
+    new THREE.ConeGeometry(2.2, 4.5, segs),
+    new THREE.ConeGeometry(1.6, 3.8, segs),
+    new THREE.ConeGeometry(0.95, 2.8, segs),
   ]
   const coneY = [4.8, 7.4, 9.6]
 
+  const treeCount = isMobile ? 14 : 26
   const r = rng(42)
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < treeCount; i++) {
     const z = -4 - i * 5.2
     for (const side of [-1, 1]) {
       const g = new THREE.Group()
@@ -143,20 +148,22 @@ function addTrees() {
 // ── Flowers ───────────────────────────────────────────────────────────────────
 function addFlowers() {
   const COLORS = [0xffd700, 0xff69b4, 0xff4500, 0xf5f5f0, 0x9b59b6, 0xe74c3c, 0xf39c12]
-  const stemMat = new THREE.MeshStandardMaterial({ color: 0x4a8a2a })
+  const MatClass = isMobile ? THREE.MeshLambertMaterial : THREE.MeshStandardMaterial
+  const stemMat = new MatClass({ color: 0x4a8a2a } as any)
   const stemGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.9, 4)
-  const headGeo = new THREE.SphereGeometry(0.2, 6, 5)
+  const headGeo = new THREE.SphereGeometry(0.2, 5, 4)
+  const flowerCount = isMobile ? 40 : 110
   const r = rng(77)
-  for (let i = 0; i < 110; i++) {
+  for (let i = 0; i < flowerCount; i++) {
     const z = -2 - r() * 100
     const x = (r() > 0.5 ? 1 : -1) * (2.8 + r() * 5.5)
     const g = new THREE.Group()
     const stem = new THREE.Mesh(stemGeo, stemMat)
     stem.position.set(0, 0.45, 0)
     g.add(stem)
-    const hm = new THREE.Mesh(headGeo, new THREE.MeshStandardMaterial({
+    const hm = new THREE.Mesh(headGeo, new MatClass({
       color: COLORS[Math.floor(r() * COLORS.length)], roughness: 0.7
-    }))
+    } as any))
     hm.position.y = 0.92
     g.add(hm)
     const s = 0.6 + r() * 0.9
@@ -170,7 +177,7 @@ function addFlowers() {
 let particlePositions: Float32Array
 let particleGeo: THREE.BufferGeometry
 function addParticles() {
-  const N = 250
+  const N = isMobile ? 60 : 250
   particlePositions = new Float32Array(N * 3)
   const r = rng(999)
   for (let i = 0; i < N; i++) {
@@ -190,16 +197,17 @@ async function addLetters(): Promise<void> {
   return new Promise(resolve => {
     const loader = new FontLoader()
     loader.load('/fonts/helvetiker_bold.typeface.json', font => {
-      const bumpGeo = new THREE.SphereGeometry(0.28, 5, 4)
+      const bumpGeo = new THREE.SphereGeometry(0.28, isMobile ? 4 : 5, isMobile ? 3 : 4)
       const r = rng(31415)
+      const bumpCount = isMobile ? 8 : 18
 
       LETTERS.forEach((char, i) => {
         const textGeo = new TextGeometry(char, {
           font,
           size:          LETTER_SIZE,
-          depth:         0.9,
-          curveSegments: 5,
-          bevelEnabled:  true,
+          depth:         isMobile ? 0.5 : 0.9,
+          curveSegments: isMobile ? 3 : 5,
+          bevelEnabled:  !isMobile,
           bevelThickness: 0.12,
           bevelSize:      0.06,
           bevelSegments:  2,
@@ -226,7 +234,7 @@ async function addLetters(): Promise<void> {
         group.add(new THREE.Mesh(textGeo, makeMat(0x2d5a1b)))
 
         // Bush bumps for topiary texture
-        for (let b = 0; b < 18; b++) {
+        for (let b = 0; b < bumpCount; b++) {
           const bump = new THREE.Mesh(bumpGeo, makeMat(b % 2 === 0 ? 0x3a6b22 : 0x224510))
           bump.position.set(
             bb.min.x + r() * (bb.max.x - bb.min.x),
@@ -303,8 +311,9 @@ function tick() {
   })
 
   // ── Particles drift ──────────────────────────────────────────
+  const particleN = isMobile ? 60 : 250
   if (particleGeo) {
-    for (let i = 0; i < 250; i++) {
+    for (let i = 0; i < particleN; i++) {
       particlePositions[i*3+1] += Math.sin(t0 * 0.8 + i * 0.7) * 0.0015
     }
     particleGeo.attributes.position.needsUpdate = true
@@ -333,6 +342,7 @@ onMounted(async () => {
   await addLetters()
   loading.value = false
   window.addEventListener('scroll', onScroll, { passive: true })
+  window.addEventListener('touchmove', onScroll, { passive: true })
   window.addEventListener('resize', onResize)
   tick()
 })
@@ -340,6 +350,7 @@ onMounted(async () => {
 onUnmounted(() => {
   cancelAnimationFrame(animId)
   window.removeEventListener('scroll', onScroll)
+  window.removeEventListener('touchmove', onScroll)
   window.removeEventListener('resize', onResize)
   renderer?.dispose()
 })
