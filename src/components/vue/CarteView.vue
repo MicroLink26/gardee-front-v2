@@ -20,7 +20,8 @@ let map: any = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let L: any = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let markers: any[] = [];
+let clusterGroup: any = null;
+const markerById = new Map<string, any>();
 
 const categoriesStore = useCategoriesStore();
 const RATINGS = [
@@ -56,8 +57,27 @@ async function load() {
 
 function updateMarkers() {
   if (!map || !L) return;
-  markers.forEach(m => m.remove());
-  markers = [];
+
+  if (clusterGroup) map.removeLayer(clusterGroup);
+  markerById.clear();
+
+  clusterGroup = L.markerClusterGroup({
+    maxClusterRadius: 60,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: true,
+    animate: true,
+    iconCreateFunction: (cluster: any) => {
+      const count = cluster.getChildCount();
+      const size = count >= 10 ? 'lg' : count >= 5 ? 'md' : 'sm';
+      return L.divIcon({
+        html: `<div class="gd-cluster gd-cluster--${size}"><span>${count}</span></div>`,
+        className: '',
+        iconSize: [44, 44],
+        iconAnchor: [22, 22],
+      });
+    },
+  });
 
   for (const user of filtered.value) {
     if (!user.location) continue;
@@ -75,7 +95,6 @@ function updateMarkers() {
     });
 
     const marker = L.marker([lat, lng], { icon })
-      .addTo(map)
       .bindPopup(`
         <div class="gd-popup">
           <strong>${user.prenom} ${user.nom}</strong>
@@ -89,16 +108,21 @@ function updateMarkers() {
         document.getElementById(`card-${user._id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
 
-    markers.push(marker);
+    clusterGroup.addLayer(marker);
+    markerById.set(user._id, marker);
   }
+
+  map.addLayer(clusterGroup);
 }
 
 function flyTo(user: User) {
   if (!map || !user.location) return;
   const [lng, lat] = user.location.coordinates;
-  map.flyTo([lat, lng], 13, { duration: 0.8 });
-  const idx = filtered.value.findIndex(u => u._id === user._id);
-  if (idx !== -1) markers[idx]?.openPopup();
+  map.flyTo([lat, lng], 14, { duration: 0.8 });
+  const marker = markerById.get(user._id);
+  if (marker) {
+    clusterGroup?.zoomToShowLayer(marker, () => marker.openPopup());
+  }
 }
 
 watch(filtered, updateMarkers);
@@ -109,6 +133,9 @@ onMounted(async () => {
 
   L = (await import('leaflet')).default;
   await import('leaflet/dist/leaflet.css');
+  await import('leaflet.markercluster');
+  await import('leaflet.markercluster/dist/MarkerCluster.css');
+  await import('leaflet.markercluster/dist/MarkerCluster.Default.css');
 
   map = L.map(mapEl.value!).setView([46.8, 2.3], 6);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -731,6 +758,42 @@ function stars(n: number) {
 .gd-popup-tarif { font-weight: 700; color: #515F37 !important; }
 .gd-popup a { color: #515F37; font-weight: 600; font-size: 0.8rem; text-decoration: none; margin-top: 0.25rem; }
 .gd-popup a:hover { text-decoration: underline; }
+
+.gd-cluster {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #515F37;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 10px rgba(81,95,55,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  font-size: 0.85rem;
+  transition: transform 0.15s;
+}
+
+.gd-cluster:hover { transform: scale(1.1); }
+
+.gd-cluster--md {
+  width: 50px;
+  height: 50px;
+  background: #3d4a28;
+  font-size: 0.9rem;
+}
+
+.gd-cluster--lg {
+  width: 58px;
+  height: 58px;
+  background: #1a1a0e;
+  font-size: 1rem;
+}
+
+.gd-cluster span {
+  line-height: 1;
+}
 
 .you-marker {
   width: 16px;
