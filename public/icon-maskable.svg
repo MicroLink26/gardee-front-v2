@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <!-- Background -->
-  <rect width="512" height="512" rx="88" fill="#d6cda4"/>
+  <rect width="512" height="512" rx="0" fill="#d6cda4"/>
 
   <!-- Outer bumps (depth / shadow layer) -->
   <circle cx="319.3" cy="429.8" r="28" fill="#4a5c2f"/>
