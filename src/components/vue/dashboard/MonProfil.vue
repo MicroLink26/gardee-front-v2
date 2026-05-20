@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
-import { getMyProfile, updateMyProfile } from '../../../services/users';
+import { getMyProfile, updateMyProfile, changePassword } from '../../../services/users';
 import { useCategoriesStore } from '../../../stores/categories';
 
 const auth = useAuthStore();
@@ -13,6 +13,7 @@ const saved = ref(false);
 const error = ref('');
 
 const form = ref({
+  email: '',
   nom: '', prenom: '', telephone: '',
   prestations: [] as string[],
   tarifHoraire: '',
@@ -23,12 +24,18 @@ const form = ref({
   consentDataProcessing: false,
 });
 
+const pwForm = ref({ current: '', newPwd: '', confirm: '' });
+const pwSaving = ref(false);
+const pwSaved = ref(false);
+const pwError = ref('');
+
 const photoFile = ref<File | null>(null);
 const photoPreview = ref('');
 
 onMounted(async () => {
   const [user] = await Promise.all([getMyProfile(), categories.load()]);
   form.value = {
+    email: user.email ?? '',
     nom: user.nom, prenom: user.prenom, telephone: user.telephone,
     prestations: [...user.prestations],
     tarifHoraire: user.tarifHoraire?.toString() ?? '',
@@ -76,6 +83,30 @@ async function save() {
     error.value = 'Impossible de sauvegarder.';
   } finally {
     saving.value = false;
+  }
+}
+
+async function savePassword() {
+  pwError.value = '';
+  if (pwForm.value.newPwd !== pwForm.value.confirm) {
+    pwError.value = 'Les mots de passe ne correspondent pas.';
+    return;
+  }
+  if (pwForm.value.newPwd.length < 8) {
+    pwError.value = 'Le mot de passe doit contenir au moins 8 caractères.';
+    return;
+  }
+  pwSaving.value = true;
+  try {
+    await changePassword(pwForm.value.current, pwForm.value.newPwd);
+    pwForm.value = { current: '', newPwd: '', confirm: '' };
+    pwSaved.value = true;
+    setTimeout(() => (pwSaved.value = false), 3000);
+  } catch (e: unknown) {
+    const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
+    pwError.value = msg ?? 'Impossible de changer le mot de passe.';
+  } finally {
+    pwSaving.value = false;
   }
 }
 </script>
@@ -126,6 +157,10 @@ async function save() {
             <label>Nom</label>
             <input v-model="form.nom" type="text" autocomplete="family-name" />
           </div>
+        </div>
+        <div class="field">
+          <label>Adresse email</label>
+          <input v-model="form.email" type="email" autocomplete="email" placeholder="votre@email.fr" />
         </div>
         <div class="field">
           <label>Téléphone</label>
@@ -213,6 +248,37 @@ async function save() {
           </div>
         </div>
       </template>
+
+      <!-- Sécurité -->
+      <div class="section-card">
+        <div class="section-header">
+          <h2>Sécurité</h2>
+        </div>
+        <div class="field">
+          <label>Mot de passe actuel</label>
+          <input v-model="pwForm.current" type="password" autocomplete="current-password" placeholder="••••••••" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Nouveau mot de passe</label>
+            <input v-model="pwForm.newPwd" type="password" autocomplete="new-password" placeholder="8 caractères min." />
+          </div>
+          <div class="field">
+            <label>Confirmer</label>
+            <input v-model="pwForm.confirm" type="password" autocomplete="new-password" placeholder="••••••••" />
+          </div>
+        </div>
+        <div class="pw-save-row">
+          <div v-if="pwSaved" class="saved-banner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Mot de passe mis à jour
+          </div>
+          <p v-if="pwError" class="error-msg">{{ pwError }}</p>
+          <button type="button" class="btn-secondary" :disabled="pwSaving || !pwForm.current || !pwForm.newPwd || !pwForm.confirm" @click="savePassword">
+            {{ pwSaving ? 'Enregistrement...' : 'Changer le mot de passe' }}
+          </button>
+        </div>
+      </div>
 
       <!-- Save -->
       <div class="save-row">
@@ -383,6 +449,20 @@ textarea { resize: vertical; }
   border-left: none; border-top: none;
   transform: rotate(45deg);
 }
+
+/* Password save row */
+.pw-save-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 0.25rem; }
+
+.btn-secondary {
+  padding: 0.6rem 1.5rem;
+  background: #fff; color: #515F37;
+  border: 1.5px solid #515F37; border-radius: 10px;
+  cursor: pointer; font-weight: 700;
+  font-size: 0.9rem;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-secondary:hover:not(:disabled) { background: #515F37; color: #fff; }
 
 /* Save row */
 .save-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }

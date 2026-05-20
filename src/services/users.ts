@@ -49,3 +49,7 @@ export async function registerClient(data: {
 }): Promise<void> {
   await api.post('/users/register/client', data);
 }
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await api.put('/auth/change-password', { currentPassword, newPassword });
+}
