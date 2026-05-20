@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="88" fill="#515F37"/>
+
+  <!-- Side lobes -->
+  <circle cx="172" cy="236" r="80" fill="#bdb380"/>
+  <circle cx="340" cy="236" r="80" fill="#bdb380"/>
+
+  <!-- Main canopy -->
+  <circle cx="256" cy="196" r="120" fill="#d6cda4"/>
+
+  <!-- Trunk -->
+  <rect x="236" y="300" width="40" height="82" rx="8" fill="#bdb380"/>
+
+  <!-- Ground -->
+  <rect x="152" y="368" width="208" height="22" rx="11" fill="#bdb380"/>
+</svg>

@@ -290,7 +290,8 @@ function stars(n: number) {
                     <span class="no-rating">Nouveau</span>
                   </div>
                   <div class="podium-tags">
-                    <span v-for="p in user.prestations.slice(0, 2)" :key="p" class="tag">{{ categoryName(p) }}</span>
+                    <span v-if="user.prestations.length > 0" class="tag">{{ categoryName(user.prestations[0]) }}</span>
+                    <span v-if="user.prestations.length > 1" class="tag tag--more">+{{ user.prestations.length - 1 }}</span>
                   </div>
                 </div>
               </a>
@@ -327,7 +328,8 @@ function stars(n: number) {
                   <span class="rating-count-sm">({{ user.numberOfReviews }})</span>
                 </div>
                 <div class="rank-tags">
-                  <span v-for="p in user.prestations.slice(0, 2)" :key="p" class="tag-sm">{{ categoryName(p) }}</span>
+                  <span v-if="user.prestations.length > 0" class="tag-sm">{{ categoryName(user.prestations[0]) }}</span>
+                  <span v-if="user.prestations.length > 1" class="tag-sm tag-sm--more">+{{ user.prestations.length - 1 }}</span>
                 </div>
               </div>
               <div class="rank-right">
@@ -348,6 +350,7 @@ function stars(n: number) {
                 @click="goPage(p)"
               >{{ p }}</button>
             </div>
+            <span class="page-indicator">Page {{ page }} / {{ totalPages }}</span>
             <button class="page-btn" :disabled="page === totalPages" @click="goPage(page + 1)">Suivant →</button>
           </div>
         </template>
@@ -737,7 +740,7 @@ h1 { font-size: 2.25rem; font-weight: 900; color: #fff; margin: 0 0 0.4rem; lett
 .rating-count { font-size: 0.78rem; color: #9ca3af; }
 .no-rating { font-size: 0.75rem; color: #9ca3af; font-style: italic; }
 
-.podium-tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.podium-tags { display: flex; gap: 0.35rem; align-items: center; }
 .tag {
   background: #f0ede3;
   color: #515F37;
@@ -746,6 +749,16 @@ h1 { font-size: 2.25rem; font-weight: 900; color: #fff; margin: 0 0 0.4rem; lett
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tag--more {
+  background: #e5e2d3;
+  color: #9ca3af;
+  border-color: #d6cda4;
+  flex-shrink: 0;
 }
 
 /* ── RANK GRID ── */
@@ -811,7 +824,7 @@ h1 { font-size: 2.25rem; font-weight: 900; color: #fff; margin: 0 0 0.4rem; lett
 .rating-val-sm { font-size: 0.72rem; font-weight: 700; color: #515F37; margin-left: 0.2rem; }
 .rating-count-sm { font-size: 0.68rem; color: #9ca3af; }
 
-.rank-tags { display: flex; gap: 0.25rem; margin-top: 0.35rem; }
+.rank-tags { display: flex; gap: 0.25rem; margin-top: 0.35rem; align-items: center; }
 .tag-sm {
   background: #f0ede3;
   color: #515F37;
@@ -820,6 +833,17 @@ h1 { font-size: 2.25rem; font-weight: 900; color: #fff; margin: 0 0 0.4rem; lett
   font-size: 0.68rem;
   font-weight: 600;
   border: 1px solid #d6cda4;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tag-sm--more {
+  background: #e5e2d3;
+  color: #9ca3af;
+  border-color: #d6cda4;
+  flex-shrink: 0;
+  max-width: none;
 }
 
 .rank-right {
@@ -844,6 +868,10 @@ h1 { font-size: 2.25rem; font-weight: 900; color: #fff; margin: 0 0 0.4rem; lett
 .pagination {
   display: flex; align-items: center; justify-content: center;
   gap: 1rem; margin-top: 3rem; flex-wrap: wrap;
+}
+.page-indicator {
+  display: none;
+  font-size: 0.9rem; font-weight: 600; color: #515F37;
 }
 
 .page-btn {
@@ -891,6 +919,9 @@ h1 { font-size: 2.25rem; font-weight: 900; color: #fff; margin: 0 0 0.4rem; lett
   .search-row { flex-direction: column; }
   .input-wrap { max-width: 100%; }
   .map-btn { display: none; }
+  .page-nums { display: none; }
+  .page-indicator { display: block; }
+  .pagination { flex-wrap: nowrap; }
 }
 
 @media (max-width: 600px) {

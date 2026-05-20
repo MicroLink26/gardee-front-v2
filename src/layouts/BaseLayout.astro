@@ -28,5 +28,20 @@ const { title, description = 'Trouvez un jardinier professionnel près de chez v
   </head>
   <body>
     <slot />
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').then((reg) => {
+          reg.update();
+        });
+
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+      }
+    </script>
   </body>
 </html>
