@@ -109,9 +109,12 @@ function addGround() {
 
 // ── Trees ─────────────────────────────────────────────────────────────────────
 function addTrees() {
-  const MatClass = isMobile ? THREE.MeshLambertMaterial : THREE.MeshStandardMaterial
-  const trunkMat   = new MatClass({ color: 0x6b3a1f, roughness: 0.9 } as any)
-  const foliageMat = new MatClass({ color: 0x2a5518, roughness: 0.85 } as any)
+  const trunkMat = isMobile
+    ? new THREE.MeshLambertMaterial({ color: 0x6b3a1f })
+    : new THREE.MeshStandardMaterial({ color: 0x6b3a1f, roughness: 0.9 })
+  const foliageMat = isMobile
+    ? new THREE.MeshLambertMaterial({ color: 0x2a5518 })
+    : new THREE.MeshStandardMaterial({ color: 0x2a5518, roughness: 0.85 })
 
   const segs = isMobile ? 5 : 7
   const trunkGeo = new THREE.CylinderGeometry(0.2, 0.32, 3.0, 6)
@@ -148,8 +151,9 @@ function addTrees() {
 // ── Flowers ───────────────────────────────────────────────────────────────────
 function addFlowers() {
   const COLORS = [0xffd700, 0xff69b4, 0xff4500, 0xf5f5f0, 0x9b59b6, 0xe74c3c, 0xf39c12]
-  const MatClass = isMobile ? THREE.MeshLambertMaterial : THREE.MeshStandardMaterial
-  const stemMat = new MatClass({ color: 0x4a8a2a } as any)
+  const stemMat = isMobile
+    ? new THREE.MeshLambertMaterial({ color: 0x4a8a2a })
+    : new THREE.MeshStandardMaterial({ color: 0x4a8a2a })
   const stemGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.9, 4)
   const headGeo = new THREE.SphereGeometry(0.2, 5, 4)
   const flowerCount = isMobile ? 40 : 110
@@ -161,9 +165,11 @@ function addFlowers() {
     const stem = new THREE.Mesh(stemGeo, stemMat)
     stem.position.set(0, 0.45, 0)
     g.add(stem)
-    const hm = new THREE.Mesh(headGeo, new MatClass({
-      color: COLORS[Math.floor(r() * COLORS.length)], roughness: 0.7
-    } as any))
+    const headColor = COLORS[Math.floor(r() * COLORS.length)]
+    const hm = new THREE.Mesh(headGeo, isMobile
+      ? new THREE.MeshLambertMaterial({ color: headColor })
+      : new THREE.MeshStandardMaterial({ color: headColor, roughness: 0.7 })
+    )
     hm.position.y = 0.92
     g.add(hm)
     const s = 0.6 + r() * 0.9
@@ -194,7 +200,7 @@ function addParticles() {
 
 // ── GARDEE Topiaries ──────────────────────────────────────────────────────────
 async function addLetters(): Promise<void> {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     const loader = new FontLoader()
     loader.load('/fonts/helvetiker_bold.typeface.json', font => {
       const bumpGeo = new THREE.SphereGeometry(0.28, isMobile ? 4 : 5, isMobile ? 3 : 4)
@@ -255,6 +261,9 @@ async function addLetters(): Promise<void> {
         scene.add(group)
       })
       resolve()
+    }, undefined, (err) => {
+      console.error('HeroThree: font load failed', err)
+      reject(err)
     })
   })
 }
@@ -339,7 +348,7 @@ onMounted(async () => {
   addTrees()
   addFlowers()
   addParticles()
-  await addLetters()
+  await addLetters().catch(() => {})
   loading.value = false
   window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('touchmove', onScroll, { passive: true })
