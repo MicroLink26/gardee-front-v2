@@ -40,6 +40,25 @@ import Footer from '../components/astro/Footer.astro';
         <span class="sep">·</span>
         <a href="/postuler" class="action-link action-muted">Vous êtes jardinier ?</a>
       </div>
+
+      <!-- App download badges -->
+      <div class="app-badges">
+        <button class="badge-pwa" id="pwa-install-btn" style="display:none" aria-label="Installer l'application">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span class="badge-sub">Installer</span>
+          <span class="badge-main">l'application</span>
+        </button>
+        <a href="#" class="badge-store badge-android" aria-label="Disponible sur Google Play" title="Bientôt sur Google Play">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M3.18 23.76a2 2 0 001.93-.21l11.44-6.6-2.77-2.77-10.6 9.58zM.5 1.1C.19 1.45 0 1.96 0 2.62v18.76c0 .66.19 1.17.5 1.52l.08.08 10.5-10.5v-.25L.58 1.03.5 1.1zM20.55 10.3l-2.88-1.66-3.1 3.1 3.1 3.1 2.9-1.67c.83-.48.83-1.4-.02-1.87zM5.11.45L16.55 7.05l-2.77 2.77L3.18.25A2 2 0 015.1.45z"/></svg>
+          <span class="badge-sub">Disponible sur</span>
+          <span class="badge-main">Google Play</span>
+        </a>
+        <a href="#" class="badge-store badge-apple" aria-label="Télécharger sur l'App Store" title="Bientôt sur l'App Store">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98l-.09.06c-.22.15-2.18 1.27-2.16 3.8.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.37 2.78M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          <span class="badge-sub">Télécharger sur</span>
+          <span class="badge-main">l'App Store</span>
+        </a>
+      </div>
     </div>
 
     <div class="scroll-hint" aria-hidden="true"><div class="scroll-dot"></div></div>
@@ -230,6 +249,44 @@ h1 em { font-style: normal; color: #515F37; }
 .action-muted { color: #9ca3af; font-weight: 400; }
 .action-muted:hover { color: #515F37; opacity: 1; }
 .sep { color: #c9bfa0; font-size: 0.7rem; }
+
+/* App download badges */
+.app-badges {
+  display: flex; align-items: center;
+  gap: 0.75rem; flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+.badge-pwa, .badge-store {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  border: none;
+}
+.badge-pwa, .badge-store:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+.badge-pwa {
+  background: #515F37; color: #fff;
+}
+.badge-android {
+  background: #1a1a2e; color: #fff;
+}
+.badge-apple {
+  background: #111; color: #fff;
+}
+.badge-sub {
+  display: block; font-size: 0.62rem; opacity: 0.8; line-height: 1; font-weight: 400;
+}
+.badge-main {
+  display: block; font-size: 0.88rem; font-weight: 700; line-height: 1.2;
+}
+.badge-store .badge-sub,
+.badge-store .badge-main { text-align: left; }
+.badge-store svg { flex-shrink: 0; }
 
 /* Hero illustration */
 .hero-illus {
@@ -457,6 +514,28 @@ h1 em { font-style: normal; color: #515F37; }
 </style>
 
 <script>
+// PWA install prompt
+let deferredPrompt: any = null;
+const installBtn = document.getElementById('pwa-install-btn') as HTMLButtonElement | null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (installBtn) installBtn.style.display = 'inline-flex';
+});
+
+installBtn?.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') installBtn.style.display = 'none';
+  deferredPrompt = null;
+});
+
+window.addEventListener('appinstalled', () => {
+  if (installBtn) installBtn.style.display = 'none';
+});
+
 // Scroll reveal
 const revealObserver = new IntersectionObserver(
   entries => entries.forEach(e => {
