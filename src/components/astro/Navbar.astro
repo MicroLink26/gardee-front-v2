@@ -154,10 +154,12 @@ const isActive = (path: string) => currentPath === path ? 'nav-active' : '';
     background: rgba(26,26,14,0.5);
     z-index: 500;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.25s;
   }
   .mobile-overlay.open {
     opacity: 1;
+    pointer-events: auto;
   }
 
   .mobile-menu {
