@@ -8,22 +8,22 @@ import { Timer } from 'three'
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SCROLL_MULTIPLIER = 5
 const CAM_START = { x: 0, y: 3.5, z: 22 }
-const CAM_PANO  = { x: 0, y: 38,  z: 15 }   // bird's eye pullback
-const PANO_LOOK = { x: 0, y: 0,   z: -55 }  // center of letter field
-const LETTER_SIZE = 3.8
+const CAM_PANO  = { x: 0, y: 45,  z: 10 }   // bird's eye pullback
+const PANO_LOOK = { x: 0, y: 0,   z: -57 }  // center of letter field
+const LETTER_SIZE = 4.5
 const PHASE_FLY  = 0.80
 const PHASE_PANO = 1.0
 
-// Letters scattered organically — alternating left/right, varying depth
+// Letters alternating L/R, positioned clear of the serpentine path
 const LETTER_DEFS = [
-  { char: 'G', x:  5.5, z: -16,  ry:  0.20 },
-  { char: 'A', x: -6.0, z: -30,  ry: -0.15 },
-  { char: 'R', x:  4.0, z: -46,  ry:  0.10 },
-  { char: 'D', x: -5.5, z: -62,  ry: -0.20 },
-  { char: 'E', x:  3.5, z: -78,  ry:  0.08 },
-  { char: 'E', x: -4.0, z: -94,  ry: -0.10 },
+  { char: 'G', x: -3.5, z: -18,  ry:  0.18 },
+  { char: 'A', x:  6.5, z: -34,  ry: -0.14 },
+  { char: 'R', x: -6.5, z: -50,  ry:  0.12 },
+  { char: 'D', x:  4.5, z: -66,  ry: -0.18 },
+  { char: 'E', x: -5.0, z: -82,  ry:  0.10 },
+  { char: 'E', x:  6.5, z: -96,  ry: -0.10 },
 ]
-const CAM_FLY_END_Z = LETTER_DEFS[LETTER_DEFS.length - 1].z + 8  // -86
+const CAM_FLY_END_Z = -88
 
 const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
 
@@ -57,6 +57,9 @@ function rng(seed: number) {
 function ease(t: number) { return t<.5 ? 2*t*t : -1+(4-2*t)*t }
 function lerp(a: number, b: number, t: number) { return a+(b-a)*t }
 
+// Serpentine path center X at a given Z
+function getPathX(z: number): number { return Math.sin(z * -0.075) * 2.5 }
+
 // ── Renderer ──────────────────────────────────────────────────────────────────
 function initRenderer() {
   const canvas = canvasRef.value!
@@ -86,7 +89,7 @@ function addLights() {
 
 // ── Ground & Path ─────────────────────────────────────────────────────────────
 function addGround() {
-  // Grass
+  // Wide grass plane
   const grass = new THREE.Mesh(
     new THREE.PlaneGeometry(200, 600),
     new THREE.MeshStandardMaterial({ color: 0x3a7028, roughness: 1 })
@@ -95,29 +98,51 @@ function addGround() {
   grass.position.set(0, 0, -250)
   scene.add(grass)
 
-  // Stone path surface
-  const path = new THREE.Mesh(
-    new THREE.PlaneGeometry(5.2, 600),
-    new THREE.MeshStandardMaterial({ color: 0xb09878, roughness: 1 })
-  )
-  path.rotation.x = -Math.PI / 2
-  path.position.set(0, 0.01, -250)
-  scene.add(path)
+  // Serpentine path ribbon mesh
+  const halfW = 2.4
+  const steps = 110
+  const zStart = 25, zEnd = -115
+  const verts: number[] = []
+  const idxs: number[] = []
 
-  // Edge kerb stones
+  for (let i = 0; i <= steps; i++) {
+    const z = zStart + (zEnd - zStart) * i / steps
+    const cx = getPathX(z)
+    verts.push(cx - halfW, 0.01, z)
+    verts.push(cx + halfW, 0.01, z)
+  }
+  for (let i = 0; i < steps; i++) {
+    const a = i * 2, b = a + 1, c = a + 2, d = a + 3
+    idxs.push(a, c, b, b, c, d)
+  }
+  const pathGeo = new THREE.BufferGeometry()
+  pathGeo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3))
+  pathGeo.setIndex(idxs)
+  pathGeo.computeVertexNormals()
+  scene.add(new THREE.Mesh(pathGeo, new THREE.MeshStandardMaterial({ color: 0xb09878, roughness: 1 })))
+
+  // Kerb stones along path edges
   const kerbMat = new THREE.MeshStandardMaterial({ color: 0x807060, roughness: 1 })
-  for (const sx of [-1, 1]) {
-    const kerb = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 600), kerbMat)
-    kerb.position.set(sx * 2.8, 0.08, -250)
-    scene.add(kerb)
+  const kerbGeo = new THREE.BoxGeometry(0.22, 0.16, 0.35)
+  for (let i = 0; i < 75; i++) {
+    const z = -2 - i * 1.5
+    const cx = getPathX(z)
+    for (const side of [-1, 1]) {
+      const kerb = new THREE.Mesh(kerbGeo, kerbMat)
+      kerb.position.set(cx + side * halfW, 0.08, z)
+      scene.add(kerb)
+    }
   }
 }
 
-// ── Trees (sphere-cluster / organic) ──────────────────────────────────────────
+// ── Trees — scattered everywhere with exclusion zones ─────────────────────────
 function addTrees() {
   const r = rng(42)
-  const treeCount = isMobile ? 12 : 24
+  const target = isMobile ? 32 : 75
   const segs = isMobile ? 6 : 9
+  const pathClear = 4.8   // min dist from path center
+  const letterClear = 9.5 // min dist from any letter
+  const treeSep = 3.5     // min dist between trees
 
   const trunkMat = isMobile
     ? new THREE.MeshLambertMaterial({ color: 0x7a5230 })
@@ -130,69 +155,69 @@ function addTrees() {
     : new THREE.MeshStandardMaterial({ color: c, roughness: 0.88 })
   )
 
-  for (let i = 0; i < treeCount; i++) {
-    for (const side of [-1, 1]) {
-      const g = new THREE.Group()
-      const trunkH = 4 + r() * 7
-      const trunkGeo = new THREE.CylinderGeometry(0.05 + r()*0.05, 0.1 + r()*0.1, trunkH, isMobile ? 5 : 7)
-      const trunk = new THREE.Mesh(trunkGeo, trunkMat)
-      trunk.position.y = trunkH / 2
-      g.add(trunk)
+  const placed: Array<{ x: number; z: number }> = []
+  let attempts = 0
 
-      const clusterN = isMobile ? 3 : (3 + Math.floor(r() * 5))
-      for (let c = 0; c < clusterN; c++) {
-        const geo = sphereGeos[Math.floor(r() * sphereGeos.length)]
-        const mat = foliageMats[Math.floor(r() * foliageMats.length)]
-        const foliage = new THREE.Mesh(geo, mat)
-        foliage.position.set(
-          (r()-0.5) * 2.8,
-          trunkH * 0.72 + r() * 3.5 - 0.5,
-          (r()-0.5) * 2.8
-        )
-        g.add(foliage)
-      }
+  while (placed.length < target && attempts < target * 25) {
+    attempts++
+    const z = -3 - r() * 110
+    const x = (r() - 0.5) * 64   // spread over ±32 units
 
-      const s = 0.5 + r() * 1.0
-      g.scale.set(s, s * (0.7 + r() * 0.6), s)
-      g.position.set(side * (5.2 + r() * 6.5), 0, -2 - i * 5 + r() * 3 - 1)
-      g.rotation.y = (r()-0.5) * 0.5
-      scene.add(g)
-    }
+    // Exclude path zone
+    if (Math.abs(x - getPathX(z)) < pathClear) continue
+
+    // Exclude letter zones
+    if (LETTER_DEFS.some(l => {
+      const dx = x - l.x, dz = z - l.z
+      return dx*dx + dz*dz < letterClear * letterClear
+    })) continue
+
+    // Exclude overlap with other trees
+    if (placed.some(p => {
+      const dx = x - p.x, dz = z - p.z
+      return dx*dx + dz*dz < treeSep * treeSep
+    })) continue
+
+    placed.push({ x, z })
   }
-}
 
-// ── Hedges (low bushes along path) ────────────────────────────────────────────
-function addHedges() {
-  const hedgeMat = isMobile
-    ? new THREE.MeshLambertMaterial({ color: 0x1e5218 })
-    : new THREE.MeshStandardMaterial({ color: 0x1e5218, roughness: 0.95 })
-  const r = rng(888)
-  const count = isMobile ? 8 : 18
-  for (let i = 0; i < count; i++) {
-    for (const side of [-1, 1]) {
-      const w = 0.7 + r() * 0.5
-      const h = 0.5 + r() * 0.5
-      const d = 1.8 + r() * 2.5
-      const hedge = new THREE.Mesh(
-        new THREE.SphereGeometry(1, isMobile ? 6 : 8, 6),
-        hedgeMat
+  for (const { x, z } of placed) {
+    const g = new THREE.Group()
+    const trunkH = 4 + r() * 7
+    const trunkGeo = new THREE.CylinderGeometry(0.05 + r()*0.05, 0.1 + r()*0.1, trunkH, isMobile ? 5 : 7)
+    const trunk = new THREE.Mesh(trunkGeo, trunkMat)
+    trunk.position.y = trunkH / 2
+    g.add(trunk)
+
+    const clusterN = isMobile ? 3 : (3 + Math.floor(r() * 5))
+    for (let c = 0; c < clusterN; c++) {
+      const foliage = new THREE.Mesh(
+        sphereGeos[Math.floor(r() * sphereGeos.length)],
+        foliageMats[Math.floor(r() * foliageMats.length)]
       )
-      hedge.scale.set(w, h, d)
-      hedge.position.set(side * (3.2 + r() * 1.2), h, -4 - i * 6 + r() * 4)
-      scene.add(hedge)
+      foliage.position.set((r()-0.5)*2.8, trunkH*0.72 + r()*3.5 - 0.5, (r()-0.5)*2.8)
+      g.add(foliage)
     }
+
+    const s = 0.5 + r() * 1.0
+    g.scale.set(s, s * (0.7 + r() * 0.6), s)
+    g.position.set(x, 0, z)
+    g.rotation.y = r() * Math.PI * 2
+    scene.add(g)
   }
 }
 
-// ── Lamp Posts ────────────────────────────────────────────────────────────────
+// ── Lamp Posts — follow the serpentine path ───────────────────────────────────
 function addLampPosts() {
   if (isMobile) return
-  const poleMat  = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5, metalness: 0.6 })
-  const lampMat  = new THREE.MeshStandardMaterial({ color: 0xfff0cc, emissive: 0xffaa22, emissiveIntensity: 1.0 })
-  const poleGeo  = new THREE.CylinderGeometry(0.035, 0.065, 4.8, 6)
-  const lampGeo  = new THREE.SphereGeometry(0.22, 8, 6)
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5, metalness: 0.6 })
+  const lampMat = new THREE.MeshStandardMaterial({ color: 0xfff0cc, emissive: 0xffaa22, emissiveIntensity: 1.0 })
+  const poleGeo = new THREE.CylinderGeometry(0.035, 0.065, 4.8, 6)
+  const lampGeo = new THREE.SphereGeometry(0.22, 8, 6)
+  const lampZ   = [-6, -20, -34, -48, -62, -76, -90, -104]
 
-  for (let i = 0; i < 8; i++) {
+  for (const lz of lampZ) {
+    const cx = getPathX(lz)
     for (const side of [-1, 1]) {
       const g = new THREE.Group()
       const pole = new THREE.Mesh(poleGeo, poleMat)
@@ -204,7 +229,7 @@ function addLampPosts() {
       const light = new THREE.PointLight(0xffaa33, 0.7, 12)
       light.position.y = 5.0
       g.add(light)
-      g.position.set(side * 3.3, 0, -6 - i * 14)
+      g.position.set(cx + side * 3.0, 0, lz)
       scene.add(g)
     }
   }
@@ -317,7 +342,7 @@ async function addLetters(): Promise<void> {
         }
 
         // Scattered position — each letter at its own X offset
-        group.position.set(def.x - cx, 0.15, def.z)
+        group.position.set(def.x - cx, 0.55, def.z)
         group.rotation.y = def.ry + (r()-0.5) * 0.05
         group.scale.set(1, 0.9 + r() * 0.2, 1)
         letterMats.push(mats)
@@ -381,8 +406,10 @@ function tick() {
     const t = ease(p / PHASE_FLY)
     camera.position.z = lerp(CAM_START.z, CAM_FLY_END_Z, t)
     camera.position.y = CAM_START.y + Math.sin(t * Math.PI * 0.5) * 0.6
-    camera.position.x = Math.sin(t * Math.PI * 1.5) * 0.8
-    camera.lookAt(camera.position.x * 0.2, 1.8, camera.position.z - 12)
+    // Camera drifts to follow the path — lag for organic feel
+    const targetX = getPathX(camera.position.z) * 0.6
+    camera.position.x = lerp(camera.position.x, targetX, 0.035)
+    camera.lookAt(getPathX(camera.position.z - 14) * 0.4, 1.8, camera.position.z - 14)
   } else {
     const t = ease(Math.min(1, (p - PHASE_FLY) / (PHASE_PANO - PHASE_FLY)))
     camera.position.z = lerp(CAM_FLY_END_Z, CAM_PANO.z, t)
@@ -435,7 +462,6 @@ onMounted(async () => {
   addLights()
   addGround()
   addTrees()
-  addHedges()
   addLampPosts()
   addWater()
   addFlowers()
