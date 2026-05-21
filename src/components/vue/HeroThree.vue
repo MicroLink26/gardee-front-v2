@@ -41,6 +41,11 @@ let animId:   number
 let scrollProg = 0
 let uiShown    = false
 
+// Auto-scroll state
+let autoScrollActive = false
+let autoScrollY      = 0
+let idleTimer: ReturnType<typeof setTimeout> | null = null
+
 const letterMats: THREE.MeshStandardMaterial[][] = []
 
 // ── Seeded RNG ────────────────────────────────────────────────────────────────
@@ -333,6 +338,22 @@ function onScroll() {
   if (scrollProg > 0.04) hintVisible.value = false
 }
 
+// ── Auto-scroll ───────────────────────────────────────────────────────────────
+function onUserInput() {
+  autoScrollActive = false
+  if (idleTimer) { clearTimeout(idleTimer); idleTimer = null }
+}
+
+function scheduleAutoScroll() {
+  if (idleTimer) clearTimeout(idleTimer)
+  idleTimer = setTimeout(() => {
+    if (scrollProg < 0.01) {
+      autoScrollActive = true
+      autoScrollY = 0
+    }
+  }, 3000)
+}
+
 // ── Animation loop ────────────────────────────────────────────────────────────
 const timer = new Timer()
 let t0 = 0
@@ -340,8 +361,19 @@ let t0 = 0
 function tick() {
   animId = requestAnimationFrame(tick)
   timer.update()
-  const dt = timer.getDelta()
+  const dt = Math.min(timer.getDelta(), 0.05)  // cap spike frames
   t0 += dt
+
+  // Drive page scroll automatically when user is idle
+  if (autoScrollActive) {
+    const el = wrapperRef.value
+    if (el) {
+      const total = el.offsetHeight - window.innerHeight
+      autoScrollY = Math.min(total, autoScrollY + total * 0.09 * dt)
+      window.scrollTo(0, autoScrollY)
+      if (autoScrollY >= total) autoScrollActive = false
+    }
+  }
 
   const p = scrollProg
 
@@ -410,17 +442,25 @@ onMounted(async () => {
   addParticles()
   await addLetters().catch(() => {})
   loading.value = false
-  window.addEventListener('scroll', onScroll, { passive: true })
-  window.addEventListener('touchmove', onScroll, { passive: true })
-  window.addEventListener('resize', onResize)
+  window.addEventListener('scroll',     onScroll,    { passive: true })
+  window.addEventListener('touchmove',  onScroll,    { passive: true })
+  window.addEventListener('wheel',      onUserInput, { passive: true })
+  window.addEventListener('touchstart', onUserInput, { passive: true })
+  window.addEventListener('keydown',    onUserInput)
+  window.addEventListener('resize',     onResize)
+  scheduleAutoScroll()
   tick()
 })
 
 onUnmounted(() => {
   cancelAnimationFrame(animId)
-  window.removeEventListener('scroll', onScroll)
-  window.removeEventListener('touchmove', onScroll)
-  window.removeEventListener('resize', onResize)
+  if (idleTimer) clearTimeout(idleTimer)
+  window.removeEventListener('scroll',     onScroll)
+  window.removeEventListener('touchmove',  onScroll)
+  window.removeEventListener('wheel',      onUserInput)
+  window.removeEventListener('touchstart', onUserInput)
+  window.removeEventListener('keydown',    onUserInput)
+  window.removeEventListener('resize',     onResize)
   renderer?.dispose()
 })
 </script>
