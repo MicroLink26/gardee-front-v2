@@ -46,7 +46,7 @@ let autoScrollActive = false
 let autoScrollY      = 0
 let idleTimer: ReturnType<typeof setTimeout> | null = null
 
-const letterMats: THREE.MeshStandardMaterial[][] = []
+const letterMats: THREE.Material[][] = []
 
 // ── Seeded RNG ────────────────────────────────────────────────────────────────
 function rng(seed: number) {
@@ -87,21 +87,51 @@ function addLights() {
   scene.add(fill)
 }
 
+// ── Grass texture (procedural canvas) ────────────────────────────────────────
+function makeGrassTexture(): THREE.Texture {
+  const size = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = '#3d7a28'
+  ctx.fillRect(0, 0, size, size)
+  const r = rng(7777)
+  for (let i = 0; i < 5000; i++) {
+    const x = r() * size
+    const y = r() * size
+    const dark = r() > 0.55
+    const gv = Math.floor(dark ? 80 + r()*30 : 130 + r()*50)
+    const rv = Math.floor(dark ? 18 + r()*18 : 45 + r()*28)
+    ctx.strokeStyle = `rgba(${rv},${gv},${Math.floor(8 + r()*14)},0.5)`
+    ctx.lineWidth = 0.4 + r() * 1.4
+    ctx.beginPath()
+    ctx.moveTo(x, y + 2)
+    ctx.lineTo(x + (r()-0.5)*4, y - 3 - r()*6)
+    ctx.stroke()
+  }
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+  tex.repeat.set(28, 90)
+  return tex
+}
+
 // ── Ground & Path ─────────────────────────────────────────────────────────────
 function addGround() {
-  // Wide grass plane
-  const grass = new THREE.Mesh(
-    new THREE.PlaneGeometry(200, 600),
-    new THREE.MeshStandardMaterial({ color: 0x3a7028, roughness: 1 })
-  )
+  // Wide grass plane with procedural texture
+  const grassMat = new THREE.MeshStandardMaterial({
+    color: 0x4a8830,
+    roughness: 1,
+    ...(isMobile ? {} : { map: makeGrassTexture() }),
+  })
+  const grass = new THREE.Mesh(new THREE.PlaneGeometry(200, 800), grassMat)
   grass.rotation.x = -Math.PI / 2
-  grass.position.set(0, 0, -250)
+  grass.position.set(0, 0, -290)
   scene.add(grass)
 
-  // Serpentine path ribbon mesh
+  // Serpentine path ribbon mesh — extends well past both ends for panoramic view
   const halfW = 2.4
-  const steps = 110
-  const zStart = 25, zEnd = -115
+  const steps = 130
+  const zStart = 60, zEnd = -145
   const verts: number[] = []
   const idxs: number[] = []
 
@@ -121,11 +151,12 @@ function addGround() {
   pathGeo.computeVertexNormals()
   scene.add(new THREE.Mesh(pathGeo, new THREE.MeshStandardMaterial({ color: 0xb09878, roughness: 1 })))
 
-  // Kerb stones along path edges
+  // Kerb stones — span full path range (near to far)
   const kerbMat = new THREE.MeshStandardMaterial({ color: 0x807060, roughness: 1 })
   const kerbGeo = new THREE.BoxGeometry(0.22, 0.16, 0.35)
-  for (let i = 0; i < 75; i++) {
-    const z = -2 - i * 1.5
+  const kerbCount = 130
+  for (let i = 0; i < kerbCount; i++) {
+    const z = 55 - i * 1.6
     const cx = getPathX(z)
     for (const side of [-1, 1]) {
       const kerb = new THREE.Mesh(kerbGeo, kerbMat)
@@ -320,7 +351,7 @@ async function addLetters(): Promise<void> {
         const bb = textGeo.boundingBox!
         const cx = (bb.max.x - bb.min.x) / 2
 
-        const mats: THREE.MeshStandardMaterial[] = []
+        const mats: THREE.Material[] = []
         const makeMat = (hex: number) => {
           const m = new THREE.MeshStandardMaterial({ color: hex, roughness: 0.95, metalness: 0, transparent: true, opacity: 1 })
           mats.push(m)
@@ -328,6 +359,25 @@ async function addLetters(): Promise<void> {
         }
 
         const group = new THREE.Group()
+
+        // Golden border — scaled slightly larger, placed just behind the letter
+        const bbCenterX = bb.min.x + (bb.max.x - bb.min.x) / 2
+        const bbCenterY = (bb.max.y + bb.min.y) / 2
+        const goldMat = new THREE.MeshStandardMaterial({
+          color: 0xffd040,
+          roughness: 0.18,
+          metalness: 0.9,
+          emissive: 0xb87800,
+          emissiveIntensity: 0.45,
+          transparent: true,
+          opacity: 1,
+        })
+        mats.push(goldMat)
+        const goldOutline = new THREE.Mesh(textGeo, goldMat)
+        goldOutline.scale.set(1.07, 1.07, 1.0)
+        goldOutline.position.set(-bbCenterX * 0.07, -bbCenterY * 0.07, -0.16)
+        group.add(goldOutline)
+
         group.add(new THREE.Mesh(textGeo, makeMat(0x2d5a1b)))
 
         for (let b = 0; b < bumpCount; b++) {
