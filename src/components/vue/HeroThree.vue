@@ -8,20 +8,20 @@ import { Timer } from 'three'
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SCROLL_MULTIPLIER = 5
 const CAM_START = { x: 0, y: 3.5, z: 22 }
-const CAM_PANO  = { x: 0, y: 45,  z: 10 }   // bird's eye pullback
-const PANO_LOOK = { x: 0, y: 0,   z: -57 }  // center of letter field
-const LETTER_SIZE = 4.5
+const CAM_PANO  = { x: 0, y: 32,  z: 38 }   // elevated & zoomed in on letter field
+const PANO_LOOK = { x: 0, y: 1.0, z: -60 }  // center of letter field
+const LETTER_SIZE = 7.0
 const PHASE_FLY  = 0.80
 const PHASE_PANO = 1.0
 
 // Letters alternating L/R, positioned clear of the serpentine path
 const LETTER_DEFS = [
-  { char: 'G', x: -3.5, z: -18,  ry:  0.18 },
-  { char: 'A', x:  6.5, z: -34,  ry: -0.14 },
-  { char: 'R', x: -6.5, z: -50,  ry:  0.12 },
-  { char: 'D', x:  4.5, z: -66,  ry: -0.18 },
-  { char: 'E', x: -5.0, z: -82,  ry:  0.10 },
-  { char: 'E', x:  6.5, z: -96,  ry: -0.10 },
+  { char: 'G', x: -8.0, z: -20,  ry:  0.18 },
+  { char: 'A', x:  9.0, z: -36,  ry: -0.14 },
+  { char: 'R', x: -9.0, z: -52,  ry:  0.12 },
+  { char: 'D', x:  8.0, z: -68,  ry: -0.18 },
+  { char: 'E', x: -8.5, z: -84,  ry:  0.10 },
+  { char: 'E', x:  9.0, z: -98,  ry: -0.10 },
 ]
 const CAM_FLY_END_Z = -88
 
@@ -47,6 +47,7 @@ let autoScrollY      = 0
 let idleTimer: ReturnType<typeof setTimeout> | null = null
 
 const letterMats: THREE.Material[][] = []
+const letterGroups: THREE.Group[] = []
 
 // ── Seeded RNG ────────────────────────────────────────────────────────────────
 function rng(seed: number) {
@@ -340,7 +341,7 @@ async function addLetters(): Promise<void> {
         const textGeo = new TextGeometry(def.char, {
           font,
           size:          LETTER_SIZE,
-          depth:         isMobile ? 0.5 : 0.9,
+          depth:         isMobile ? 0.7 : 1.4,
           curveSegments: isMobile ? 3 : 5,
           bevelEnabled:  !isMobile,
           bevelThickness: 0.12,
@@ -367,8 +368,8 @@ async function addLetters(): Promise<void> {
           color: 0xffd040,
           roughness: 0.18,
           metalness: 0.9,
-          emissive: 0xb87800,
-          emissiveIntensity: 0.45,
+          emissive: 0xd49000,
+          emissiveIntensity: 0.85,
           transparent: true,
           opacity: 1,
         })
@@ -396,6 +397,7 @@ async function addLetters(): Promise<void> {
         group.rotation.y = def.ry + (r()-0.5) * 0.05
         group.scale.set(1, 0.9 + r() * 0.2, 1)
         letterMats.push(mats)
+        letterGroups.push(group)
         scene.add(group)
       })
       resolve()
@@ -460,15 +462,17 @@ function tick() {
     const targetX = getPathX(camera.position.z) * 0.6
     camera.position.x = lerp(camera.position.x, targetX, 0.035)
     camera.lookAt(getPathX(camera.position.z - 14) * 0.4, 1.8, camera.position.z - 14)
+    // Letters stand vertical during fly-through
+    letterGroups.forEach(g => { g.rotation.x = lerp(g.rotation.x, 0, 0.08) })
   } else {
     const t = ease(Math.min(1, (p - PHASE_FLY) / (PHASE_PANO - PHASE_FLY)))
     camera.position.z = lerp(CAM_FLY_END_Z, CAM_PANO.z, t)
     camera.position.y = lerp(CAM_START.y, CAM_PANO.y, t)
     camera.position.x = lerp(camera.position.x, CAM_PANO.x, 0.06)
-    // Look down toward garden center
     const lookZ = lerp(CAM_FLY_END_Z - 12, PANO_LOOK.z, t)
-    const lookY = lerp(1.8, 0, t)
-    camera.lookAt(0, lookY, lookZ)
+    camera.lookAt(0, PANO_LOOK.y, lookZ)
+    // Letters stay upright
+    letterGroups.forEach(g => { g.rotation.x = lerp(g.rotation.x, 0, 0.08) })
     if (t > 0.75 && !uiShown) { uiShown = true; uiVisible.value = true }
   }
 
