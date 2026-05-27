@@ -25,6 +25,8 @@ let L: any = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let clusterGroup: any = null;
 const markerById = new Map<string, any>();
+let youMarker: any = null;
+const locating = ref(false);
 
 const categoriesStore = useCategoriesStore();
 const RATINGS = [
@@ -140,6 +142,30 @@ watch(mobileView, async (v) => {
   }
 });
 
+function locateMe() {
+  if (!navigator.geolocation || !map) return;
+  locating.value = true;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const { latitude, longitude } = pos.coords;
+      map.flyTo([latitude, longitude], 13, { duration: 1.0 });
+      if (youMarker) map.removeLayer(youMarker);
+      const youIcon = L.divIcon({
+        html: '<div class="you-marker"></div>',
+        className: '',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      });
+      youMarker = L.marker([latitude, longitude], { icon: youIcon })
+        .addTo(map)
+        .bindPopup('<div class="gd-popup"><strong>Votre position</strong></div>');
+      locating.value = false;
+    },
+    () => { locating.value = false; },
+    { timeout: 8000, maximumAge: 60000 }
+  );
+}
+
 onMounted(async () => {
   categoriesStore.load();
 
@@ -155,25 +181,7 @@ onMounted(async () => {
     maxZoom: 18,
   }).addTo(map);
 
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        map.flyTo([latitude, longitude], 12, { duration: 1.2 });
-        const youIcon = L.divIcon({
-          html: '<div class="you-marker"></div>',
-          className: '',
-          iconSize: [16, 16],
-          iconAnchor: [8, 8],
-        });
-        L.marker([latitude, longitude], { icon: youIcon })
-          .addTo(map)
-          .bindPopup('<div class="gd-popup"><strong>Votre position</strong></div>');
-      },
-      () => {},
-      { timeout: 6000, maximumAge: 300000 }
-    );
-  }
+  locateMe();
 
   await load();
   updateMarkers();
@@ -380,7 +388,19 @@ function stars(n: number) {
     </div>
 
     <!-- ── MAP ── -->
-    <div ref="mapEl" :class="['map-area', { 'map-hidden': mobileView === 'liste' }]"></div>
+    <div :class="['map-wrapper', { 'map-hidden': mobileView === 'liste' }]">
+      <div ref="mapEl" class="map-area"></div>
+      <button class="locate-btn" :class="{ locating }" @click="locateMe" type="button" :title="locating ? 'Localisation…' : 'Ma position'">
+        <svg v-if="!locating" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="20" height="20">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+          <circle cx="12" cy="12" r="8" stroke-dasharray="2 2"/>
+        </svg>
+        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="20" height="20" class="spin-icon">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+        </svg>
+      </button>
+    </div>
 
     <!-- ── FILTER DRAWER (mobile) ── -->
     <Transition name="drawer">
@@ -567,8 +587,30 @@ function stars(n: number) {
 .mobile-list { display: none; }
 
 /* ── MAP ── */
-.map-area { flex: 1; height: 100%; z-index: 0; }
-.map-hidden { display: none; }
+.map-wrapper { flex: 1; position: relative; }
+.map-wrapper.map-hidden { display: none; }
+.map-area { width: 100%; height: 100%; z-index: 0; }
+
+.locate-btn {
+  position: absolute;
+  bottom: 2rem;
+  right: 1rem;
+  z-index: 1000;
+  width: 44px;
+  height: 44px;
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #515F37;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.locate-btn:hover { background: #f0ede3; border-color: #515F37; }
+.locate-btn.locating { color: #9ca3af; cursor: default; }
+.spin-icon { animation: spin 0.9s linear infinite; }
 
 /* ── MOBILE ── */
 @media (max-width: 768px) {
@@ -781,12 +823,13 @@ function stars(n: number) {
   .mobile-card-cta { font-size: 0.75rem; font-weight: 600; color: #515F37; white-space: nowrap; }
 
   /* Map area */
-  .map-area {
+  .map-wrapper {
     flex: 1;
     min-height: 0;
     width: 100%;
   }
-  .map-hidden { display: none !important; }
+  .map-wrapper.map-hidden { display: none !important; }
+  .locate-btn { bottom: 1rem; }
 }
 
 /* ── FILTER DRAWER ── */
