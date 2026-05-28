@@ -95,7 +95,7 @@ async function submit() {
         </div>
 
         <div class="aside-tree">
-          <img src="/arbreContacter.png" alt="" aria-hidden="true" />
+          <img src="/arbreContacter.svg" alt="" aria-hidden="true" />
         </div>
       </aside>
 

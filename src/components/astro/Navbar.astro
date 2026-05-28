@@ -75,6 +75,19 @@ const isActive = (path: string) => currentPath === path ? 'nav-active' : '';
   overlay?.addEventListener('click', (e) => {
     if (e.target === overlay) closeMenu();
   });
+
+  function handleScroll() {
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+    if (window.scrollY > 20) {
+      navbar.classList.add('scrolled');
+    } else {
+      navbar.classList.remove('scrolled');
+    }
+  }
+
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  handleScroll();
 </script>
 
 <style>
@@ -85,10 +98,14 @@ const isActive = (path: string) => currentPath === path ? 'nav-active' : '';
     padding: 0 2.5rem;
     height: 56px;
     background: #d6cda4;
-    border-bottom: 1px solid #c4ba8e;
+    border-bottom: 1px solid transparent;
     position: sticky;
     top: 0;
     z-index: 200;
+    transition: border-color 0.2s ease;
+  }
+  .navbar.scrolled {
+    border-bottom-color: rgba(0,0,0,0.18);
   }
   .navbar-links {
     display: flex;
@@ -100,8 +117,8 @@ const isActive = (path: string) => currentPath === path ? 'nav-active' : '';
   .navbar-links a {
     text-decoration: none;
     color: #3d3820;
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 1rem;
+    font-weight: 600;
     letter-spacing: 0.01em;
     transition: color 0.15s;
   }

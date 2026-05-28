@@ -121,7 +121,7 @@ const BENEFITS = [
         </ul>
       </div>
       <div class="aside-illus">
-        <img src="/fondPostuler.png" alt="" />
+        <img src="/fondPostuler.svg" alt="" />
       </div>
     </aside>
 

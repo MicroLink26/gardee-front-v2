@@ -103,7 +103,7 @@ onMounted(() => {
     <p v-else-if="error" class="error-msg">{{ error }}</p>
 
     <div v-else-if="!filtered.length" class="empty">
-      <img src="/arbreUtiliser.png" alt="" style="height:100px;opacity:0.5;margin-bottom:1rem" />
+      <img src="/arbreUtiliser.svg" alt="" style="height:100px;opacity:0.5;margin-bottom:1rem" />
       <p>Aucune demande dans cette catégorie.</p>
     </div>
 

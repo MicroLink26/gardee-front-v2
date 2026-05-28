@@ -27,7 +27,7 @@ onMounted(async () => {
         <h1>Bonjour, {{ auth.user?.prenom }} 👋</h1>
         <p>Gérez votre activité depuis votre espace personnel.</p>
       </div>
-      <img src="/arbreBut.png" alt="" class="welcome-illustration" />
+      <img src="/arbreBut.svg" alt="" class="welcome-illustration" />
     </div>
 
     <div class="stats-row">

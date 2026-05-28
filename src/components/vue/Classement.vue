@@ -249,7 +249,7 @@ function stars(n: number) {
       <template v-else>
         <!-- Empty -->
         <div v-if="!filtered.length" class="empty">
-          <img src="/arbreUtiliser.png" alt="" style="height:120px;opacity:0.6;margin-bottom:1rem;" />
+          <img src="/arbreUtiliser.svg" alt="" style="height:120px;opacity:0.6;margin-bottom:1rem;" />
           <h3>Aucun jardinier trouvé</h3>
           <p>Essayez d'autres filtres ou une autre ville</p>
           <button class="btn-primary" @click="resetFilters">Voir tous les jardiniers</button>

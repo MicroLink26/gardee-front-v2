@@ -58,7 +58,7 @@ async function submit() {
           </li>
         </ul>
       </div>
-      <img src="/arbrePostuler.png" alt="" class="aside-illustration" />
+      <img src="/arbrePostuler.svg" alt="" class="aside-illustration" />
     </aside>
 
     <main class="login-main">

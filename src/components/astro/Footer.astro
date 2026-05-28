@@ -5,7 +5,7 @@ const year = new Date().getFullYear();
   <div class="footer-inner">
 
     <div class="footer-brand">
-      <img src="/logo.png" alt="Gardee" height="40" />
+      <a href="/" class="footer-logo">GARDEE</a>
       <p>La plateforme qui connecte les particuliers avec des jardiniers professionnels vérifiés.</p>
       <div class="footer-badges">
         <button class="fbadge fbadge--pwa" id="footer-pwa-btn" style="display:none">
@@ -53,7 +53,7 @@ const year = new Date().getFullYear();
 <style>
   .footer {
     background: #111827;
-    margin-top: 4rem;
+  
   }
 
   .footer-inner {
@@ -65,7 +65,16 @@ const year = new Date().getFullYear();
     gap: 2.5rem;
   }
 
-  .footer-brand img { display: block; margin-bottom: 0.875rem; background: #d6cda4; border-radius: 6px; padding: 4px 8px; }
+  .footer-logo {
+    display: inline-block;
+    margin-bottom: 0.875rem;
+    color: #5f7a39;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
   .footer-brand p {
     font-size: 0.875rem;
     color: #9ca3af;

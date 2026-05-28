@@ -117,7 +117,7 @@ onMounted(() => {
         </div>
 
         <div v-else class="empty-state">
-          <img src="/arbreUtiliser.png" alt="" style="height:100px;opacity:0.5;margin-bottom:1rem" />
+          <img src="/arbreUtiliser.svg" alt="" style="height:100px;opacity:0.5;margin-bottom:1rem" />
           <h3>Aucun jardinier trouvé</h3>
           <p>Essayez un autre service ou une autre ville</p>
           <button class="btn-primary" @click="query = ''; search()">Voir tous les jardiniers</button>

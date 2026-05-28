@@ -40,7 +40,7 @@ import Footer from '../components/astro/Footer.astro';
     </div>
 
     <div class="hero-right">
-      <img src="/pommier.png" alt="Jardinage" class="hero-illus" />
+      <img src="/hero-screenshot.png" alt="Visuel Gardee" class="hero-illus" />
     </div>
   </section>
 
@@ -70,9 +70,6 @@ import Footer from '../components/astro/Footer.astro';
       <div class="services-grid">
 
         <div class="svc-card">
-          <div class="svc-illus">
-            <img src="/futur-left.png" alt="Détenteurs de jardins" />
-          </div>
           <div class="svc-text">
             <div class="svc-tag">Pour les propriétaires</div>
             <h3>Sublimez votre jardin</h3>
@@ -85,9 +82,6 @@ import Footer from '../components/astro/Footer.astro';
         </div>
 
         <div class="svc-card svc-card--reverse">
-          <div class="svc-illus">
-            <img src="/futur-right.png" alt="Pour les jardiniers" />
-          </div>
           <div class="svc-text">
             <div class="svc-tag svc-tag--green">Pour les professionnels</div>
             <h3>Développez votre activité</h3>
@@ -139,9 +133,6 @@ import Footer from '../components/astro/Footer.astro';
 
       </div>
     </div>
-    <div class="how-illus">
-      <img src="/tondeuse.png" alt="" aria-hidden="true" />
-    </div>
   </section>
 
   <!-- ══ FAQ — arbres pictos ════════════════════════════════════════ -->
@@ -154,27 +145,20 @@ import Footer from '../components/astro/Footer.astro';
     <div class="trees-row">
       <a href="/contact" class="tree-item" data-answer="Utilisez la carte ou la barre de recherche pour trouver un jardinier. Consultez son profil, ses avis, et réservez un créneau directement sur la plateforme.">
         <p class="tree-label">Comment utiliser ?</p>
-        <img src="/arbreUtiliser.png" alt="Comment utiliser Gardee ?" />
       </a>
       <a href="/postuler" class="tree-item" data-answer="Gardee vous offre une visibilité locale, des avis vérifiés qui valorisent votre expertise, et une interface simple pour gérer vos réservations.">
         <p class="tree-label">Pourquoi postuler ?</p>
-        <img src="/arbrePostuler.png" alt="Pourquoi postuler sur Gardee ?" />
       </a>
       <a href="/contact" class="tree-item" data-answer="Notre équipe est disponible via la page contact. Vous pouvez aussi nous écrire à contact@gardee.fr pour toute question.">
         <p class="tree-label">Nous contacter</p>
-        <img src="/arbreContacter.png" alt="Qui contacter ?" />
       </a>
       <a href="/contact" class="tree-item" data-answer="Nous développons une messagerie sécurisée, un paiement en ligne, et un calendrier en temps réel. L'objectif : gérer tout votre parcours sans quitter Gardee.">
         <p class="tree-label">Notre vision</p>
-        <img src="/arbreBut.png" alt="Quel but sur le long terme ?" />
       </a>
     </div>
 
     <div class="faq-answer" id="faqAnswer"></div>
 
-    <div class="faq-ground">
-      <img src="/bg-faq.png" alt="" aria-hidden="true" />
-    </div>
   </section>
 
   <Footer />
@@ -188,7 +172,7 @@ import Footer from '../components/astro/Footer.astro';
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: calc(100vh - 56px);
-  background: #14231a;
+  background: linear-gradient(160deg, #f4f7ed 0%, #e6ecd7 100%);
 }
 
 .hero-left {
@@ -206,9 +190,9 @@ import Footer from '../components/astro/Footer.astro';
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #a8c47a;
-  background: rgba(168, 196, 122, 0.12);
-  border: 1px solid rgba(168, 196, 122, 0.3);
+  color: #4c5c36;
+  background: rgba(140, 177, 92, 0.18);
+  border: 1px solid rgba(140, 177, 92, 0.2);
   border-radius: 100px;
   padding: 0.35rem 0.9rem;
   width: fit-content;
@@ -219,19 +203,19 @@ import Footer from '../components/astro/Footer.astro';
   font-size: clamp(2.6rem, 4.5vw, 4.2rem);
   font-weight: 900;
   line-height: 1.06;
-  color: #fff;
+  color: #14231a;
   letter-spacing: -0.03em;
   margin-bottom: 1rem;
 }
 
 .hero-left h1 em {
   font-style: normal;
-  color: #a8c47a;
+  color: #5f7a39;
 }
 
 .hero-sub {
   font-size: 1rem;
-  color: rgba(255,255,255,0.55);
+  color: #5c5b45;
   line-height: 1.6;
   margin-bottom: 2.5rem;
 }
@@ -306,18 +290,21 @@ import Footer from '../components/astro/Footer.astro';
 
 .hero-right {
   position: relative;
-  background: #c8bfa0;
+  background: #d6cda4;
   overflow: hidden;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  padding: 2rem;
 }
 .hero-illus {
+  max-width: 520px;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
   display: block;
+  filter: drop-shadow(0 20px 60px rgba(0,0,0,0.16));
 }
 
 /* ══ TRUST STRIP ═════════════════════════════════════════════════ */
@@ -387,28 +374,23 @@ import Footer from '../components/astro/Footer.astro';
   margin-bottom: 4rem;
 }
 
-.services-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
 
 .svc-card {
   display: flex;
-  align-items: center;
-  gap: 4rem;
+  flex-direction: column;
+  justify-content: space-between;
   background: #fff;
-  border-radius: 20px;
-  padding: 3rem;
+  border-radius: 24px;
+  padding: 2.5rem;
   border: 1px solid rgba(81,95,55,0.08);
+  box-shadow: 0 18px 40px rgba(81,95,55,0.08);
 }
-.svc-card--reverse { flex-direction: row-reverse; }
-
-.svc-illus {
-  flex: 0 0 auto;
-  width: 180px;
-}
-.svc-illus img {
-  width: 100%; height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 8px 20px rgba(81,95,55,0.12));
-}
+.svc-card--reverse { flex-direction: column; }
 
 .svc-text { flex: 1; }
 
@@ -470,8 +452,8 @@ import Footer from '../components/astro/Footer.astro';
 
 /* ══ COMMENT ÇA MARCHE ═══════════════════════════════════════════ */
 .how-section {
-  padding: 7rem 0 0;
-  background: #fff;
+  padding: 6rem 0 0;
+  background: #f8f8f1;
   overflow: hidden;
 }
 
@@ -540,8 +522,8 @@ import Footer from '../components/astro/Footer.astro';
 /* ══ FAQ — ARBRES ════════════════════════════════════════════════ */
 .faq-section {
   position: relative;
-  background: #d6cda4;
-  padding: 5rem 0 0;
+  background: linear-gradient(180deg, #f8f8f1 0%, #dde2bf 100%);
+  padding: 5rem 0 5rem;
   overflow: hidden;
 }
 
@@ -575,28 +557,29 @@ import Footer from '../components/astro/Footer.astro';
   align-items: center;
   cursor: pointer;
   text-decoration: none;
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 .tree-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #3d3820;
-  background: rgba(255,255,255,0.45);
+  color: #1f1d12;
+  background: rgba(255,255,255,0.72);
   border-radius: 100px;
-  padding: 0.3rem 0.75rem;
-  margin-bottom: 0.75rem;
-  white-space: nowrap;
+  padding: 0.45rem 1rem;
+  margin-top: 1rem;
 }
 
-.tree-item img {
-  width: 100%;
-  height: auto;
-  display: block;
-  pointer-events: none;
+.tree-item {
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
-.tree-item:hover { filter: drop-shadow(0 12px 24px rgba(81,95,55,0.35)); }
+
+.tree-item:hover {
+  transform: translateY(-4px);
+  filter: drop-shadow(0 18px 35px rgba(81,95,55,0.18));
+}
 
 .faq-answer {
   min-height: 56px;
@@ -614,18 +597,6 @@ import Footer from '../components/astro/Footer.astro';
 }
 .faq-answer.visible { opacity: 1; }
 
-.faq-ground {
-  margin-top: 2rem;
-  overflow: hidden;
-  line-height: 0;
-}
-.faq-ground img {
-  width: 100%;
-  max-width: 900px;
-  display: block;
-  margin: 0 auto;
-  object-fit: contain;
-}
 
 /* ══ RESPONSIVE ══════════════════════════════════════════════════ */
 @media (max-width: 1024px) {
