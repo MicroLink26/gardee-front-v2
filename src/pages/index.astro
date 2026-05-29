@@ -385,6 +385,7 @@ import Footer from '../components/astro/Footer.astro';
   background: linear-gradient(135deg, #c8d9a6 0%, #b0c480 60%, #8fa85a 100%);
   overflow: hidden;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 2rem;
@@ -894,7 +895,9 @@ import Footer from '../components/astro/Footer.astro';
 
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; min-height: auto; }
-  .hero-right { height: 320px; }
+  .hero-right { height: auto; padding: 2.5rem 1.5rem 3rem; }
+  .hero-illus { max-width: 280px; }
+  .hero-right-caption { margin-top: 1.25rem; }
   .hero-left { padding: 3.5rem 2rem; }
   .hero-floating-card { display: none; }
   .how-grid { grid-template-columns: 1fr; gap: 1rem; }
