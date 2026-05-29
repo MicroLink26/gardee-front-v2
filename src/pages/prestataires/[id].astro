@@ -1,0 +1,351 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/astro/Navbar.astro';
+import Footer from '../../components/astro/Footer.astro';
+import BookingWidget from '../../components/vue/BookingWidget.vue';
+
+export async function getStaticPaths() {
+  const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3002/api';
+  try {
+    const res = await fetch(`${apiUrl}/users/ranking?pageSize=500`);
+    if (!res.ok) return [];
+    const { items } = await res.json();
+    return (items ?? []).map((u: { _id: string }) => ({ params: { id: u._id } }));
+  } catch {
+    return [];
+  }
+}
+
+const { id } = Astro.params;
+const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3002/api';
+
+const [profileRes, catsRes, reviewsRes] = await Promise.all([
+  fetch(`${apiUrl}/users/${id}`),
+  fetch(`${apiUrl}/categories`),
+  fetch(`${apiUrl}/users/${id}/reviews?pageSize=5`),
+]);
+
+const { user } = await profileRes.json();
+const categories: Array<{ _id: string; name: string }> = await catsRes.json();
+const { items: reviews = [], total: totalReviews = 0 } = await reviewsRes.json();
+
+const catMap = new Map(categories.map(c => [c._id, c.name]));
+const catName = (cid: string) => catMap.get(cid) ?? cid;
+
+function starsArr(n: number) {
+  const full = Math.min(Math.round(n ?? 0), 5);
+  return { full, empty: Math.max(0, 5 - full) };
+}
+
+// Pre-process reviews for the template (avoid typed callbacks in JSX)
+const processedReviews = reviews.map((r: any) => {
+  const d = r.ratingDetails as Record<string, number> | undefined;
+  const vals = d ? Object.values(d).filter((v: unknown): v is number => typeof v === 'number') : [];
+  const avg = vals.length ? vals.reduce((a: number, b: number) => a + b, 0) / vals.length : 0;
+  const stars = starsArr(avg);
+  return {
+    author: (r.requesterPrenom as string) || 'Client',
+    date: new Date(r.ratingGivenAt as string).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+    comment: r.ratingComment as string | undefined,
+    avgStr: avg.toFixed(1),
+    starsFullStr: '★'.repeat(stars.full),
+    starsEmptyStr: '★'.repeat(stars.empty),
+    initial: ((r.requesterPrenom as string)?.[0] ?? '?').toUpperCase(),
+  };
+});
+
+const avatarIdx = parseInt(id.slice(-2), 16) % 3 + 1;
+const avatarSrc = user?.profil_image?.secure_url ?? `/img/default-avatar-${avatarIdx}.png`;
+
+const fullName = user ? `${user.prenom} ${user.nom}` : 'Jardinier';
+const pageTitle = user ? `${fullName} — Jardinier à ${user.ville}` : 'Profil jardinier';
+const pageDesc = user?.description
+  ? user.description.slice(0, 155) + (user.description.length > 155 ? '…' : '')
+  : `Découvrez le profil de ${fullName}, jardinier professionnel à ${user?.ville ?? ''} sur Gardee.`;
+---
+
+<BaseLayout title={pageTitle} description={pageDesc}>
+  <Navbar />
+
+  {!user ? (
+    <div style="display:flex;align-items:center;justify-content:center;min-height:60vh">
+      <p style="color:#9ca3af">Profil introuvable.</p>
+    </div>
+  ) : (
+  <div class="profile-page">
+
+    <!-- HERO COVER -->
+    <div class="hero-cover" style={user.profil_image?.secure_url ? `background-image:url(${user.profil_image.secure_url})` : ''}>
+      <div class="hero-overlay"></div>
+    </div>
+
+    <div class="container">
+
+      <!-- PROFILE HEADER -->
+      <div class="profile-header">
+        <div class="profile-avatar">
+          <img src={avatarSrc} alt={fullName} />
+        </div>
+
+        <div class="profile-meta">
+          <div class="profile-name-row">
+            <h1>{fullName}</h1>
+            <span class="badge-verified">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Vérifié
+            </span>
+          </div>
+          <p class="profile-ville">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            {user.ville}
+          </p>
+          {user.numberOfReviews > 0 && (
+            <div class="profile-rating">
+              <span class="stars-full">{'★'.repeat(starsArr(user.averageRating).full)}</span>
+              <span class="stars-empty">{'★'.repeat(starsArr(user.averageRating).empty)}</span>
+              <span class="rating-score">{user.averageRating.toFixed(1)}</span>
+              <span class="rating-count">· {user.numberOfReviews} avis</span>
+            </div>
+          )}
+          <div class="profile-tags">
+            {user.prestations?.map((p: string) => (
+              <span class="tag">{catName(p)}</span>
+            ))}
+          </div>
+        </div>
+
+        {user.tarifHoraire && (
+          <div class="tarif-badge">
+            <span class="tarif-val">{user.tarifHoraire} €</span>
+            <span class="tarif-unit">/ heure</span>
+          </div>
+        )}
+      </div>
+
+      <!-- BODY -->
+      <div class="profile-body">
+
+        <!-- LEFT: CONTENT -->
+        <div class="profile-content">
+
+          {user.description && (
+            <div class="content-section">
+              <h2>Présentation</h2>
+              <p class="description-text">{user.description}</p>
+            </div>
+          )}
+
+          <div class="content-section">
+            <h2>Services proposés</h2>
+            <div class="services-grid">
+              {user.prestations?.map((p: string) => (
+                <div class="service-item">
+                  <div class="service-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <span>{catName(p)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div class="content-section">
+            <h2>Informations</h2>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">Zone d'intervention</span>
+                <span class="info-val">{user.ville} et alentours</span>
+              </div>
+              {user.tarifHoraire && (
+                <div class="info-item">
+                  <span class="info-label">Tarif horaire</span>
+                  <span class="info-val">{user.tarifHoraire} €/h</span>
+                </div>
+              )}
+              <div class="info-item">
+                <span class="info-label">Membre depuis</span>
+                <span class="info-val">
+                  {new Date(user.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- REVIEWS -->
+          {totalReviews > 0 && (
+            <div class="content-section">
+              <h2>Avis clients ({totalReviews})</h2>
+              <div class="reviews-list">
+                {processedReviews.map((r) => (
+                  <div class="review-card">
+                    <div class="review-header">
+                      <div class="review-avatar">{r.initial}</div>
+                      <div>
+                        <div class="review-author">{r.author}</div>
+                        <div class="review-date">{r.date}</div>
+                      </div>
+                      <div class="review-stars">
+                        <span class="stars-full">{r.starsFullStr}</span>
+                        <span class="stars-empty">{r.starsEmptyStr}</span>
+                        <span class="review-score">{r.avgStr}</span>
+                      </div>
+                    </div>
+                    {r.comment && <p class="review-text">{r.comment}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        <!-- RIGHT: BOOKING WIDGET (Vue island) -->
+        <aside class="booking-aside">
+          <BookingWidget
+            client:load
+            prestataireId={id}
+            prenom={user.prenom}
+            tarifHoraire={user.tarifHoraire}
+            averageRating={user.averageRating}
+            numberOfReviews={user.numberOfReviews}
+            prestations={user.prestations ?? []}
+          />
+        </aside>
+
+      </div>
+    </div>
+  </div>
+  )}
+
+  <Footer />
+</BaseLayout>
+
+<style>
+* { box-sizing: border-box; }
+
+.profile-page { background: #f2efe6; min-height: 100vh; }
+
+.hero-cover {
+  height: 260px;
+  background: linear-gradient(155deg, #141f0b 0%, #253515 55%, #3a5020 100%);
+  background-size: cover; background-position: center;
+  position: relative;
+}
+.hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.55) 100%);
+}
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 2rem 5rem; }
+
+.profile-header {
+  display: flex; align-items: flex-end; gap: 1.5rem;
+  margin-top: -60px; margin-bottom: 2.5rem;
+  padding-bottom: 2rem; border-bottom: 1px solid #e9e5d6;
+  position: relative; z-index: 1; flex-wrap: wrap;
+}
+
+.profile-avatar {
+  width: 120px; height: 120px; border-radius: 50%; overflow: hidden;
+  border: 4px solid #fff; box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+  flex-shrink: 0; background: linear-gradient(135deg, #dde6c8, #a8c47a);
+}
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.profile-meta { flex: 1; min-width: 200px; }
+.profile-name-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; flex-wrap: wrap; }
+.profile-page h1 { font-size: 1.75rem; font-weight: 900; color: #111827; margin: 0; letter-spacing: -0.02em; }
+
+.badge-verified {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.72rem; font-weight: 600; color: #3a5020;
+  background: rgba(81,95,55,0.08); border: 1px solid rgba(81,95,55,0.2);
+  padding: 0.2rem 0.6rem; border-radius: 999px;
+}
+.profile-ville {
+  display: flex; align-items: center; gap: 0.3rem;
+  color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem; margin-top: 0.2rem;
+}
+.profile-rating { display: flex; align-items: center; gap: 0.25rem; font-size: 0.9rem; margin-bottom: 0.6rem; }
+.stars-full { color: #e6c553; }
+.stars-empty { color: #e0dbd0; }
+.rating-score { font-weight: 700; color: #111827; margin-left: 0.15rem; }
+.rating-count { color: #9ca3af; font-size: 0.8rem; }
+.profile-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.tag {
+  background: #f0ede3; color: #515F37; border: 1px solid #e0d8c2;
+  padding: 0.2rem 0.65rem; border-radius: 999px;
+  font-size: 0.78rem; font-weight: 600;
+}
+
+.tarif-badge {
+  display: flex; flex-direction: column; align-items: center;
+  background: #3a5020; color: #fff;
+  padding: 0.875rem 1.375rem; border-radius: 16px;
+  flex-shrink: 0; box-shadow: 0 4px 16px rgba(58,80,32,0.3);
+}
+.tarif-val { font-size: 1.6rem; font-weight: 900; line-height: 1; color: #a8c47a; }
+.tarif-unit { font-size: 0.72rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem; }
+
+.profile-body {
+  display: grid; grid-template-columns: 1fr 380px;
+  gap: 3rem; align-items: start;
+}
+
+.content-section { margin-bottom: 2.5rem; }
+.content-section h2 {
+  font-size: 0.72rem; font-weight: 700; color: #515F37;
+  margin: 0 0 1rem; padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9e5d6;
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.description-text { color: #374151; font-size: 0.95rem; line-height: 1.75; white-space: pre-wrap; }
+
+.services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem; }
+.service-item {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.55rem 0.875rem;
+  background: #FCFAF5; border: 1.5px solid #e9e5d6; border-radius: 10px;
+  font-size: 0.875rem; color: #374151;
+}
+.service-icon {
+  width: 28px; height: 28px; background: rgba(81,95,55,0.08); color: #3a5020;
+  border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.info-grid { display: flex; flex-direction: column; gap: 0; }
+.info-item { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0; border-bottom: 1px solid #e9e5d6; }
+.info-label { font-size: 0.875rem; color: #9ca3af; }
+.info-val { font-size: 0.875rem; font-weight: 600; color: #1a1a0e; }
+
+.reviews-list { display: flex; flex-direction: column; gap: 1rem; }
+.review-card {
+  padding: 1.125rem 1.25rem; background: #FCFAF5;
+  border: 1.5px solid #e9e5d6; border-radius: 14px;
+}
+.review-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+.review-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #dde6c8, #a8c47a);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 800; color: #3a5020; flex-shrink: 0;
+}
+.review-author { font-size: 0.875rem; font-weight: 700; color: #1a1a0e; }
+.review-date { font-size: 0.72rem; color: #9ca3af; }
+.review-stars { margin-left: auto; display: flex; align-items: center; gap: 0.2rem; }
+.review-score { font-size: 0.8rem; font-weight: 700; color: #1a1a0e; }
+.review-text { font-size: 0.875rem; color: #374151; line-height: 1.65; }
+
+.booking-aside { position: sticky; top: 84px; }
+
+@media (max-width: 900px) {
+  .profile-body { grid-template-columns: 1fr; }
+  .booking-aside { position: static; order: -1; }
+}
+@media (max-width: 600px) {
+  .profile-page h1 { font-size: 1.4rem; }
+  .profile-header { margin-top: -40px; gap: 1rem; }
+  .profile-avatar { width: 90px; height: 90px; }
+  .container { padding: 0 1rem 4rem; }
+}
+</style>

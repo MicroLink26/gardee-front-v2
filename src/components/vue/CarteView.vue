@@ -165,7 +165,7 @@ function updateMarkers() {
           <strong>${user.prenom} ${user.nom}</strong>
           <span>${user.ville}</span>
           ${user.tarifHoraire ? `<span class="gd-popup-tarif">${user.tarifHoraire} €/h</span>` : ''}
-          <a href="/prestataires/?id=${user._id}">Voir le profil →</a>
+          <a href="/prestataires/${user._id}">Voir le profil →</a>
         </div>
       `)
       .on('click', () => {
@@ -437,7 +437,7 @@ function stars(n: number) {
           </div>
           <div class="scard-right">
             <span v-if="user.tarifHoraire" class="scard-price">{{ user.tarifHoraire }} €/h</span>
-            <a :href="`/prestataires/?id=${user._id}`" class="scard-link" @click.stop>Profil →</a>
+            <a :href="`/prestataires/${user._id}`" class="scard-link" @click.stop>Profil →</a>
           </div>
         </button>
       </div>
@@ -480,7 +480,7 @@ function stars(n: number) {
         </div>
         <div class="scard-right">
           <span v-if="user.tarifHoraire" class="scard-price">{{ user.tarifHoraire }} €/h</span>
-          <a :href="`/prestataires/?id=${user._id}`" class="mobile-card-cta" @click.stop>Voir →</a>
+          <a :href="`/prestataires/${user._id}`" class="mobile-card-cta" @click.stop>Voir →</a>
         </div>
       </div>
     </div>
