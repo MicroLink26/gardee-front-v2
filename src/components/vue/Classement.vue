@@ -30,7 +30,7 @@ const RATINGS = [
 
 const filtered = computed(() => {
   let list = users.value.filter(u => {
-    if (minRating.value > 0 && u.averageRating < minRating.value) return false;
+    if (minRating.value > 0 && (!u.numberOfReviews || (u.averageRating ?? 0) < minRating.value)) return false;
     if (u.tarifHoraire && u.tarifHoraire > maxTarif.value) return false;
     return true;
   });
@@ -137,128 +137,145 @@ function stars(n: number) {
 <template>
   <div class="classement-page">
 
-    <!-- Hero -->
-    <div class="page-hero">
+    <!-- ══ HERO ═══════════════════════════════════════════════════ -->
+    <section class="page-hero">
+      <div class="hero-deco" aria-hidden="true">
+        <svg class="leaf leaf-a" viewBox="0 0 220 300" xmlns="http://www.w3.org/2000/svg">
+          <path d="M110,8 C175,8 212,65 212,150 C212,235 175,292 110,292 C45,292 8,235 8,150 C8,65 45,8 110,8Z" fill="rgba(168,196,122,0.07)"/>
+        </svg>
+        <svg class="leaf leaf-b" viewBox="0 0 180 260" xmlns="http://www.w3.org/2000/svg">
+          <path d="M90,6 C148,6 174,58 174,130 C174,202 148,254 90,254 C32,254 6,202 6,130 C6,58 32,6 90,6Z" fill="rgba(255,255,255,0.04)"/>
+        </svg>
+        <div class="deco-ring deco-ring-a"></div>
+        <div class="deco-ring deco-ring-b"></div>
+      </div>
+
       <div class="container">
-        <div class="hero-content">
+        <div class="hero-text">
           <span class="eyebrow">Classement 2025</span>
-          <h1>Les meilleurs jardiniers</h1>
-          <p>Découvrez les prestataires les mieux notés près de chez vous</p>
+          <h1>Les <em class="hero-accent">meilleurs</em> jardiniers</h1>
+          <p class="hero-sub">Découvrez les prestataires les mieux notés près de chez vous</p>
         </div>
 
         <div class="filters-panel">
-          <!-- Search row -->
           <div class="search-row">
             <div class="input-wrap">
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
               <input
                 v-model="ville"
                 type="text"
-                placeholder="Ville ou code postal..."
+                placeholder="Ville ou code postal…"
                 class="text-input"
                 @keyup.enter="search"
               />
             </div>
             <button class="search-btn" @click="search">Rechercher</button>
             <a :href="carteUrl" class="map-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-              Voir sur la carte
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+              Carte
             </a>
           </div>
 
-          <!-- Service chips -->
           <div class="chip-scroll-wrap">
             <div class="chip-group">
               <button
                 v-for="cat in categoriesStore.categories" :key="cat._id"
-                :class="['chip', { active: prestation === cat._id }]"
+                :class="['chip', { 'chip--on': prestation === cat._id }]"
                 @click="toggleService(cat._id)"
                 type="button"
               >{{ cat.name }}</button>
             </div>
+            <div class="chip-fade"></div>
           </div>
 
-          <!-- Rating + Price + Sort -->
           <div class="filter-row">
             <div class="filter-block">
               <span class="filter-label">Note minimum</span>
-              <div class="rating-group">
+              <div class="btn-group">
                 <button
                   v-for="r in RATINGS" :key="r.val"
-                  :class="['rating-btn', { active: minRating === r.val }]"
+                  :class="['fbtn', { 'fbtn--on': minRating === r.val }]"
                   @click="minRating = r.val"
                 >{{ r.label }}</button>
               </div>
             </div>
             <div class="filter-block">
-              <span class="filter-label">Tarif max : <strong>{{ maxTarif === 200 ? 'Tous' : maxTarif + ' €/h' }}</strong></span>
+              <span class="filter-label">
+                Tarif max :
+                <strong>{{ maxTarif === 200 ? 'Tous' : maxTarif + ' €/h' }}</strong>
+              </span>
               <input type="range" v-model.number="maxTarif" min="15" max="200" step="5" class="range-input" />
             </div>
             <div class="filter-block">
               <span class="filter-label">Trier par</span>
-              <div class="rating-group">
-                <button :class="['rating-btn', { active: sortBy === 'rating' }]" @click="sortBy = 'rating'">Note</button>
-                <button :class="['rating-btn', { active: sortBy === 'price' }]" @click="sortBy = 'price'">Prix</button>
-                <button :class="['rating-btn', { active: sortBy === 'reviews' }]" @click="sortBy = 'reviews'">Avis</button>
+              <div class="btn-group">
+                <button :class="['fbtn', { 'fbtn--on': sortBy === 'rating' }]"   @click="sortBy = 'rating'">Note</button>
+                <button :class="['fbtn', { 'fbtn--on': sortBy === 'price' }]"    @click="sortBy = 'price'">Prix</button>
+                <button :class="['fbtn', { 'fbtn--on': sortBy === 'reviews' }]"  @click="sortBy = 'reviews'">Avis</button>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
+    <!-- ══ CONTENT ════════════════════════════════════════════════ -->
     <div ref="resultsRef" class="container main-content">
 
-      <!-- Results meta -->
+      <!-- Meta -->
       <div class="results-meta">
         <span v-if="loading" class="meta-loading">
-          <span class="spinner"></span> Chargement...
+          <span class="spinner"></span> Chargement…
         </span>
         <template v-else>
           <span class="meta-count">
             <strong>{{ filtered.length }}</strong> prestataire{{ filtered.length > 1 ? 's' : '' }}
-            <template v-if="prestation"> · {{ prestation }}</template>
+            <template v-if="prestation"> · {{ categoryName(prestation) }}</template>
             <template v-if="ville"> · {{ ville }}</template>
           </span>
           <button
             v-if="prestation || ville || minRating > 0 || maxTarif < 200"
             class="reset-btn"
             @click="resetFilters"
-          >Réinitialiser les filtres ×</button>
+          >Réinitialiser ×</button>
         </template>
       </div>
 
       <!-- Skeleton -->
       <template v-if="loading">
         <div class="podium-grid">
-          <div v-for="i in 3" :key="i" class="podium-card skeleton-card">
-            <div class="skeleton" style="height:260px;border-radius:16px 16px 0 0"></div>
+          <div v-for="i in 3" :key="i" class="podium-card skel-card">
+            <div class="skel" style="height:200px"></div>
             <div style="padding:1rem;display:flex;flex-direction:column;gap:0.5rem">
-              <div class="skeleton" style="height:14px;width:60%;border-radius:4px"></div>
-              <div class="skeleton" style="height:12px;width:40%;border-radius:4px"></div>
+              <div class="skel" style="height:13px;width:60%;border-radius:4px"></div>
+              <div class="skel" style="height:11px;width:40%;border-radius:4px"></div>
             </div>
           </div>
         </div>
-        <div class="grid">
-          <div v-for="i in 6" :key="i" class="skeleton-card">
-            <div class="skeleton" style="height:80px;border-radius:14px"></div>
-          </div>
+        <div class="rank-list">
+          <div v-for="i in 6" :key="i" class="skel" style="height:76px;border-radius:14px"></div>
         </div>
       </template>
 
       <template v-else>
         <!-- Empty -->
         <div v-if="!filtered.length" class="empty">
-          <img src="/arbreUtiliser.svg" alt="" style="height:120px;opacity:0.6;margin-bottom:1rem;" />
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
           <h3>Aucun jardinier trouvé</h3>
           <p>Essayez d'autres filtres ou une autre ville</p>
           <button class="btn-primary" @click="resetFilters">Voir tous les jardiniers</button>
         </div>
 
         <template v-else>
-          <!-- Podium top 3 -->
+
+          <!-- ── Podium ── -->
           <div v-if="showPodium" class="podium-section">
-            <h2 class="section-title">Podium</h2>
+            <h2 class="section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 21h8m-4-4v4M6.5 3h11L19 9c0 3.31-3.13 6-7 6s-7-2.69-7-6l1.5-6zM3 9h3m15 0h-3"/></svg>
+              Podium
+            </h2>
             <div class="podium-grid">
               <a
                 v-for="(user, i) in podiumOrder"
@@ -266,28 +283,31 @@ function stars(n: number) {
                 :href="`/prestataires/?id=${user._id}`"
                 :class="['podium-card', podiumClass(i), { 'podium-first': PODIUM_RANK[i] === 1 }]"
               >
-                <div class="podium-rank-label">
-                  <span class="podium-medal">{{ podiumMedal(i) }}</span>
-                  <span class="podium-position">#{{ PODIUM_RANK[i] }}</span>
-                </div>
                 <div class="podium-photo">
                   <img :src="getAvatar(user._id, user.profil_image?.secure_url)" :alt="`${user.prenom} ${user.nom}`" loading="lazy" />
+                  <div class="podium-overlay"></div>
+                  <div class="podium-badge">
+                    <span class="podium-medal">{{ podiumMedal(i) }}</span>
+                    <span class="podium-rank">#{{ PODIUM_RANK[i] }}</span>
+                  </div>
                   <span v-if="user.tarifHoraire" class="price-badge">{{ user.tarifHoraire }} €/h</span>
+                  <div class="podium-identity">
+                    <h3>{{ user.prenom }} {{ user.nom }}</h3>
+                    <p class="podium-ville">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="10" height="10"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>
+                      {{ user.ville }}
+                    </p>
+                  </div>
                 </div>
                 <div class="podium-body">
-                  <h3>{{ user.prenom }} {{ user.nom }}</h3>
-                  <p class="podium-ville">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;flex-shrink:0"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    {{ user.ville }}
-                  </p>
                   <div v-if="user.numberOfReviews > 0" class="podium-rating">
-                    <span class="stars-full"><span v-for="j in stars(user.averageRating).full" :key="`f${j}`">★</span></span>
-                    <span class="stars-empty"><span v-for="j in stars(user.averageRating).empty" :key="`e${j}`">★</span></span>
-                    <span class="rating-val">{{ user.averageRating.toFixed(1) }}</span>
-                    <span class="rating-count">({{ user.numberOfReviews }} avis)</span>
+                    <span class="sf"><span v-for="j in stars(user.averageRating).full"  :key="`f${j}`">★</span></span>
+                    <span class="se"><span v-for="j in stars(user.averageRating).empty" :key="`e${j}`">★</span></span>
+                    <span class="rv">{{ user.averageRating.toFixed(1) }}</span>
+                    <span class="rc">{{ user.numberOfReviews }} avis</span>
                   </div>
                   <div v-else class="podium-rating">
-                    <span class="no-rating">Nouveau</span>
+                    <span class="new-badge">Nouveau</span>
                   </div>
                   <div class="podium-tags">
                     <span v-if="user.prestations.length > 0" class="tag">{{ categoryName(user.prestations[0]) }}</span>
@@ -298,63 +318,74 @@ function stars(n: number) {
             </div>
           </div>
 
-          <!-- Rest of ranking -->
+          <!-- ── Suite du classement ── -->
           <div v-if="listItems.length > 0">
-            <h2 class="section-title" style="margin-top:2rem">
+            <h2 class="section-title" style="margin-top: 2.5rem">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
               {{ showPodium ? 'Suite du classement' : page > 1 ? `Page ${page}` : 'Classement' }}
             </h2>
-          </div>
-          <div class="grid">
-            <a
-              v-for="(user, i) in listItems"
-              :key="user._id"
-              :href="`/prestataires/?id=${user._id}`"
-              class="rank-card"
-            >
-              <span class="rank-num">{{ listRankStart + i }}</span>
-              <div class="rank-photo">
-                <img :src="getAvatar(user._id, user.profil_image?.secure_url)" :alt="`${user.prenom} ${user.nom}`" loading="lazy" />
-              </div>
-              <div class="rank-body">
-                <div class="rank-name">{{ user.prenom }} {{ user.nom }}</div>
-                <div class="rank-ville">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;flex-shrink:0"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                  {{ user.ville }}
+            <div class="rank-list">
+              <a
+                v-for="(user, i) in listItems"
+                :key="user._id"
+                :href="`/prestataires/?id=${user._id}`"
+                class="rank-card"
+              >
+                <span class="rank-num">{{ listRankStart + i }}</span>
+                <div class="rank-photo">
+                  <img :src="getAvatar(user._id, user.profil_image?.secure_url)" :alt="`${user.prenom} ${user.nom}`" loading="lazy" />
                 </div>
-                <div v-if="user.numberOfReviews > 0" class="rank-rating">
-                  <span class="stars-full"><span v-for="j in stars(user.averageRating).full" :key="`f${j}`">★</span></span>
-                  <span class="stars-empty"><span v-for="j in stars(user.averageRating).empty" :key="`e${j}`">★</span></span>
-                  <span class="rating-val-sm">{{ user.averageRating.toFixed(1) }}</span>
-                  <span class="rating-count-sm">({{ user.numberOfReviews }})</span>
+                <div class="rank-body">
+                  <div class="rank-name">{{ user.prenom }} {{ user.nom }}</div>
+                  <div class="rank-ville">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>
+                    {{ user.ville }}
+                  </div>
+                  <div v-if="user.numberOfReviews > 0" class="rank-rating">
+                    <span class="sf"><span v-for="j in stars(user.averageRating).full"  :key="`f${j}`">★</span></span>
+                    <span class="se"><span v-for="j in stars(user.averageRating).empty" :key="`e${j}`">★</span></span>
+                    <span class="rv-sm">{{ user.averageRating.toFixed(1) }}</span>
+                    <span class="rc-sm">({{ user.numberOfReviews }})</span>
+                  </div>
+                  <div class="rank-tags">
+                    <span v-if="user.prestations.length > 0" class="tag-sm">{{ categoryName(user.prestations[0]) }}</span>
+                    <span v-if="user.prestations.length > 1" class="tag-sm tag-sm--more">+{{ user.prestations.length - 1 }}</span>
+                  </div>
                 </div>
-                <div class="rank-tags">
-                  <span v-if="user.prestations.length > 0" class="tag-sm">{{ categoryName(user.prestations[0]) }}</span>
-                  <span v-if="user.prestations.length > 1" class="tag-sm tag-sm--more">+{{ user.prestations.length - 1 }}</span>
+                <div class="rank-right">
+                  <span v-if="user.tarifHoraire" class="rank-price">{{ user.tarifHoraire }} €/h</span>
+                  <span class="rank-cta">
+                    Voir le profil
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><polyline points="9 18 15 12 9 6"/></svg>
+                  </span>
                 </div>
-              </div>
-              <div class="rank-right">
-                <span v-if="user.tarifHoraire" class="rank-price">{{ user.tarifHoraire }} €/h</span>
-                <span class="rank-cta">Voir le profil →</span>
-              </div>
-            </a>
+              </a>
+            </div>
           </div>
 
           <!-- Pagination -->
           <div v-if="totalPages > 1" class="pagination">
-            <button class="page-btn" :disabled="page === 1" @click="goPage(page - 1)">← Précédent</button>
-            <div class="page-nums">
+            <button class="pag-btn" :disabled="page === 1" @click="goPage(page - 1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+              Précédent
+            </button>
+            <div class="pag-nums">
               <button
-                v-for="p in totalPages"
-                :key="p"
-                :class="['page-num', { active: p === page }]"
+                v-for="p in totalPages" :key="p"
+                :class="['pag-num', { 'pag-num--on': p === page }]"
                 @click="goPage(p)"
               >{{ p }}</button>
             </div>
-            <span class="page-indicator">Page {{ page }} / {{ totalPages }}</span>
-            <button class="page-btn" :disabled="page === totalPages" @click="goPage(page + 1)">Suivant →</button>
+            <span class="pag-indicator">{{ page }} / {{ totalPages }}</span>
+            <button class="pag-btn" :disabled="page === totalPages" @click="goPage(page + 1)">
+              Suivant
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
           </div>
+
         </template>
       </template>
+
     </div>
   </div>
 </template>
@@ -362,568 +393,379 @@ function stars(n: number) {
 <style scoped>
 * { box-sizing: border-box; }
 
-.classement-page { background: #faf8f2; min-height: 100vh; }
+.classement-page { background: #f2efe6; min-height: 100vh; }
 .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
 
-/* ── HERO ── */
+/* ══ HERO ═══════════════════════════════════════════════════════ */
 .page-hero {
-  background: linear-gradient(160deg, #515F37 0%, #3d4a28 100%);
-  padding: 2.5rem 0 2rem;
+  position: relative;
+  background: linear-gradient(155deg, #141f0b 0%, #253515 55%, #3a5020 100%);
+  padding: 3.5rem 0 2.5rem;
+  overflow: hidden;
 }
 
-.hero-content { margin-bottom: 1.75rem; }
+.hero-deco { position: absolute; inset: 0; pointer-events: none; }
+.leaf { position: absolute; }
+.leaf-a { width: 280px; height: 380px; right: -60px; top: -80px; }
+.leaf-b { width: 200px; height: 290px; left: -80px; bottom: -100px; }
+.deco-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,0.055); }
+.deco-ring-a { width: 480px; height: 480px; top: -200px; right: -80px; }
+.deco-ring-b { width: 300px; height: 300px; bottom: -150px; left: -60px; }
+
+.hero-text { position: relative; z-index: 1; margin-bottom: 2rem; }
 
 .eyebrow {
   display: inline-block;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #d6cda4;
-  background: rgba(214, 205, 164, 0.15);
-  border: 1px solid rgba(214, 205, 164, 0.3);
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  margin-bottom: 0.75rem;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.16em;
+  text-transform: uppercase; color: rgba(214,205,164,0.75);
+  background: rgba(214,205,164,0.1); border: 1px solid rgba(214,205,164,0.2);
+  padding: 0.28rem 0.8rem; border-radius: 999px; margin-bottom: 0.75rem;
 }
 
-h1 { font-size: 2.25rem; font-weight: 900; color: #fff; margin: 0 0 0.4rem; letter-spacing: -0.02em; }
-.hero-content p { color: rgba(255,255,255,0.7); font-size: 1rem; }
+.page-hero h1 {
+  font-size: clamp(1.9rem, 4vw, 2.8rem); font-weight: 900; color: #fff;
+  margin: 0 0 0.5rem; letter-spacing: -0.035em; line-height: 1.08;
+}
+.hero-accent { color: #a8c47a; font-style: italic; }
+.hero-sub { color: rgba(255,255,255,0.55); font-size: 1rem; margin: 0; }
 
 /* Filters panel */
 .filters-panel {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 16px;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  backdrop-filter: blur(8px);
+  position: relative; z-index: 1;
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 20px;
+  padding: 1.375rem;
+  display: flex; flex-direction: column; gap: 1.1rem;
+  backdrop-filter: blur(10px);
 }
 
 .search-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
-.input-wrap {
-  position: relative;
-  flex: 1;
-  min-width: 200px;
-  max-width: 340px;
-}
+.input-wrap { position: relative; flex: 1; min-width: 200px; max-width: 340px; }
 .input-icon {
-  position: absolute;
-  left: 0.75rem; top: 50%;
-  transform: translateY(-50%);
-  width: 16px; height: 16px;
-  color: #9ca3af;
-  pointer-events: none;
+  position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%);
+  width: 15px; height: 15px; color: #9ca3af; pointer-events: none;
 }
 .text-input {
-  width: 100%;
-  padding: 0.6rem 0.875rem 0.6rem 2.25rem;
-  border: 1.5px solid rgba(255,255,255,0.2);
-  border-radius: 10px;
-  font-size: 0.9rem;
-  outline: none;
-  background: rgba(255,255,255,0.95);
-  color: #1a1a0e;
-  transition: border-color 0.15s;
+  width: 100%; padding: 0.65rem 0.875rem 0.65rem 2.2rem;
+  border: 1.5px solid rgba(255,255,255,0.18); border-radius: 12px;
+  font-size: 0.9rem; outline: none;
+  background: rgba(255,255,255,0.95); color: #1a1a0e;
+  transition: border-color 0.15s; font-family: inherit;
 }
-.text-input:focus { border-color: #d6cda4; }
+.text-input:focus { border-color: #a8c47a; }
 .text-input::placeholder { color: #9ca3af; }
 
 .search-btn {
-  padding: 0.6rem 1.25rem;
-  background: #d6cda4;
-  color: #1a1a0e;
-  border: none;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: background 0.15s;
-  white-space: nowrap;
+  padding: 0.65rem 1.375rem; background: #a8c47a; color: #1a1a0e;
+  border: none; border-radius: 12px; font-weight: 700; font-size: 0.875rem;
+  cursor: pointer; transition: background 0.15s; white-space: nowrap; font-family: inherit;
 }
-.search-btn:hover { background: #c4ba8e; }
+.search-btn:hover { background: #94b366; }
 
 .map-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.6rem 1.1rem;
-  background: transparent;
-  color: #d6cda4;
-  border: 1.5px solid rgba(214, 205, 164, 0.5);
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.875rem;
-  cursor: pointer;
-  text-decoration: none;
-  transition: all 0.15s;
-  white-space: nowrap;
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.65rem 1.1rem;
+  background: transparent; color: rgba(255,255,255,0.75);
+  border: 1.5px solid rgba(255,255,255,0.2); border-radius: 12px;
+  font-weight: 600; font-size: 0.875rem;
+  cursor: pointer; text-decoration: none; transition: all 0.15s; white-space: nowrap;
 }
-.map-btn svg { width: 15px; height: 15px; }
-.map-btn:hover { background: rgba(214, 205, 164, 0.15); border-color: #d6cda4; }
+.map-btn:hover { color: #a8c47a; border-color: #a8c47a; }
 
-.chip-scroll-wrap {
-  position: relative;
-}
-.chip-scroll-wrap::after {
-  content: '';
-  position: absolute;
-  right: 0; top: 0; bottom: 0;
-  width: 48px;
-  background: linear-gradient(to right, transparent, rgba(65,78,40,0.85));
+.chip-scroll-wrap { position: relative; }
+.chip-fade {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 50px;
+  background: linear-gradient(to right, transparent, rgba(20,35,11,0.85));
   pointer-events: none;
-  border-radius: 0 999px 999px 0;
 }
-
 .chip-group {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.4rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 2px;
+  display: flex; flex-wrap: nowrap; gap: 0.45rem;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px;
 }
 .chip-group::-webkit-scrollbar { display: none; }
-
 .chip {
-  padding: 0.3rem 0.8rem;
-  border: 1.5px solid rgba(255,255,255,0.2);
-  border-radius: 999px;
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.8);
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-  flex-shrink: 0;
+  padding: 0.35rem 0.9rem;
+  border: 1.5px solid rgba(255,255,255,0.18); border-radius: 999px;
+  background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.75);
+  font-size: 0.8rem; font-weight: 500; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: all 0.15s; font-family: inherit;
 }
-.chip:hover { border-color: #d6cda4; color: #d6cda4; }
-.chip.active { background: #d6cda4; border-color: #d6cda4; color: #1a1a0e; font-weight: 700; }
+.chip:hover { border-color: #a8c47a; color: #a8c47a; }
+.chip--on { background: #a8c47a; border-color: #a8c47a; color: #1a1a0e; font-weight: 700; }
 
-.filter-row {
-  display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  align-items: flex-start;
-}
-
-.filter-block { display: flex; flex-direction: column; gap: 0.4rem; }
-
+.filter-row { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; }
+.filter-block { display: flex; flex-direction: column; gap: 0.45rem; }
 .filter-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.6);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.55);
+  letter-spacing: 0.07em; text-transform: uppercase;
 }
-.filter-label strong { color: #d6cda4; font-weight: 700; }
+.filter-label strong { color: #a8c47a; font-weight: 700; }
 
-.rating-group { display: flex; gap: 0.35rem; }
-
-.rating-btn {
-  padding: 0.28rem 0.7rem;
-  border: 1.5px solid rgba(255,255,255,0.2);
-  border-radius: 8px;
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.8);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
+.btn-group { display: flex; gap: 0.3rem; }
+.fbtn {
+  padding: 0.3rem 0.75rem;
+  border: 1.5px solid rgba(255,255,255,0.18); border-radius: 8px;
+  background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.75);
+  font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: inherit;
 }
-.rating-btn:hover { border-color: #d6cda4; color: #d6cda4; }
-.rating-btn.active { background: #d6cda4; border-color: #d6cda4; color: #1a1a0e; }
+.fbtn:hover { border-color: #a8c47a; color: #a8c47a; }
+.fbtn--on { background: #a8c47a; border-color: #a8c47a; color: #1a1a0e; }
 
-.range-input {
-  width: 160px;
-  accent-color: #d6cda4;
-  cursor: pointer;
-}
+.range-input { width: 160px; accent-color: #a8c47a; cursor: pointer; }
 
-/* ── MAIN ── */
-.main-content { padding-top: 1.75rem; padding-bottom: 4rem; }
+/* ══ MAIN ════════════════════════════════════════════════════════ */
+.main-content { padding-top: 1.75rem; padding-bottom: 5rem; }
 
 .results-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-  min-height: 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.75rem; min-height: 28px;
 }
-
 .meta-count { font-size: 0.875rem; color: #515F37; }
 .meta-count strong { font-weight: 700; }
-
 .meta-loading { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #6b7280; }
-
 .spinner {
-  width: 14px; height: 14px;
-  border: 2px solid #e5e7eb;
-  border-top-color: #515F37;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  display: inline-block;
+  width: 14px; height: 14px; border: 2px solid #e5e7eb; border-top-color: #515F37;
+  border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
 .reset-btn {
-  font-size: 0.78rem; color: #515F37;
-  background: none; border: 1.5px solid #d6cda4;
-  border-radius: 999px; padding: 0.3rem 0.9rem;
-  cursor: pointer; transition: all 0.15s;
+  font-size: 0.78rem; color: #515F37; background: none;
+  border: 1.5px solid #d6cda4; border-radius: 999px; padding: 0.3rem 0.9rem;
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
 }
 .reset-btn:hover { background: #d6cda4; }
 
-/* ── SECTION TITLE ── */
+/* Section title */
 .section-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #515F37;
-  margin: 0 0 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: #515F37; margin: 0 0 1.25rem;
+  display: flex; align-items: center; gap: 0.6rem;
 }
-.section-title::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: #e5e2d3;
-}
+.section-title::after { content: ''; flex: 1; height: 1px; background: #e5e2d3; }
 
-/* ── EMPTY ── */
+/* Empty */
 .empty { text-align: center; padding: 5rem 2rem; }
-.empty h3 { font-size: 1.25rem; font-weight: 700; color: #1a1a0e; margin-bottom: 0.5rem; }
+.empty-icon {
+  width: 80px; height: 80px; background: rgba(81,95,55,0.08); border-radius: 24px;
+  display: flex; align-items: center; justify-content: center; color: #515F37;
+  margin: 0 auto 1.5rem;
+}
+.empty h3 { font-size: 1.2rem; font-weight: 800; color: #1a1a0e; margin-bottom: 0.5rem; }
 .empty p { color: #6b7280; margin-bottom: 1.5rem; }
 .btn-primary {
-  padding: 0.7rem 1.75rem; background: #515F37; color: #fff;
-  border: none; border-radius: 10px; font-weight: 700; cursor: pointer;
-  transition: background 0.15s;
+  padding: 0.7rem 1.75rem; background: #3a5020; color: #fff;
+  border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
+  transition: background 0.15s; font-family: inherit;
 }
-.btn-primary:hover { background: #3d4a28; }
+.btn-primary:hover { background: #2a3c16; }
 
-/* ── PODIUM ── */
-.podium-section { margin-bottom: 2rem; }
+/* ══ PODIUM ══════════════════════════════════════════════════════ */
+.podium-section { margin-bottom: 0; }
 
 .podium-grid {
   display: grid;
-  grid-template-columns: 1fr 1.12fr 1fr;
+  grid-template-columns: 1fr 1.1fr 1fr;
   gap: 1rem;
   align-items: end;
 }
 
 .podium-card {
-  display: flex;
-  flex-direction: column;
-  border-radius: 18px;
-  overflow: hidden;
-  text-decoration: none;
-  color: inherit;
-  border: 2px solid #e5e2d3;
-  background: #fff;
-  transition: transform 0.2s, box-shadow 0.2s;
-  position: relative;
+  display: flex; flex-direction: column;
+  border-radius: 20px; overflow: hidden;
+  text-decoration: none; color: inherit;
+  border: 2px solid #e5e2d3; background: #FCFAF5;
+  transition: transform 0.22s, box-shadow 0.22s, border-color 0.18s;
 }
-
 .podium-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 48px rgba(81,95,55,0.15);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 48px rgba(81,95,55,0.16);
 }
-
-.podium-card.medal-gold  { border-color: #e6c553; box-shadow: 0 4px 20px rgba(230,197,83,0.2); }
-.podium-card.medal-silver { border-color: #b0b8c1; }
-.podium-card.medal-bronze { border-color: #c98a3e; }
-
+.podium-card.medal-gold   { border-color: #d4a833; box-shadow: 0 4px 20px rgba(212,168,51,0.2); }
+.podium-card.medal-silver { border-color: #9fb0be; }
+.podium-card.medal-bronze { border-color: #b8743a; }
 .podium-card.podium-first {
-  border-color: #e6c553;
-  box-shadow: 0 6px 32px rgba(230,197,83,0.3);
+  border-color: #d4a833;
+  box-shadow: 0 6px 30px rgba(212,168,51,0.28);
 }
 
-.podium-rank-label {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  z-index: 2;
-}
-
-.podium-medal { font-size: 1.6rem; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25)); }
-
-.podium-position {
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: rgba(0,0,0,0.5);
-  background: rgba(255,255,255,0.9);
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
-}
-
+/* Photo */
 .podium-photo {
-  position: relative;
-  height: 180px;
-  background: linear-gradient(135deg, #eae8de 0%, #d6cda4 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  overflow: hidden;
+  position: relative; height: 190px;
+  background: linear-gradient(135deg, #dde6c8, #c8d9a6);
+  overflow: hidden; flex-shrink: 0;
 }
-.podium-first .podium-photo { height: 210px; }
-
+.podium-first .podium-photo { height: 220px; }
 .podium-photo img {
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: center top;
-  border: 4px solid rgba(255,255,255,0.9);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
-  transition: transform 0.3s;
-  flex-shrink: 0;
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.38s;
 }
-.podium-first .podium-photo img {
-  width: 130px;
-  height: 130px;
-}
-.podium-card:hover .podium-photo img { transform: scale(1.06); }
+.podium-card:hover .podium-photo img { transform: scale(1.07); }
 
-.podium-initials {
-  width: 110px; height: 110px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.5rem;
-  font-weight: 900;
-  color: #515F37;
-  background: rgba(255,255,255,0.6);
+.podium-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, transparent 35%, rgba(0,0,0,0.75) 100%);
+  pointer-events: none;
+}
+
+.podium-badge {
+  position: absolute; top: 10px; left: 10px; z-index: 2;
+  display: flex; align-items: center; gap: 0.3rem;
+}
+.podium-medal { font-size: 1.5rem; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+.podium-rank {
+  font-size: 0.72rem; font-weight: 800; color: rgba(0,0,0,0.55);
+  background: rgba(255,255,255,0.9); padding: 0.15rem 0.45rem; border-radius: 999px;
 }
 
 .price-badge {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  background: rgba(26,26,14,0.85);
-  color: #d6cda4;
-  padding: 0.25rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  backdrop-filter: blur(4px);
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  background: rgba(20,35,26,0.88); color: #d6cda4;
+  padding: 0.25rem 0.68rem; border-radius: 999px;
+  font-size: 0.75rem; font-weight: 700; backdrop-filter: blur(4px);
 }
 
-.podium-body { padding: 1.125rem; flex: 1; }
-.podium-body h3 { font-size: 1.05rem; font-weight: 800; margin: 0 0 0.25rem; color: #1a1a0e; }
-
+.podium-identity {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 0.875rem 1rem 0.8rem; z-index: 1;
+}
+.podium-identity h3 {
+  font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0 0 0.2rem;
+  letter-spacing: -0.01em; text-shadow: 0 1px 5px rgba(0,0,0,0.25);
+}
 .podium-ville {
-  display: flex; align-items: center; gap: 0.3rem;
-  font-size: 0.8rem; color: #9ca3af; margin: 0 0 0.5rem;
+  display: flex; align-items: center; gap: 0.28rem;
+  color: rgba(255,255,255,0.8); font-size: 0.75rem; margin: 0;
 }
 
-.podium-rating {
-  display: flex; align-items: center; gap: 0.2rem;
-  font-size: 0.875rem; margin-bottom: 0.6rem;
+/* Body */
+.podium-body { padding: 0.875rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.55rem; }
+
+.podium-rating { display: flex; align-items: center; gap: 0.25rem; }
+.sf { color: #e6c553; font-size: 0.82rem; letter-spacing: -1px; }
+.se { color: #e0dbd0; font-size: 0.82rem; letter-spacing: -1px; }
+.rv { font-size: 0.82rem; font-weight: 800; color: #1a1a0e; margin-left: 0.1rem; }
+.rc { font-size: 0.72rem; color: #9ca3af; }
+.new-badge {
+  font-size: 0.7rem; font-weight: 700; color: #515F37;
+  background: rgba(81,95,55,0.08); border: 1px solid rgba(81,95,55,0.18);
+  border-radius: 999px; padding: 0.15rem 0.6rem;
 }
 
-.stars-full { color: #e6c553; }
-.stars-empty { color: #e5e2d3; }
-.rating-val { font-weight: 700; font-size: 0.875rem; color: #1a1a0e; margin-left: 0.2rem; }
-.rating-count { font-size: 0.78rem; color: #9ca3af; }
-.no-rating { font-size: 0.75rem; color: #9ca3af; font-style: italic; }
-
-.podium-tags { display: flex; gap: 0.35rem; align-items: center; }
+.podium-tags { display: flex; gap: 0.3rem; }
 .tag {
-  background: #f0ede3;
-  color: #515F37;
-  border: 1px solid #d6cda4;
-  padding: 0.18rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  background: #f0ede3; color: #515F37; border: 1px solid #d6cda4;
+  padding: 0.18rem 0.6rem; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 600;
+  max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.tag--more {
-  background: #e5e2d3;
-  color: #9ca3af;
-  border-color: #d6cda4;
-  flex-shrink: 0;
-}
+.tag--more { background: #e5e2d3; color: #9ca3af; flex-shrink: 0; max-width: none; }
 
-/* ── RANK GRID ── */
-.grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
+/* ══ RANK LIST ═══════════════════════════════════════════════════ */
+.rank-list { display: flex; flex-direction: column; gap: 0.6rem; }
 
 .rank-card {
-  display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.875rem 1.125rem;
-  background: #fff;
-  border: 1.5px solid #e5e2d3;
-  border-radius: 14px;
-  text-decoration: none;
-  color: inherit;
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0.9rem 1.125rem;
+  background: #FCFAF5; border: 1.5px solid #e5e2d3; border-radius: 14px;
+  text-decoration: none; color: inherit;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  position: relative;
 }
-
+.rank-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 0;
+  background: #3a5020; border-radius: 14px 0 0 14px;
+  transition: width 0.18s; pointer-events: none;
+}
 .rank-card:hover {
-  border-color: #d6cda4;
-  box-shadow: 0 4px 16px rgba(81,95,55,0.08);
-  transform: translateX(3px);
+  border-color: #b8c89a;
+  box-shadow: 0 4px 18px rgba(81,95,55,0.1);
+  transform: translateX(4px);
 }
+.rank-card:hover::before { width: 3px; }
 
 .rank-num {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #c8c4b4;
-  width: 28px;
-  text-align: center;
-  flex-shrink: 0;
+  font-size: 0.8rem; font-weight: 800; color: #ccc8b8;
+  width: 26px; text-align: center; flex-shrink: 0;
 }
 
 .rank-photo {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
+  width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
   background: linear-gradient(135deg, #eae8de, #d6cda4);
 }
 .rank-photo img { width: 100%; height: 100%; object-fit: cover; }
 
-.rank-initials {
-  width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1rem; font-weight: 800; color: #515F37;
-}
-
 .rank-body { flex: 1; min-width: 0; }
 .rank-name { font-size: 0.9rem; font-weight: 700; color: #1a1a0e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
 .rank-ville {
   display: flex; align-items: center; gap: 0.25rem;
   font-size: 0.75rem; color: #9ca3af; margin-top: 0.1rem;
 }
-
 .rank-rating { display: flex; align-items: center; gap: 1px; margin-top: 0.3rem; }
-.rating-val-sm { font-size: 0.72rem; font-weight: 700; color: #515F37; margin-left: 0.2rem; }
-.rating-count-sm { font-size: 0.68rem; color: #9ca3af; }
-
-.rank-tags { display: flex; gap: 0.25rem; margin-top: 0.35rem; align-items: center; }
+.rv-sm { font-size: 0.72rem; font-weight: 700; color: #515F37; margin-left: 0.2rem; }
+.rc-sm { font-size: 0.68rem; color: #9ca3af; }
+.rank-tags { display: flex; gap: 0.25rem; margin-top: 0.35rem; }
 .tag-sm {
-  background: #f0ede3;
-  color: #515F37;
-  padding: 0.1rem 0.45rem;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 600;
-  border: 1px solid #d6cda4;
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  background: #f0ede3; color: #515F37; border: 1px solid #d6cda4;
+  padding: 0.1rem 0.45rem; border-radius: 999px;
+  font-size: 0.68rem; font-weight: 600;
+  max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.tag-sm--more {
-  background: #e5e2d3;
-  color: #9ca3af;
-  border-color: #d6cda4;
-  flex-shrink: 0;
-  max-width: none;
-}
+.tag-sm--more { background: #e5e2d3; color: #9ca3af; max-width: none; }
 
-.rank-right {
-  display: flex; flex-direction: column;
-  align-items: flex-end; gap: 0.4rem;
-  flex-shrink: 0;
-}
-
-.rank-price {
-  font-size: 0.85rem; font-weight: 800;
-  color: #515F37;
-}
-
+.rank-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; flex-shrink: 0; }
+.rank-price { font-size: 0.875rem; font-weight: 800; color: #3a5020; }
 .rank-cta {
-  font-size: 0.75rem; font-weight: 600;
-  color: #9ca3af;
+  display: flex; align-items: center; gap: 0.2rem;
+  font-size: 0.75rem; font-weight: 600; color: #9ca3af;
   transition: color 0.15s;
 }
-.rank-card:hover .rank-cta { color: #515F37; }
+.rank-cta svg { transition: transform 0.15s; }
+.rank-card:hover .rank-cta { color: #3a5020; }
+.rank-card:hover .rank-cta svg { transform: translateX(3px); }
 
-/* ── PAGINATION ── */
+/* ══ PAGINATION ══════════════════════════════════════════════════ */
 .pagination {
   display: flex; align-items: center; justify-content: center;
-  gap: 1rem; margin-top: 3rem; flex-wrap: wrap;
+  gap: 0.75rem; margin-top: 3rem; flex-wrap: wrap;
 }
-.page-indicator {
-  display: none;
-  font-size: 0.9rem; font-weight: 600; color: #515F37;
+.pag-btn {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.6rem 1.35rem; border: 1.5px solid #d6cda4; border-radius: 12px;
+  background: #FCFAF5; color: #515F37; font-weight: 600; font-size: 0.875rem;
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
 }
+.pag-btn:hover:not(:disabled) { background: #d6cda4; }
+.pag-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.pag-nums { display: flex; gap: 0.35rem; }
+.pag-num {
+  width: 40px; height: 40px; border: 1.5px solid #e5e2d3; border-radius: 10px;
+  background: #FCFAF5; color: #374151; font-weight: 500; font-size: 0.875rem;
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.pag-num:hover { border-color: #515F37; color: #515F37; }
+.pag-num--on { background: #3a5020; border-color: #3a5020; color: #fff; font-weight: 700; }
+.pag-indicator { display: none; font-size: 0.875rem; font-weight: 600; color: #515F37; }
 
-.page-btn {
-  padding: 0.5rem 1.25rem;
-  border: 1.5px solid #d6cda4; border-radius: 10px;
-  background: #fff; color: #515F37;
-  font-weight: 600; font-size: 0.875rem;
-  cursor: pointer; transition: all 0.15s;
+/* Skeleton */
+.skel-card { background: #FCFAF5; border: 1.5px solid #e9e5d6; border-radius: 20px; overflow: hidden; }
+.skel {
+  background: linear-gradient(90deg, #f3f0e8 25%, #ebe7dc 50%, #f3f0e8 75%);
+  background-size: 200% 100%; animation: shimmer 1.5s infinite;
 }
-.page-btn:hover:not(:disabled) { background: #d6cda4; }
-.page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-.page-nums { display: flex; gap: 0.35rem; }
-.page-num {
-  width: 36px; height: 36px;
-  border: 1.5px solid #e5e2d3; border-radius: 8px;
-  background: #fff; color: #374151;
-  font-weight: 500; font-size: 0.875rem;
-  cursor: pointer; transition: all 0.15s;
-}
-.page-num:hover { border-color: #515F37; color: #515F37; }
-.page-num.active { background: #515F37; border-color: #515F37; color: #fff; }
-
-/* ── SKELETON ── */
-.skeleton-card {
-  background: #fff;
-  border: 1px solid #e5e2d3;
-  border-radius: 16px;
-  overflow: hidden;
-}
-.skeleton {
-  background: linear-gradient(90deg, #f3f0e8 25%, #ebe8de 50%, #f3f0e8 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s infinite;
-}
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* ── RESPONSIVE ── */
+/* ══ RESPONSIVE ══════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .container { padding: 0 1rem; }
   .filter-row { flex-direction: column; gap: 1rem; }
   .search-row { flex-direction: column; }
   .input-wrap { max-width: 100%; }
   .map-btn { display: none; }
-  .page-nums { display: none; }
-  .page-indicator { display: block; }
-  .pagination { flex-wrap: nowrap; }
+  .pag-nums { display: none; }
+  .pag-indicator { display: block; }
 }
-
 @media (max-width: 600px) {
   .podium-grid { grid-template-columns: 1fr; align-items: unset; }
   .podium-card.podium-first { order: -1; }

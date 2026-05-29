@@ -8,10 +8,10 @@ const sent = ref(false);
 const error = ref('');
 
 const SUBJECTS = [
-  { id: 'question',    label: 'Question générale',     icon: '💬' },
-  { id: 'probleme',    label: 'Problème technique',    icon: '🔧' },
-  { id: 'prestataire', label: 'Devenir prestataire',   icon: '🌿' },
-  { id: 'partenariat', label: 'Partenariat',           icon: '🤝' },
+  { id: 'question',    label: 'Question générale',  svg: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>` },
+  { id: 'probleme',    label: 'Problème technique', svg: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>` },
+  { id: 'prestataire', label: 'Devenir prestataire', svg: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12M12 12C12 12 7 9 7 5a5 5 0 0110 0c0 4-5 7-5 7z"/></svg>` },
+  { id: 'partenariat', label: 'Partenariat',         svg: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>` },
 ];
 
 async function submit() {
@@ -36,9 +36,19 @@ async function submit() {
 
     <!-- ── HERO ── -->
     <div class="hero">
+      <div class="hero-deco" aria-hidden="true">
+        <svg class="leaf leaf-a" viewBox="0 0 220 300" xmlns="http://www.w3.org/2000/svg">
+          <path d="M110,8 C175,8 212,65 212,150 C212,235 175,292 110,292 C45,292 8,235 8,150 C8,65 45,8 110,8Z" fill="rgba(168,196,122,0.07)"/>
+        </svg>
+        <svg class="leaf leaf-b" viewBox="0 0 180 260" xmlns="http://www.w3.org/2000/svg">
+          <path d="M90,6 C148,6 174,58 174,130 C174,202 148,254 90,254 C32,254 6,202 6,130 C6,58 32,6 90,6Z" fill="rgba(255,255,255,0.035)"/>
+        </svg>
+        <div class="deco-ring deco-ring-a"></div>
+        <div class="deco-ring deco-ring-b"></div>
+      </div>
       <div class="hero-inner">
         <span class="eyebrow">Support & questions</span>
-        <h1>Nous contacter</h1>
+        <h1>Nous <em class="hero-accent">contacter</em></h1>
         <p>Une question, une suggestion ou besoin d'aide ?<br />Notre équipe vous répond sous 24h.</p>
       </div>
     </div>
@@ -94,9 +104,6 @@ async function submit() {
           </a>
         </div>
 
-        <div class="aside-tree">
-          <img src="/arbreContacter.svg" alt="" aria-hidden="true" />
-        </div>
       </aside>
 
       <!-- Right: form -->
@@ -127,7 +134,7 @@ async function submit() {
                 :class="['subject-chip', { active: form.subject === s.id }]"
                 @click="form.subject = form.subject === s.id ? '' : s.id"
               >
-                <span>{{ s.icon }}</span>
+                <span class="chip-icon" v-html="s.svg"></span>
                 {{ s.label }}
               </button>
             </div>
@@ -179,12 +186,25 @@ async function submit() {
 
 /* ── HERO ── */
 .hero {
-  background: linear-gradient(150deg, #faf8f2 0%, #f2ede0 100%);
-  border-bottom: 1px solid #e8e0cc;
+  position: relative;
+  background: linear-gradient(155deg, #141f0b 0%, #253515 55%, #3a5020 100%);
   padding: 3.5rem 0 3rem;
+  overflow: hidden;
 }
 
+.hero-deco { position: absolute; inset: 0; pointer-events: none; }
+.leaf { position: absolute; }
+.leaf-a { width: 260px; height: 360px; right: -60px; top: -80px; }
+.leaf-b { width: 200px; height: 290px; left: -80px; bottom: -80px; }
+.deco-ring {
+  position: absolute; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.deco-ring-a { width: 480px; height: 480px; top: -200px; right: -80px; }
+.deco-ring-b { width: 280px; height: 280px; bottom: -140px; left: -60px; }
+
 .hero-inner {
+  position: relative; z-index: 1;
   max-width: 1000px;
   margin: 0 auto;
   padding: 0 3rem;
@@ -193,28 +213,32 @@ async function submit() {
 .eyebrow {
   display: inline-block;
   font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #515F37;
+  color: rgba(214,205,164,0.72);
   margin-bottom: 0.75rem;
 }
 
 h1 {
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(2rem, 4vw, 2.8rem);
   font-weight: 900;
-  color: #1a1a0e;
-  letter-spacing: -0.03em;
+  color: #fff;
+  letter-spacing: -0.035em;
   margin-bottom: 0.6rem;
+  line-height: 1.08;
 }
+.hero-accent { color: #a8c47a; font-style: italic; }
 
 .hero p {
   font-size: 0.95rem;
-  color: #6b6347;
+  color: rgba(255,255,255,0.55);
   line-height: 1.7;
 }
 
 /* ── BODY ── */
+.contact-page { background: #f2efe6; min-height: 100vh; }
+
 .body-layout {
   max-width: 1000px;
   margin: 0 auto;
@@ -239,7 +263,7 @@ h1 {
   align-items: center;
   gap: 0.875rem;
   padding: 0.875rem 1rem;
-  background: #fff;
+  background: #FCFAF5;
   border: 1.5px solid #e8e0cc;
   border-radius: 12px;
   transition: border-color 0.15s;
@@ -279,18 +303,18 @@ a.info-value:hover { color: #515F37; }
 
 /* FAQ shortcut */
 .faq-shortcut {
-  background: #d6cda4;
-  border-radius: 12px;
-  padding: 1rem;
+  background: #3a5020;
+  border-radius: 14px;
+  padding: 1.1rem 1rem;
   margin-top: 0.25rem;
 }
 
 .faq-title {
-  font-size: 0.72rem;
-  font-weight: 800;
+  font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #515F37;
+  letter-spacing: 0.12em;
+  color: rgba(168,196,122,0.85);
   margin-bottom: 0.75rem;
 }
 
@@ -300,33 +324,21 @@ a.info-value:hover { color: #515F37; }
   gap: 0.4rem;
   font-size: 0.8rem;
   font-weight: 500;
-  color: #3d3820;
+  color: rgba(255,255,255,0.75);
   text-decoration: none;
-  padding: 0.35rem 0;
-  border-bottom: 1px solid rgba(81,95,55,0.1);
+  padding: 0.38rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   transition: color 0.15s;
 }
 
 .faq-link:last-child { border-bottom: none; }
-.faq-link:hover { color: #515F37; }
-.faq-link svg { color: #515F37; flex-shrink: 0; }
+.faq-link:hover { color: #a8c47a; }
+.faq-link svg { color: #a8c47a; flex-shrink: 0; }
 
-/* Tree decoration */
-.aside-tree {
-  text-align: center;
-  margin-top: 0.5rem;
-  opacity: 0.85;
-}
-
-.aside-tree img {
-  width: 140px;
-  height: auto;
-  filter: drop-shadow(0 4px 12px rgba(81,95,55,0.15));
-}
 
 /* ── FORM PANEL ── */
 .form-panel {
-  background: #fff;
+  background: #FCFAF5;
   border: 1.5px solid #e8e0cc;
   border-radius: 20px;
   padding: 2.25rem;
@@ -370,7 +382,7 @@ input, textarea {
   border-radius: 10px;
   font-size: 0.9rem;
   color: #1a1a0e;
-  background: #faf8f2;
+  background: #f5f2eb;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
   font-family: inherit;
@@ -378,7 +390,7 @@ input, textarea {
 
 input:focus, textarea:focus {
   border-color: #515F37;
-  background: #fff;
+  background: #FCFAF5;
   box-shadow: 0 0 0 3px rgba(81,95,55,0.08);
 }
 
@@ -398,7 +410,7 @@ textarea { resize: vertical; }
   padding: 0.45rem 0.9rem;
   border: 1.5px solid #e0d8c2;
   border-radius: 999px;
-  background: #faf8f2;
+  background: #f5f2eb;
   color: #5a5234;
   font-size: 0.82rem;
   font-weight: 600;
@@ -406,8 +418,9 @@ textarea { resize: vertical; }
   transition: all 0.15s;
 }
 
-.subject-chip:hover { border-color: #515F37; color: #515F37; background: #fff; }
+.subject-chip:hover { border-color: #515F37; color: #515F37; background: #FCFAF5; }
 .subject-chip.active { background: #515F37; border-color: #515F37; color: #d6cda4; }
+.chip-icon { display: flex; align-items: center; flex-shrink: 0; }
 
 /* Error */
 .form-error {
@@ -508,7 +521,7 @@ textarea { resize: vertical; }
   padding: 0.6rem 1.5rem;
   border: 1.5px solid #e0d8c2;
   border-radius: 10px;
-  background: #fff;
+  background: #FCFAF5;
   color: #5a5234;
   font-size: 0.875rem;
   font-weight: 600;
@@ -525,7 +538,6 @@ textarea { resize: vertical; }
     gap: 2rem;
   }
   .contact-aside { position: static; }
-  .aside-tree { display: none; }
   .field-row { grid-template-columns: 1fr; }
   .form-footer { flex-direction: column; align-items: stretch; }
   .btn-submit { justify-content: center; }

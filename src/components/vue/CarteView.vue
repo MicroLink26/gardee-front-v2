@@ -29,6 +29,15 @@ let youMarker: any = null;
 const locating = ref(false);
 
 const categoriesStore = useCategoriesStore();
+const sortBy = ref<'note' | 'prix' | 'distance'>('note');
+const userPosition = ref<{ lat: number; lng: number } | null>(null);
+
+const SORTS = [
+  { val: 'note' as const, label: 'Note ↓' },
+  { val: 'prix' as const, label: 'Prix ↑' },
+  { val: 'distance' as const, label: 'Distance' },
+];
+
 const RATINGS = [
   { label: 'Toutes', val: 0 },
   { label: '3+', val: 3 },
@@ -38,7 +47,7 @@ const RATINGS = [
 
 const filtered = computed(() =>
   users.value.filter(u => {
-    if (minRating.value > 0 && u.averageRating < minRating.value) return false;
+    if (minRating.value > 0 && (u.averageRating ?? 0) < minRating.value) return false;
     if (maxTarif.value < 150 && u.tarifHoraire && u.tarifHoraire > maxTarif.value) return false;
     return true;
   })
@@ -47,6 +56,37 @@ const filtered = computed(() =>
 const hasActiveFilters = computed(() =>
   !!(service.value || ville.value || minRating.value > 0 || maxTarif.value < 150)
 );
+
+function geoDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+const sortedAndFiltered = computed(() => {
+  const arr = [...filtered.value];
+  if (sortBy.value === 'note') {
+    return arr.sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0));
+  }
+  if (sortBy.value === 'prix') {
+    return arr.sort((a, b) => {
+      if (!a.tarifHoraire) return 1;
+      if (!b.tarifHoraire) return -1;
+      return a.tarifHoraire - b.tarifHoraire;
+    });
+  }
+  if (sortBy.value === 'distance' && userPosition.value) {
+    const { lat, lng } = userPosition.value;
+    return arr.sort((a, b) => {
+      const dA = a.location ? geoDistance(lat, lng, a.location.coordinates[1], a.location.coordinates[0]) : Infinity;
+      const dB = b.location ? geoDistance(lat, lng, b.location.coordinates[1], b.location.coordinates[0]) : Infinity;
+      return dA - dB;
+    });
+  }
+  return arr;
+});
 
 async function load() {
   loading.value = true;
@@ -148,6 +188,7 @@ function locateMe() {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       const { latitude, longitude } = pos.coords;
+      userPosition.value = { lat: latitude, lng: longitude };
       map.flyTo([latitude, longitude], 13, { duration: 1.0 });
       if (youMarker) map.removeLayer(youMarker);
       const youIcon = L.divIcon({
@@ -159,6 +200,7 @@ function locateMe() {
       youMarker = L.marker([latitude, longitude], { icon: youIcon })
         .addTo(map)
         .bindPopup('<div class="gd-popup"><strong>Votre position</strong></div>');
+      sortBy.value = 'distance';
       locating.value = false;
     },
     () => { locating.value = false; },
@@ -211,6 +253,16 @@ function resetFilters() {
   minRating.value = 0;
   maxTarif.value = 150;
   applyFilters();
+}
+
+function setMinRating(val: number) {
+  minRating.value = val;
+  updateMarkers();
+}
+
+function setMaxTarif(val: number) {
+  maxTarif.value = val;
+  updateMarkers();
 }
 
 function stars(n: number) {
@@ -295,7 +347,7 @@ function stars(n: number) {
         <div class="filter-group">
           <label class="filter-label">Note minimum</label>
           <div class="rating-group">
-            <button v-for="r in RATINGS" :key="r.val" :class="['rating-btn', { active: minRating === r.val }]" @click="minRating = r.val; updateMarkers()">{{ r.label }}</button>
+            <button v-for="r in RATINGS" :key="r.val" :class="['rating-btn', { active: minRating === r.val }]" @click="setMinRating(r.val)">{{ r.label }}</button>
           </div>
         </div>
 
@@ -304,7 +356,7 @@ function stars(n: number) {
             Tarif max
             <span class="filter-value">{{ maxTarif < 150 ? maxTarif + ' €/h' : 'Illimité' }}</span>
           </label>
-          <input type="range" v-model.number="maxTarif" min="20" max="150" step="5" class="range-slider" @input="updateMarkers" />
+          <input type="range" :value="maxTarif" min="20" max="150" step="5" class="range-slider" @input="setMaxTarif(+($event.target as HTMLInputElement).value)" />
           <div class="range-labels"><span>20 €</span><span>150 €+</span></div>
         </div>
       </div>
@@ -313,6 +365,17 @@ function stars(n: number) {
         <span v-if="loading" class="loading-text"><span class="spinner"></span> Chargement...</span>
         <span v-else><strong>{{ filtered.length }}</strong> jardinier{{ filtered.length > 1 ? 's' : '' }}</span>
         <button v-if="hasActiveFilters" class="reset-btn" @click="resetFilters">Réinitialiser</button>
+      </div>
+
+      <div class="sort-bar">
+        <button
+          v-for="s in SORTS"
+          :key="s.val"
+          :class="['sort-btn', { active: sortBy === s.val, disabled: s.val === 'distance' && !userPosition }]"
+          :title="s.val === 'distance' && !userPosition ? 'Activez la géolocalisation pour trier par distance' : ''"
+          @click="s.val !== 'distance' || userPosition ? sortBy = s.val : locateMe()"
+          type="button"
+        >{{ s.label }}</button>
       </div>
 
       <div class="cards-list">
@@ -325,8 +388,8 @@ function stars(n: number) {
             </div>
           </div>
         </template>
-        <div v-else-if="!filtered.length" class="empty"><span>🌿</span><p>Aucun jardinier pour ces filtres</p></div>
-        <button v-else v-for="user in filtered" :key="user._id" :id="`card-${user._id}`" :class="['scard', { selected: selectedId === user._id }]" @click="selectCard(user)" type="button">
+        <div v-else-if="!sortedAndFiltered.length" class="empty"><span>🌿</span><p>Aucun jardinier pour ces filtres</p></div>
+        <button v-else v-for="user in sortedAndFiltered" :key="user._id" :id="`card-${user._id}`" :class="['scard', { selected: selectedId === user._id }]" @click="selectCard(user)" type="button">
           <div class="scard-photo"><img :src="getAvatar(user._id, user.profil_image?.secure_url)" :alt="`${user.prenom} ${user.nom}`" /></div>
           <div class="scard-body">
             <div class="scard-name">{{ user.prenom }} {{ user.nom }}</div>
@@ -356,10 +419,10 @@ function stars(n: number) {
           </div>
         </div>
       </template>
-      <div v-else-if="!filtered.length" class="empty"><span>🌿</span><p>Aucun jardinier pour ces filtres</p></div>
+      <div v-else-if="!sortedAndFiltered.length" class="empty"><span>🌿</span><p>Aucun jardinier pour ces filtres</p></div>
       <a
         v-else
-        v-for="user in filtered"
+        v-for="user in sortedAndFiltered"
         :key="user._id"
         :href="`/prestataires/?id=${user._id}`"
         class="mobile-card"
@@ -418,7 +481,7 @@ function stars(n: number) {
             <div class="drawer-section">
               <label class="drawer-label">Note minimum</label>
               <div class="rating-group">
-                <button v-for="r in RATINGS" :key="r.val" :class="['rating-btn', { active: minRating === r.val }]" @click="minRating = r.val">{{ r.label }}</button>
+                <button v-for="r in RATINGS" :key="r.val" :class="['rating-btn', { active: minRating === r.val }]" @click="setMinRating(r.val)">{{ r.label }}</button>
               </div>
             </div>
             <div class="drawer-section">
@@ -426,7 +489,7 @@ function stars(n: number) {
                 Tarif maximum
                 <strong>{{ maxTarif < 150 ? maxTarif + ' €/h' : 'Illimité' }}</strong>
               </label>
-              <input type="range" v-model.number="maxTarif" min="20" max="150" step="5" class="range-slider" />
+              <input type="range" :value="maxTarif" min="20" max="150" step="5" class="range-slider" @input="setMaxTarif(+($event.target as HTMLInputElement).value)" />
               <div class="range-labels"><span>20 €</span><span>150 €+</span></div>
             </div>
           </div>
@@ -463,17 +526,27 @@ function stars(n: number) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-right: 1px solid #e5e7eb;
-  background: #fff;
+  border-right: 1px solid #e9e5d6;
+  background: #faf8f2;
 }
 
 .filters {
   padding: 1.25rem 1.25rem 0.75rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid #e9e5d6;
   flex-shrink: 0;
+  background: #faf8f2;
 }
 
-.filters h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; color: #111827; }
+.filters h2 {
+  font-size: 0.95rem; font-weight: 800; margin-bottom: 1rem; color: #3a5020;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.filters h2::before {
+  content: '';
+  display: inline-block; width: 3px; height: 1em;
+  background: #a8c47a; border-radius: 2px;
+}
 
 .filter-group { margin-bottom: 0.875rem; }
 
@@ -489,8 +562,9 @@ function stars(n: number) {
 
 .text-input {
   flex: 1; padding: 0.5rem 0.75rem;
-  border: 1.5px solid #e5e7eb; border-radius: 8px;
+  border: 1.5px solid #e9e5d6; border-radius: 8px;
   font-size: 0.875rem; outline: none; transition: border-color 0.15s;
+  background: #f5f2eb;
 }
 .text-input:focus { border-color: #515F37; }
 
@@ -505,21 +579,21 @@ function stars(n: number) {
 .chip-group { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 
 .chip {
-  padding: 0.3rem 0.7rem; border: 1.5px solid #e5e7eb; border-radius: 999px;
-  background: #fff; color: #374151; font-size: 0.78rem; font-weight: 500;
+  padding: 0.3rem 0.7rem; border: 1.5px solid #e9e5d6; border-radius: 999px;
+  background: #f5f2eb; color: #515F37; font-size: 0.78rem; font-weight: 500;
   cursor: pointer; transition: all 0.15s;
 }
-.chip:hover { border-color: #515F37; color: #515F37; }
+.chip:hover { border-color: #a8c47a; background: #eef2e8; }
 .chip.active { background: #515F37; border-color: #515F37; color: #fff; }
 
 .rating-group { display: flex; gap: 0.35rem; }
 
 .rating-btn {
-  flex: 1; padding: 0.35rem 0; border: 1.5px solid #e5e7eb; border-radius: 8px;
-  background: #fff; color: #374151; font-size: 0.8rem; font-weight: 600;
+  flex: 1; padding: 0.35rem 0; border: 1.5px solid #e9e5d6; border-radius: 8px;
+  background: #f5f2eb; color: #515F37; font-size: 0.8rem; font-weight: 600;
   cursor: pointer; transition: all 0.15s;
 }
-.rating-btn:hover { border-color: #515F37; color: #515F37; }
+.rating-btn:hover { border-color: #a8c47a; background: #eef2e8; }
 .rating-btn.active { background: #515F37; border-color: #515F37; color: #fff; }
 
 .range-slider { width: 100%; accent-color: #515F37; cursor: pointer; }
@@ -528,15 +602,16 @@ function stars(n: number) {
 
 .results-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0.75rem 1.25rem; border-bottom: 1px solid #f3f4f6;
-  font-size: 0.875rem; color: #374151; flex-shrink: 0;
+  padding: 0.75rem 1.25rem; border-bottom: 1px solid #e9e5d6;
+  font-size: 0.875rem; color: #515F37; flex-shrink: 0;
+  background: #faf8f2;
 }
-.results-header strong { font-weight: 700; color: #111827; }
+.results-header strong { font-weight: 700; color: #3a5020; }
 
 .loading-text { display: flex; align-items: center; gap: 0.5rem; color: #6b7280; }
 
 .spinner {
-  width: 14px; height: 14px; border: 2px solid #e5e7eb; border-top-color: #515F37;
+  width: 14px; height: 14px; border: 2px solid #e9e5d6; border-top-color: #515F37;
   border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -545,15 +620,35 @@ function stars(n: number) {
   font-size: 0.75rem; color: #6b7280; background: none; border: none;
   cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 6px; transition: background 0.15s, color 0.15s;
 }
-.reset-btn:hover { background: #f3f4f6; color: #374151; }
+.reset-btn:hover { background: #f0ede3; color: #3a5020; }
 
-.cards-list { overflow-y: auto; flex: 1; padding: 0.5rem; }
+.sort-bar {
+  display: flex; gap: 0.35rem; padding: 0.5rem 1.25rem 0;
+  flex-shrink: 0; background: #faf8f2;
+}
+.sort-btn {
+  padding: 0.3rem 0.8rem;
+  border: 1.5px solid #e9e5d6; border-radius: 999px;
+  background: #f5f2eb; color: #515F37;
+  font-size: 0.75rem; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.sort-btn:hover { border-color: #a8c47a; background: #eef2e8; }
+.sort-btn.active { background: #3a5020; border-color: #3a5020; color: #fff; }
+.sort-btn.disabled { opacity: 0.5; cursor: default; }
+.sort-btn.disabled:hover { border-color: #e9e5d6; background: #f5f2eb; }
+
+.cards-list { overflow-y: auto; flex: 1; padding: 0.5rem; background: #f2efe6; }
 
 .skel-card { display: flex; gap: 0.75rem; padding: 0.75rem; margin-bottom: 0.25rem; }
 .skel-photo { width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0; }
 .skel-body { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.25rem; }
-.skeleton { background: #f3f4f6; animation: pulse 1.4s ease-in-out infinite; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.skeleton {
+  background: linear-gradient(90deg, #e9e5d6 25%, #f0ede3 50%, #e9e5d6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 .empty { text-align: center; padding: 3rem 1rem; color: #9ca3af; }
 .empty span { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
@@ -561,25 +656,25 @@ function stars(n: number) {
 
 .scard {
   display: flex; align-items: center; gap: 0.75rem; width: 100%;
-  padding: 0.75rem; border: 1.5px solid transparent; border-radius: 12px;
-  background: #fff; cursor: pointer; text-align: left;
-  transition: border-color 0.15s, background 0.15s; margin-bottom: 0.25rem;
+  padding: 0.75rem; border: 1.5px solid #ede9dc; border-radius: 12px;
+  background: #FCFAF5; cursor: pointer; text-align: left;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s; margin-bottom: 0.25rem;
 }
-.scard:hover { background: #f9fafb; border-color: #e5e7eb; }
-.scard.selected { border-color: #515F37; background: #f0ede3; }
+.scard:hover { background: #faf8f2; border-color: #c8d9a6; box-shadow: 0 2px 8px rgba(58,80,32,0.08); }
+.scard.selected { border-color: #515F37; background: #f0ede3; box-shadow: 0 2px 10px rgba(58,80,32,0.12); }
 
 .scard-photo { width: 52px; height: 52px; border-radius: 10px; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg, #f0ede3, #d6cda4); }
 .scard-photo img { width: 100%; height: 100%; object-fit: cover; }
 .scard-body { flex: 1; min-width: 0; }
-.scard-name { font-size: 0.875rem; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scard-name { font-size: 0.875rem; font-weight: 700; color: #1a1a0e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .scard-ville { font-size: 0.75rem; color: #9ca3af; margin-top: 0.15rem; }
 .scard-rating { display: flex; align-items: center; gap: 1px; font-size: 0.72rem; }
-.s-full { color: #f59e0b; }
-.s-empty { color: #e5e7eb; }
-.scard-rating-val { margin-left: 0.25rem; color: #374151; font-weight: 600; font-size: 0.72rem; }
+.s-full { color: #e6c553; }
+.s-empty { color: #e0dbd0; }
+.scard-rating-val { margin-left: 0.25rem; color: #515F37; font-weight: 600; font-size: 0.72rem; }
 .scard-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; flex-shrink: 0; }
-.scard-price { font-size: 0.78rem; font-weight: 700; color: #111827; background: #f3f4f6; padding: 0.15rem 0.5rem; border-radius: 6px; }
-.scard.selected .scard-price { background: #f0ede3; color: #3d4a28; }
+.scard-price { font-size: 0.78rem; font-weight: 700; color: #3a5020; background: rgba(168,196,122,0.15); padding: 0.15rem 0.5rem; border-radius: 6px; border: 1px solid rgba(168,196,122,0.3); }
+.scard.selected .scard-price { background: rgba(168,196,122,0.25); border-color: #a8c47a; color: #3a5020; }
 .scard-link { font-size: 0.75rem; color: #515F37; font-weight: 600; text-decoration: none; white-space: nowrap; }
 .scard-link:hover { text-decoration: underline; }
 
@@ -598,17 +693,17 @@ function stars(n: number) {
   z-index: 1000;
   width: 44px;
   height: 44px;
-  background: #fff;
-  border: 2px solid #e5e7eb;
+  background: #FCFAF5;
+  border: 2px solid #e9e5d6;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   color: #515F37;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(58,80,32,0.18);
 }
-.locate-btn:hover { background: #f0ede3; border-color: #515F37; }
+.locate-btn:hover { background: #f0ede3; border-color: #a8c47a; }
 .locate-btn.locating { color: #9ca3af; cursor: default; }
 .spin-icon { animation: spin 0.9s linear infinite; }
 
@@ -624,7 +719,7 @@ function stars(n: number) {
   .mobile-sticky {
     display: flex;
     flex-direction: column;
-    background: #fff;
+    background: #FCFAF5;
     border-bottom: 1px solid #e5e2d3;
     flex-shrink: 0;
     z-index: 10;
@@ -667,7 +762,7 @@ function stars(n: number) {
     color: #1a1a0e;
     transition: border-color 0.15s;
   }
-  .mobile-text-input:focus { border-color: #515F37; background: #fff; }
+  .mobile-text-input:focus { border-color: #515F37; background: #FCFAF5; }
 
   .mobile-search-btn {
     width: 36px;
@@ -689,7 +784,7 @@ function stars(n: number) {
     gap: 0.3rem;
     padding: 0 0.75rem;
     height: 36px;
-    background: #fff;
+    background: #FCFAF5;
     border: 1.5px solid #e5e2d3;
     border-radius: 10px;
     color: #374151;
@@ -729,7 +824,7 @@ function stars(n: number) {
     padding: 0.3rem 0.75rem;
     border: 1.5px solid #e5e2d3;
     border-radius: 999px;
-    background: #fff;
+    background: #FCFAF5;
     color: #374151;
     font-size: 0.8rem;
     font-weight: 500;
@@ -794,7 +889,7 @@ function stars(n: number) {
     align-items: center;
     gap: 0.875rem;
     padding: 0.875rem;
-    background: #fff;
+    background: #FCFAF5;
     border: 1.5px solid #e5e2d3;
     border-radius: 14px;
     text-decoration: none;
@@ -850,7 +945,7 @@ function stars(n: number) {
 
 .filter-drawer {
   width: 100%;
-  background: #fff;
+  background: #FCFAF5;
   border-radius: 20px 20px 0 0;
   padding: 0.75rem 1.25rem 1.5rem;
   display: flex;
@@ -904,7 +999,7 @@ function stars(n: number) {
 
 .drawer-reset {
   flex: 1; padding: 0.75rem;
-  background: #fff; border: 1.5px solid #e5e2d3;
+  background: #FCFAF5; border: 1.5px solid #e5e2d3;
   border-radius: 12px; color: #6b7280;
   font-size: 0.875rem; font-weight: 600; font-family: inherit;
   cursor: pointer;
@@ -931,18 +1026,18 @@ function stars(n: number) {
   width: 42px; height: 42px;
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
-  background: #fff; border: 3px solid #515F37;
+  background: #FCFAF5; border: 3px solid #515F37;
   overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.25);
   transition: transform 0.2s, border-color 0.2s;
 }
 .gd-marker img, .gd-marker span { display: block; width: 100%; height: 100%; transform: rotate(45deg); }
 .gd-marker img { object-fit: cover; }
 .gd-marker span { display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 800; color: #515F37; background: linear-gradient(135deg, #f0ede3, #d6cda4); }
-.gd-marker--sel { border-color: #dc2626; transform: rotate(-45deg) scale(1.2); z-index: 1000; }
+.gd-marker--sel { border-color: #e6c553; transform: rotate(-45deg) scale(1.2); z-index: 1000; box-shadow: 0 4px 16px rgba(230,197,83,0.5); }
 
 .gd-popup { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; min-width: 140px; }
-.gd-popup strong { font-size: 0.9rem; color: #111827; }
-.gd-popup span { color: #6b7280; font-size: 0.8rem; }
+.gd-popup strong { font-size: 0.9rem; color: #1a1a0e; }
+.gd-popup span { color: #515F37; font-size: 0.8rem; }
 .gd-popup-tarif { font-weight: 700; color: #515F37 !important; }
 .gd-popup a { color: #515F37; font-weight: 600; font-size: 0.8rem; text-decoration: none; margin-top: 0.25rem; }
 .gd-popup a:hover { text-decoration: underline; }

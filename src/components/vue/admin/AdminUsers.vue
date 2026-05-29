@@ -54,6 +54,7 @@ function roleClass(role: string) {
   <div class="admin-users">
     <div class="page-header">
       <div>
+        <p class="header-eyebrow">Administration</p>
         <h1>Utilisateurs</h1>
         <p class="header-sub">{{ total }} compte{{ total > 1 ? 's' : '' }} inscrits</p>
       </div>
@@ -132,8 +133,10 @@ function roleClass(role: string) {
 
 .admin-users { display: flex; flex-direction: column; gap: 1.5rem; }
 
-.page-header h1 { font-size: 1.5rem; font-weight: 900; color: #1a1a0e; margin: 0 0 0.25rem; }
-.header-sub { font-size: 0.875rem; color: #9ca3af; margin: 0; }
+.page-header { padding-bottom: 1.5rem; border-bottom: 1px solid #e9e5d6; }
+.header-eyebrow { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #a8c47a; margin: 0 0 0.35rem; }
+.page-header h1 { font-size: 1.5rem; font-weight: 900; color: #1a1a0e; margin: 0 0 0.2rem; letter-spacing: -0.02em; }
+.header-sub { font-size: 0.85rem; color: #9ca3af; margin: 0; }
 
 .toolbar { display: flex; gap: 0.75rem; }
 
@@ -149,31 +152,33 @@ function roleClass(role: string) {
 .search-wrap input {
   width: 100%;
   padding: 0.6rem 0.875rem 0.6rem 2.4rem;
-  border: 1.5px solid #e5e2d3; border-radius: 10px;
-  font-size: 0.875rem; background: #fff; color: #1a1a0e;
+  border: 1.5px solid #e9e5d6; border-radius: 10px;
+  font-size: 0.875rem; background: #f5f2eb; color: #1a1a0e;
+  font-family: inherit; transition: border-color 0.15s, background 0.15s;
 }
-.search-wrap input:focus { outline: none; border-color: #515F37; }
+.search-wrap input:focus { outline: none; border-color: #515F37; background: #FCFAF5; }
 
 .btn-search {
   padding: 0.6rem 1.25rem;
-  background: #515F37; color: #fff;
+  background: #3a5020; color: #fff;
   border: none; border-radius: 10px;
   font-weight: 700; font-size: 0.875rem;
-  cursor: pointer; transition: background 0.15s;
+  font-family: inherit;
+  cursor: pointer; transition: background 0.15s, transform 0.15s;
 }
-.btn-search:hover { background: #3d4a28; }
+.btn-search:hover { background: #253515; transform: translateY(-1px); }
 
 .table-wrap {
-  background: #fff; border: 1.5px solid #e5e2d3;
+  background: #FCFAF5; border: 1.5px solid #e9e5d6;
   border-radius: 16px; overflow: hidden;
 }
 
 .table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 th {
   background: #faf8f2; padding: 0.75rem 1rem;
-  text-align: left; font-size: 0.72rem; font-weight: 700;
-  letter-spacing: 0.06em; text-transform: uppercase;
-  color: #9ca3af; border-bottom: 1px solid #e5e2d3;
+  text-align: left; font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: #515F37; border-bottom: 1px solid #e9e5d6;
 }
 td { padding: 0.875rem 1rem; border-bottom: 1px solid #f0ede3; vertical-align: middle; }
 tr:last-child td { border-bottom: none; }
@@ -193,45 +198,45 @@ tr:hover td { background: #faf8f2; }
 .role-select {
   padding: 0.3rem 0.6rem; border-radius: 6px;
   font-size: 0.8rem; font-weight: 600; cursor: pointer;
-  border: 1.5px solid #e5e2d3; background: #fff;
-  transition: border-color 0.15s;
+  border: 1.5px solid #e9e5d6; background: #f5f2eb;
+  font-family: inherit; transition: border-color 0.15s;
 }
 .role-select:focus { outline: none; border-color: #515F37; }
 .role-admin { border-color: #a78bfa; color: #7c3aed; background: #f5f3ff; }
 .role-staff { border-color: #93c5fd; color: #2563eb; background: #eff6ff; }
-.role-prest { border-color: #d6cda4; color: #515F37; background: #f0ede3; }
-.role-client { border-color: #e5e2d3; color: #6b7280; }
+.role-prest { border-color: rgba(168,196,122,0.4); color: #3a5020; background: rgba(168,196,122,0.1); }
+.role-client { border-color: #e9e5d6; color: #6b7280; background: #f5f2eb; }
 
 .status-badge {
   padding: 0.2rem 0.65rem; border-radius: 999px;
   font-size: 0.72rem; font-weight: 700;
 }
-.badge-green { background: #f0ede3; color: #515F37; }
-.badge-yellow { background: #fef9c3; color: #b45309; }
+.badge-green { background: rgba(168,196,122,0.15); color: #3a5020; border: 1px solid rgba(168,196,122,0.3); }
+.badge-yellow { background: rgba(230,197,83,0.15); color: #7a6000; border: 1px solid rgba(230,197,83,0.35); }
 
 .action-btns { display: flex; gap: 0.5rem; align-items: center; }
 .btn-view {
-  padding: 0.3rem 0.75rem; border: 1.5px solid #e5e2d3; border-radius: 6px;
-  text-decoration: none; color: #6b7280; font-size: 0.78rem; font-weight: 600;
-  transition: all 0.15s;
+  padding: 0.3rem 0.75rem; border: 1.5px solid #e9e5d6; border-radius: 6px;
+  text-decoration: none; color: #515F37; font-size: 0.78rem; font-weight: 600;
+  background: #f5f2eb; transition: all 0.15s;
 }
-.btn-view:hover { border-color: #515F37; color: #515F37; }
+.btn-view:hover { border-color: #a8c47a; background: #eef2e8; }
 .btn-delete {
   background: none; border: none; color: #fca5a5;
   cursor: pointer; font-size: 0.78rem; font-weight: 600;
-  transition: color 0.15s;
+  font-family: inherit; transition: color 0.15s;
 }
-.btn-delete:hover { color: #dc2626; }
+.btn-delete:hover { color: #b91c1c; }
 
 .pagination {
   display: flex; align-items: center; justify-content: center; gap: 1rem;
 }
 .page-btn {
-  padding: 0.5rem 1.1rem; border: 1.5px solid #d6cda4; border-radius: 10px;
-  background: #fff; color: #515F37; font-weight: 600; font-size: 0.875rem;
-  cursor: pointer; transition: all 0.15s;
+  padding: 0.5rem 1.1rem; border: 1.5px solid #e9e5d6; border-radius: 10px;
+  background: #FCFAF5; color: #515F37; font-weight: 600; font-size: 0.875rem;
+  font-family: inherit; cursor: pointer; transition: all 0.15s;
 }
-.page-btn:hover:not(:disabled) { background: #d6cda4; }
+.page-btn:hover:not(:disabled) { background: #eef2e8; border-color: #a8c47a; }
 .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .page-info { font-size: 0.875rem; color: #9ca3af; }
 

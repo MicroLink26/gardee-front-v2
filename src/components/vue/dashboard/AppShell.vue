@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
 
 const auth = useAuthStore();
 const props = defineProps<{ requireRole?: 'prestataire' | 'staff' | 'admin' }>();
 
-const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+const currentPath = ref('');
 
 function isActive(path: string) {
-  return currentPath === path || currentPath.startsWith(path + '/');
+  return currentPath.value === path || currentPath.value.startsWith(path + '/');
 }
 
 onMounted(async () => {
+  currentPath.value = window.location.pathname;
   await auth.fetchMe();
   if (!auth.isLoggedIn) {
     window.location.href = '/app/login';
@@ -31,7 +32,7 @@ async function logout() {
   <div class="app-shell">
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <a href="/"><img src="/logo.png" alt="Gardee" height="36" /></a>
+        <a href="/"><img src="/img/logo.png" alt="Gardee" height="36" /></a>
       </div>
 
       <div v-if="auth.user" class="sidebar-user">
@@ -85,13 +86,31 @@ async function logout() {
       </div>
     </aside>
 
+    <!-- Mobile top header -->
+    <header class="mobile-header">
+      <a href="/" class="mobile-header-logo">
+        <img src="/img/logo.png" alt="Gardee" height="32" />
+      </a>
+      <div v-if="auth.user" class="mobile-header-user">
+        <span class="mobile-header-name">{{ auth.user.prenom }}</span>
+        <div class="mobile-header-avatar">{{ auth.user.prenom?.[0] }}{{ auth.user.nom?.[0] }}</div>
+      </div>
+    </header>
+
     <main class="app-main">
       <div v-if="auth.user" class="app-content">
         <slot />
       </div>
       <div v-else class="loading-screen">
-        <div class="loading-spinner"></div>
-        <span>Chargement...</span>
+        <div class="sk-page-header">
+          <div class="sk-block sk-title"></div>
+          <div class="sk-block sk-subtitle"></div>
+        </div>
+        <div class="sk-stats">
+          <div class="sk-block sk-stat" v-for="i in 3" :key="i"></div>
+        </div>
+        <div class="sk-block sk-card-tall"></div>
+        <div class="sk-block sk-card-tall"></div>
       </div>
     </main>
 
@@ -130,7 +149,7 @@ async function logout() {
 .sidebar {
   width: 256px;
   min-height: 100vh;
-  background: #515F37;
+  background: linear-gradient(180deg, #141f0b 0%, #253515 60%, #2e3f1c 100%);
   display: flex;
   flex-direction: column;
   padding: 1.5rem 1rem;
@@ -185,8 +204,8 @@ async function logout() {
   transition: all 0.15s;
 }
 .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
-.nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
-.nav-item.active { background: #d6cda4; color: #1a1a0e; font-weight: 700; }
+.nav-item:hover { background: rgba(168,196,122,0.12); color: #fff; }
+.nav-item.active { background: rgba(168,196,122,0.22); color: #a8c47a; font-weight: 700; border-left: 3px solid #a8c47a; padding-left: calc(0.75rem - 3px); }
 
 .nav-divider {
   font-size: 0.68rem;
@@ -243,24 +262,34 @@ async function logout() {
 .app-content { padding: 2rem; max-width: 1100px; }
 
 .loading-screen {
+  padding: 2rem;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 0.75rem;
-  color: #9ca3af;
-  font-size: 0.875rem;
+  gap: 1rem;
+  max-width: 680px;
 }
 
-.loading-spinner {
-  width: 28px; height: 28px;
-  border: 3px solid #e5e2d3;
-  border-top-color: #515F37;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.sk-block {
+  background: linear-gradient(90deg, #f3f0e8 25%, #ebe8de 50%, #f3f0e8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 10px;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.sk-page-header { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem; }
+.sk-title { height: 28px; width: 200px; }
+.sk-subtitle { height: 14px; width: 280px; border-radius: 6px; }
+
+.sk-stats { display: flex; gap: 1rem; }
+.sk-stat { height: 72px; flex: 1; border-radius: 12px; }
+
+.sk-card-tall { height: 120px; border-radius: 14px; }
+
+/* Mobile top header */
+.mobile-header {
+  display: none;
+}
 
 /* Mobile bottom nav */
 .mobile-bottom-nav {
@@ -270,6 +299,50 @@ async function logout() {
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .app-content { padding: 1rem 1rem 5rem; }
+  .app-main { padding-top: 52px; }
+
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 52px;
+    background: linear-gradient(90deg, #141f0b, #253515);
+    padding: 0 1.25rem;
+    z-index: 300;
+    border-bottom: 1px solid rgba(168,196,122,0.15);
+  }
+
+  .mobile-header-logo img { height: 30px; display: block; }
+
+  .mobile-header-user {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mobile-header-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+  }
+
+  .mobile-header-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #d6cda4;
+    color: #515F37;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
 
   .mobile-bottom-nav {
     display: flex;
@@ -277,8 +350,8 @@ async function logout() {
     bottom: 0;
     left: 0;
     right: 0;
-    background: #515F37;
-    border-top: 1px solid rgba(214,205,164,0.25);
+    background: linear-gradient(180deg, #253515, #141f0b);
+    border-top: 1px solid rgba(168,196,122,0.15);
     z-index: 300;
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -302,7 +375,7 @@ async function logout() {
     font-family: inherit;
   }
   .mbn-item svg { width: 20px; height: 20px; }
-  .mbn-item.active { color: #d6cda4; }
+  .mbn-item.active { color: #a8c47a; }
   .mbn-item:hover { color: rgba(255,255,255,0.85); }
   .mbn-logout { color: rgba(255,255,255,0.45); }
   .mbn-logout:hover { color: #fca5a5; }

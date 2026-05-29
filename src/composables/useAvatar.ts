@@ -1,8 +1,8 @@
 const AVATARS = [
-  '/default-avatar.png',
-  '/default-avatar2.png',
-  '/default-avatar3.png',
-  '/default-avatar4.png',
+  '/img/default-avatar.png',
+  '/img/default-avatar2.png',
+  '/img/default-avatar3.png',
+  '/img/default-avatar4.png',
 ];
 
 export function getAvatar(id: string, imageUrl?: string): string {

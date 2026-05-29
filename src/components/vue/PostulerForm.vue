@@ -95,10 +95,10 @@ const STEPS = [
 ];
 
 const BENEFITS = [
-  { icon: '📍', text: 'Visibilité locale immédiate' },
-  { icon: '⭐', text: 'Avis clients vérifiés' },
-  { icon: '📅', text: 'Gestion simplifiée des réservations' },
-  { icon: '🏆', text: 'Accès au classement régional' },
+  { svg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>`, text: 'Visibilité locale immédiate' },
+  { svg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`, text: 'Avis clients vérifiés' },
+  { svg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`, text: 'Gestion simplifiée des réservations' },
+  { svg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 010-5H6"/><path d="M18 9h1.5a2.5 2.5 0 000-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0012 0V2z"/></svg>`, text: 'Accès au classement régional' },
 ];
 </script>
 
@@ -107,21 +107,42 @@ const BENEFITS = [
 
     <!-- ── PANNEAU GAUCHE ── -->
     <aside class="postuler-aside">
-      <div class="aside-top">
-        <a href="/" class="aside-logo">
-          <img src="/logo.png" alt="Gardee" height="40" style="background:#d6cda4;border-radius:6px;padding:3px 8px" />
-        </a>
-        <h2>Rejoignez Gardee</h2>
+      <div class="aside-deco" aria-hidden="true">
+        <svg class="ad-leaf ad-leaf-a" viewBox="0 0 220 300" xmlns="http://www.w3.org/2000/svg">
+          <path d="M110,8 C175,8 212,65 212,150 C212,235 175,292 110,292 C45,292 8,235 8,150 C8,65 45,8 110,8Z" fill="rgba(168,196,122,0.08)"/>
+        </svg>
+        <svg class="ad-leaf ad-leaf-b" viewBox="0 0 180 260" xmlns="http://www.w3.org/2000/svg">
+          <path d="M90,6 C148,6 174,58 174,130 C174,202 148,254 90,254 C32,254 6,202 6,130 C6,58 32,6 90,6Z" fill="rgba(255,255,255,0.04)"/>
+        </svg>
+        <div class="ad-ring ad-ring-a"></div>
+        <div class="ad-ring ad-ring-b"></div>
+      </div>
+      <div class="aside-content">
+        
+        <h2>Rejoignez <em>Gardee</em></h2>
         <p>Proposez vos services à des milliers de particuliers près de chez vous et développez votre activité.</p>
         <ul class="benefits">
           <li v-for="b in BENEFITS" :key="b.text">
-            <span class="benefit-icon">{{ b.icon }}</span>
+            <span class="benefit-icon" v-html="b.svg"></span>
             {{ b.text }}
           </li>
         </ul>
-      </div>
-      <div class="aside-illus">
-        <img src="/fondPostuler.svg" alt="" />
+        <div class="aside-stat-strip">
+          <div class="aside-stat">
+            <strong>+500</strong>
+            <span>prestataires</span>
+          </div>
+          <div class="aside-stat-sep"></div>
+          <div class="aside-stat">
+            <strong>4.7 ★</strong>
+            <span>note moyenne</span>
+          </div>
+          <div class="aside-stat-sep"></div>
+          <div class="aside-stat">
+            <strong>Gratuit</strong>
+            <span>inscription</span>
+          </div>
+        </div>
       </div>
     </aside>
 
@@ -343,7 +364,7 @@ const BENEFITS = [
 .postuler-aside {
   width: 380px;
   flex-shrink: 0;
-  background: #d6cda4;
+  background: linear-gradient(155deg, #141f0b 0%, #253515 55%, #3a5020 100%);
   display: flex;
   flex-direction: column;
   position: sticky;
@@ -352,34 +373,52 @@ const BENEFITS = [
   overflow: hidden;
 }
 
-.aside-top {
-  padding: 2.5rem 2rem 1.5rem;
+/* Botanical deco */
+.aside-deco { position: absolute; inset: 0; pointer-events: none; }
+.ad-leaf { position: absolute; }
+.ad-leaf-a { width: 260px; height: 360px; right: -80px; bottom: -80px; }
+.ad-leaf-b { width: 180px; height: 260px; left: -60px; top: -40px; }
+.ad-ring {
+  position: absolute; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.ad-ring-a { width: 420px; height: 420px; top: -180px; right: -120px; }
+.ad-ring-b { width: 260px; height: 260px; bottom: -130px; left: -80px; }
+
+.aside-content {
+  position: relative; z-index: 1;
+  padding: 2.5rem 2rem;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.aside-logo { display: inline-block; margin-bottom: 2rem; }
+.aside-logo { display: inline-block; margin-bottom: 2.25rem; }
 
 .postuler-aside h2 {
   font-size: 1.6rem;
   font-weight: 900;
-  color: #1a1a0e;
-  letter-spacing: -0.02em;
-  margin-bottom: 0.75rem;
-  line-height: 1.2;
+  color: #fff;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.75rem;
+  line-height: 1.15;
 }
+.postuler-aside h2 em { color: #a8c47a; font-style: italic; }
 
-.postuler-aside > .aside-top > p {
+.aside-content > p {
   font-size: 0.875rem;
-  color: #5a5234;
+  color: rgba(255,255,255,0.55);
   line-height: 1.7;
-  margin-bottom: 1.75rem;
+  margin: 0 0 2rem;
 }
 
 .benefits {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.875rem;
+  margin: 0 0 auto;
 }
 
 .benefits li {
@@ -388,39 +427,64 @@ const BENEFITS = [
   gap: 0.75rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #3d3820;
+  color: rgba(255,255,255,0.85);
 }
 
 .benefit-icon {
-  width: 34px;
-  height: 34px;
-  background: rgba(255,255,255,0.5);
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  background: rgba(168,196,122,0.15);
+  border: 1px solid rgba(168,196,122,0.25);
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
   flex-shrink: 0;
+  color: #a8c47a;
 }
 
-.aside-illus {
-  flex-shrink: 0;
-  overflow: hidden;
-  line-height: 0;
+/* Stats strip */
+.aside-stat-strip {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 2.5rem;
+  padding: 1rem 1.25rem;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
 }
-
-.aside-illus img {
-  width: 100%;
-  height: auto;
-  display: block;
-  object-fit: cover;
-  object-position: top center;
+.aside-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+.aside-stat strong {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #a8c47a;
+  letter-spacing: -0.02em;
+}
+.aside-stat span {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.45);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.aside-stat-sep {
+  width: 1px;
+  height: 32px;
+  background: rgba(255,255,255,0.12);
+  flex-shrink: 0;
 }
 
 /* ── PANNEAU DROIT ── */
 .postuler-main {
   flex: 1;
-  background: #faf8f2;
+  background: #f2efe6;
   padding: 3rem 3rem 4rem;
   overflow-y: auto;
 }
@@ -498,7 +562,7 @@ const BENEFITS = [
   height: 32px;
   border-radius: 50%;
   border: 2px solid #e0d8c2;
-  background: #fff;
+  background: #FCFAF5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -604,7 +668,7 @@ textarea {
   border-radius: 10px;
   font-size: 0.9rem;
   color: #1a1a0e;
-  background: #fff;
+  background: #FCFAF5;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
   font-family: inherit;
@@ -628,7 +692,7 @@ textarea { resize: vertical; }
   padding: 0.35rem 0.875rem;
   border: 1.5px solid #e0d8c2;
   border-radius: 999px;
-  background: #fff;
+  background: #FCFAF5;
   color: #5a5234;
   font-size: 0.8rem;
   font-weight: 600;
@@ -740,7 +804,7 @@ textarea { resize: vertical; }
 
 /* Récap */
 .recap {
-  background: #fff;
+  background: #FCFAF5;
   border: 1.5px solid #e0d8c2;
   border-radius: 14px;
   padding: 1.25rem;
@@ -811,7 +875,7 @@ textarea { resize: vertical; }
   align-items: center;
   gap: 0.35rem;
   padding: 0.7rem 1.25rem;
-  background: #fff;
+  background: #FCFAF5;
   border: 1.5px solid #e0d8c2;
   border-radius: 10px;
   font-size: 0.875rem;
@@ -854,7 +918,8 @@ textarea { resize: vertical; }
 @media (max-width: 900px) {
   .postuler-layout { flex-direction: column; }
   .postuler-aside { width: 100%; height: auto; position: static; }
-  .aside-illus { display: none; }
+  .aside-content { padding: 2rem 1.5rem 2rem; }
+  .aside-stat-strip { display: none; }
   .postuler-main { padding: 2rem 1.5rem 3rem; }
   .field-row, .recap-grid { grid-template-columns: 1fr; }
   .stepper { display: none; }

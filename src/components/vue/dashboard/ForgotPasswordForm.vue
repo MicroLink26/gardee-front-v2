@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { forgotPassword, resetPassword } from '../../../services/auth';
 
-const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams('');
-const mode = ref<'forgot' | 'reset'>(params.has('token') ? 'reset' : 'forgot');
-const token = params.get('token') ?? '';
+const mode = ref<'forgot' | 'reset'>('forgot');
+let token = '';
+
+onMounted(() => {
+  const params = new URLSearchParams(window.location.search);
+  token = params.get('token') ?? '';
+  if (params.has('token')) mode.value = 'reset';
+});
 
 const email = ref('');
 const password = ref('');
@@ -48,7 +53,7 @@ async function submitReset() {
   <div class="fp-page">
     <div class="fp-card">
       <a href="/" class="card-logo">
-        <img src="/logo.png" alt="Gardee" height="40" />
+        <img src="/img/logo.png" alt="Gardee" height="40" />
       </a>
 
       <!-- Succès : email envoyé -->
@@ -154,16 +159,16 @@ async function submitReset() {
 
 .fp-page {
   display: flex; align-items: center; justify-content: center;
-  min-height: 100vh; background: #faf8f2; padding: 2rem;
+  min-height: 100vh; background: #f2efe6; padding: 2rem;
 }
 
 .fp-card {
-  background: #fff;
-  border: 1.5px solid #e5e2d3;
+  background: #FCFAF5;
+  border: 1.5px solid #e9e5d6;
   border-radius: 20px;
   padding: 2.5rem;
   width: 100%; max-width: 420px;
-  box-shadow: 0 8px 40px rgba(81,95,55,0.08);
+  box-shadow: 0 8px 40px rgba(58,80,32,0.1);
 }
 
 .card-logo { display: flex; justify-content: center; margin-bottom: 2rem; }
@@ -181,7 +186,7 @@ async function submitReset() {
   margin: 0 auto 1.25rem;
 }
 .state-icon svg { width: 28px; height: 28px; }
-.state-icon--success { background: #f0ede3; color: #515F37; }
+.state-icon--success { background: rgba(168,196,122,0.18); color: #3a5020; border: 2px solid rgba(168,196,122,0.35); }
 
 /* Form */
 .form-header { margin-bottom: 1.75rem; }
@@ -189,22 +194,23 @@ async function submitReset() {
 .form-header p { color: #9ca3af; font-size: 0.875rem; margin: 0; line-height: 1.5; }
 
 .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
-label { font-size: 0.825rem; font-weight: 600; color: #374151; }
+label { font-size: 0.8rem; font-weight: 600; color: #515F37; }
 
 .input-wrap { position: relative; }
 .input-icon {
   position: absolute; left: 0.875rem; top: 50%;
   transform: translateY(-50%);
-  width: 16px; height: 16px; color: #9ca3af; pointer-events: none;
+  width: 15px; height: 15px; color: #9ca3af; pointer-events: none;
 }
 input {
   width: 100%;
   padding: 0.7rem 2.75rem 0.7rem 2.5rem;
-  border: 1.5px solid #e5e2d3; border-radius: 10px;
-  font-size: 0.9rem; background: #faf8f2; color: #1a1a0e;
+  border: 1.5px solid #e9e5d6; border-radius: 10px;
+  font-size: 0.9rem; background: #f5f2eb; color: #1a1a0e;
+  font-family: inherit;
   transition: border-color 0.15s, background 0.15s;
 }
-input:focus { outline: none; border-color: #515F37; background: #fff; }
+input:focus { outline: none; border-color: #515F37; background: #FCFAF5; }
 input::placeholder { color: #b5ae94; }
 
 .toggle-pw {
@@ -224,7 +230,7 @@ input::placeholder { color: #b5ae94; }
 }
 .strength-fill {
   flex: 1; height: 4px; border-radius: 999px;
-  background: #e5e2d3; position: relative; overflow: hidden;
+  background: #e9e5d6; position: relative; overflow: hidden;
 }
 .strength-fill::after {
   content: ''; position: absolute;
@@ -235,12 +241,13 @@ input::placeholder { color: #b5ae94; }
 .strength-0::after { width: 25%; background: #ef4444; }
 .strength-1::after { width: 50%; background: #f97316; }
 .strength-2::after { width: 75%; background: #eab308; }
-.strength-3::after { width: 100%; background: #515F37; }
+.strength-3::after { width: 100%; background: #3a5020; }
 .strength-label { font-size: 0.72rem; font-weight: 600; color: #9ca3af; white-space: nowrap; }
 
 .error-msg {
   display: flex; align-items: center; gap: 0.5rem;
-  background: #fee2e2; color: #dc2626;
+  background: #fef2f2; color: #b91c1c;
+  border: 1px solid #fecaca;
   padding: 0.65rem 0.875rem; border-radius: 8px;
   font-size: 0.875rem; font-weight: 500;
   margin-bottom: 1rem;
@@ -249,15 +256,16 @@ input::placeholder { color: #b5ae94; }
 
 .btn-primary {
   display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-  width: 100%; padding: 0.8rem;
-  background: #515F37; color: #fff;
-  border: none; border-radius: 10px;
+  width: 100%; padding: 0.85rem;
+  background: #3a5020; color: #fff;
+  border: none; border-radius: 12px;
   font-size: 0.95rem; font-weight: 700;
-  cursor: pointer; transition: background 0.15s;
+  font-family: inherit;
+  cursor: pointer; transition: background 0.15s, transform 0.15s;
   text-decoration: none;
 }
 .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
-.btn-primary:hover:not(:disabled) { background: #3d4a28; }
+.btn-primary:hover:not(:disabled) { background: #253515; transform: translateY(-1px); }
 
 .btn-spinner {
   width: 15px; height: 15px;

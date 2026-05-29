@@ -19,7 +19,7 @@ onMounted(async () => {
 <template>
   <div class="confirm-page">
     <div class="confirm-card">
-      <a href="/"><img src="/logo.svg" alt="Gardee" width="120" /></a>
+      <a href="/"><img src="/img/logo.png" alt="Gardee" width="120" /></a>
       <div v-if="status === 'loading'" class="loading">Confirmation en cours...</div>
       <div v-else-if="status === 'success'" class="success">
         <p class="icon">✅</p>
@@ -39,12 +39,12 @@ onMounted(async () => {
 
 <style scoped>
 .confirm-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f9fafb; }
-.confirm-card { background: #fff; border-radius: 16px; padding: 3rem 2.5rem; text-align: center; max-width: 440px; width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+.confirm-card { background: #FCFAF5; border-radius: 16px; padding: 3rem 2.5rem; text-align: center; max-width: 440px; width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
 .confirm-card img { margin-bottom: 1.5rem; }
 .icon { font-size: 3rem; margin-bottom: 1rem; }
 h1 { font-size: 1.5rem; margin-bottom: 0.75rem; }
 p { color: #6b7280; margin-bottom: 1.5rem; }
 .btn { display: inline-block; padding: 0.7rem 1.75rem; background: #16a34a; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; }
-.btn-outline { background: #fff; color: #16a34a; border: 2px solid #16a34a; }
+.btn-outline { background: #FCFAF5; color: #16a34a; border: 2px solid #16a34a; }
 .loading { color: #6b7280; padding: 2rem; }
 </style>

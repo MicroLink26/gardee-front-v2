@@ -3,6 +3,8 @@ import type { User, PaginatedResult } from '../types';
 
 export async function searchPrestataires(params: {
   q?: string; page?: number; pageSize?: number;
+  sort?: 'rating' | 'price_asc' | 'distance';
+  lat?: number; lng?: number;
 }): Promise<PaginatedResult<User>> {
   const { data } = await api.get('/users/search', { params });
   return data;

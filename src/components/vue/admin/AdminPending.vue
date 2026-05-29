@@ -32,6 +32,7 @@ onMounted(() => {
   <div class="admin-pending">
     <div class="page-header">
       <div>
+        <p class="header-eyebrow">Administration</p>
         <h1>Prestataires en attente</h1>
         <p class="header-sub">{{ users.length }} candidature{{ users.length > 1 ? 's' : '' }} à examiner</p>
       </div>
@@ -93,8 +94,10 @@ onMounted(() => {
 
 .admin-pending { display: flex; flex-direction: column; gap: 1.5rem; }
 
-.page-header h1 { font-size: 1.5rem; font-weight: 900; color: #1a1a0e; margin: 0 0 0.25rem; }
-.header-sub { font-size: 0.875rem; color: #9ca3af; margin: 0; }
+.page-header { padding-bottom: 1.5rem; border-bottom: 1px solid #e9e5d6; }
+.header-eyebrow { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #a8c47a; margin: 0 0 0.35rem; }
+.page-header h1 { font-size: 1.5rem; font-weight: 900; color: #1a1a0e; margin: 0 0 0.2rem; letter-spacing: -0.02em; }
+.header-sub { font-size: 0.85rem; color: #9ca3af; margin: 0; }
 
 .empty {
   text-align: center; padding: 4rem 2rem;
@@ -102,7 +105,8 @@ onMounted(() => {
 }
 .empty-icon {
   width: 56px; height: 56px; border-radius: 50%;
-  background: #f0ede3; color: #515F37;
+  background: rgba(168,196,122,0.18); color: #3a5020;
+  border: 2px solid rgba(168,196,122,0.3);
   display: flex; align-items: center; justify-content: center;
 }
 .empty-icon svg { width: 24px; height: 24px; }
@@ -113,10 +117,10 @@ onMounted(() => {
 
 .user-card {
   display: flex; align-items: center; gap: 1.125rem;
-  background: #fff; border: 1.5px solid #e5e2d3; border-radius: 16px; padding: 1.125rem;
-  transition: border-color 0.15s;
+  background: #FCFAF5; border: 1.5px solid #e9e5d6; border-radius: 16px; padding: 1.125rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.user-card:hover { border-color: #d6cda4; }
+.user-card:hover { border-color: #c8d9a6; box-shadow: 0 4px 16px rgba(58,80,32,0.07); }
 
 .user-photo {
   width: 52px; height: 52px; border-radius: 50%; overflow: hidden;
@@ -149,24 +153,26 @@ onMounted(() => {
 .btn-view {
   display: flex; align-items: center; gap: 0.35rem;
   padding: 0.45rem 0.875rem;
-  border: 1.5px solid #e5e2d3; border-radius: 8px;
-  text-decoration: none; color: #6b7280;
+  border: 1.5px solid #e9e5d6; border-radius: 8px;
+  text-decoration: none; color: #515F37;
   font-size: 0.8rem; font-weight: 600;
+  background: #f5f2eb;
   transition: all 0.15s;
 }
 .btn-view svg { width: 13px; height: 13px; }
-.btn-view:hover { border-color: #515F37; color: #515F37; }
+.btn-view:hover { border-color: #a8c47a; background: #eef2e8; }
 
 .btn-validate {
   display: flex; align-items: center; gap: 0.35rem;
   padding: 0.45rem 1rem;
-  background: #515F37; color: #fff;
+  background: #3a5020; color: #fff;
   border: none; border-radius: 8px;
   cursor: pointer; font-weight: 700; font-size: 0.8rem;
-  transition: background 0.15s;
+  font-family: inherit;
+  transition: background 0.15s, transform 0.15s;
 }
 .btn-validate svg { width: 13px; height: 13px; }
-.btn-validate:hover { background: #3d4a28; }
+.btn-validate:hover { background: #253515; transform: translateY(-1px); }
 
 .skeleton-list { display: flex; flex-direction: column; gap: 0.75rem; }
 .skeleton-card { border-radius: 16px; overflow: hidden; }

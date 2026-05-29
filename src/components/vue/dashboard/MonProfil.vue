@@ -3,11 +3,14 @@ import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
 import { getMyProfile, updateMyProfile, changePassword } from '../../../services/users';
 import { useCategoriesStore } from '../../../stores/categories';
+import { useToastStore } from '../../../stores/toast';
 
 const auth = useAuthStore();
 const categories = useCategoriesStore();
+const toast = useToastStore();
 
 const loading = ref(true);
+const loadError = ref(false);
 const saving = ref(false);
 const saved = ref(false);
 const error = ref('');
@@ -33,23 +36,28 @@ const photoFile = ref<File | null>(null);
 const photoPreview = ref('');
 
 onMounted(async () => {
-  const [user] = await Promise.all([getMyProfile(), categories.load()]);
-  form.value = {
-    email: user.email ?? '',
-    nom: user.nom, prenom: user.prenom, telephone: user.telephone,
-    prestations: [...user.prestations],
-    tarifHoraire: user.tarifHoraire?.toString() ?? '',
-    description: user.description ?? '',
-    adresse: user.adresse ?? '', codePostal: user.codePostal ?? '', ville: user.ville ?? '',
-    materielOK: (user as Record<string, unknown>).materielOK as boolean ?? false,
-    isEntrepreneur: (user as Record<string, unknown>).isEntrepreneur as boolean ?? false,
-    siret: (user as Record<string, unknown>).siret as string ?? '',
-    qualifElagage: (user as Record<string, unknown>).qualifElagage as boolean ?? false,
-    contactCom: (user as Record<string, unknown>).contactCom as boolean ?? false,
-    consentDataProcessing: (user as Record<string, unknown>).consentDataProcessing as boolean ?? false,
-  };
-  photoPreview.value = user.profil_image?.secure_url ?? '';
-  loading.value = false;
+  try {
+    const [user] = await Promise.all([getMyProfile(), categories.load()]);
+    form.value = {
+      email: user.email ?? '',
+      nom: user.nom ?? '', prenom: user.prenom ?? '', telephone: user.telephone ?? '',
+      prestations: [...(user.prestations ?? [])],
+      tarifHoraire: user.tarifHoraire?.toString() ?? '',
+      description: user.description ?? '',
+      adresse: user.adresse ?? '', codePostal: user.codePostal ?? '', ville: user.ville ?? '',
+      materielOK: (user as Record<string, unknown>).materielOK as boolean ?? false,
+      isEntrepreneur: (user as Record<string, unknown>).isEntrepreneur as boolean ?? false,
+      siret: (user as Record<string, unknown>).siret as string ?? '',
+      qualifElagage: (user as Record<string, unknown>).qualifElagage as boolean ?? false,
+      contactCom: (user as Record<string, unknown>).contactCom as boolean ?? false,
+      consentDataProcessing: (user as Record<string, unknown>).consentDataProcessing as boolean ?? false,
+    };
+    photoPreview.value = user.profil_image?.secure_url ?? '';
+  } catch {
+    loadError.value = true;
+  } finally {
+    loading.value = false;
+  }
 });
 
 function togglePrestation(name: string) {
@@ -79,8 +87,10 @@ async function save() {
     await updateMyProfile(fd as unknown as Parameters<typeof updateMyProfile>[0]);
     saved.value = true;
     setTimeout(() => (saved.value = false), 3000);
+    toast.show('Profil enregistré avec succès', 'success');
   } catch {
     error.value = 'Impossible de sauvegarder.';
+    toast.show('Erreur lors de la sauvegarde', 'error');
   } finally {
     saving.value = false;
   }
@@ -102,9 +112,11 @@ async function savePassword() {
     pwForm.value = { current: '', newPwd: '', confirm: '' };
     pwSaved.value = true;
     setTimeout(() => (pwSaved.value = false), 3000);
+    toast.show('Mot de passe mis à jour', 'success');
   } catch (e: unknown) {
     const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
     pwError.value = msg ?? 'Impossible de changer le mot de passe.';
+    toast.show(pwError.value, 'error');
   } finally {
     pwSaving.value = false;
   }
@@ -114,13 +126,25 @@ async function savePassword() {
 <template>
   <div class="profil-page">
     <div class="page-header">
+      <p class="page-header-eyebrow">Espace personnel</p>
       <h1>Mon profil</h1>
-      <p class="header-sub">Gérez vos informations personnelles et professionnelles</p>
+      <p class="header-sub">
+        Gérez vos informations personnelles et professionnelles
+        <span v-if="auth.user" class="role-badge">
+          {{ auth.isPrestataire ? 'Prestataire' : auth.isStaff ? 'Staff' : 'Client' }}
+        </span>
+      </p>
     </div>
 
     <div v-if="loading" class="loading">
       <div class="spinner"></div>
       Chargement...
+    </div>
+
+    <div v-else-if="loadError" class="load-error">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Impossible de charger le profil.
+      <button type="button" @click="() => window.location.reload()">Réessayer</button>
     </div>
 
     <form v-else @submit.prevent="save" class="profil-form">
@@ -168,8 +192,8 @@ async function savePassword() {
         </div>
       </div>
 
-      <!-- Activité prestataire -->
-      <template v-if="auth.isPrestataire">
+      <!-- Activité -->
+      <template v-if="true">
         <div class="section-card">
           <div class="section-header">
             <h2>Activité</h2>
@@ -225,29 +249,29 @@ async function savePassword() {
             <input v-model="form.siret" type="text" maxlength="14" placeholder="14 chiffres" />
           </div>
         </div>
+      </template>
 
-        <!-- Adresse -->
-        <div class="section-card">
-          <div class="section-header">
-            <h2>Adresse d'activité</h2>
-            <span class="section-note">Utilisée pour votre géolocalisation sur la carte</span>
+      <!-- Localisation (tous les utilisateurs) -->
+      <div class="section-card">
+        <div class="section-header">
+          <h2>Localisation</h2>
+          <span v-if="auth.isPrestataire" class="section-note">Utilisée pour votre géolocalisation sur la carte</span>
+        </div>
+        <div class="field">
+          <label>Adresse</label>
+          <input v-model="form.adresse" type="text" placeholder="12 rue des jardins" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Code postal</label>
+            <input v-model="form.codePostal" type="text" maxlength="5" placeholder="75001" />
           </div>
           <div class="field">
-            <label>Adresse</label>
-            <input v-model="form.adresse" type="text" placeholder="12 rue des jardins" />
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label>Code postal</label>
-              <input v-model="form.codePostal" type="text" maxlength="5" placeholder="75001" />
-            </div>
-            <div class="field">
-              <label>Ville</label>
-              <input v-model="form.ville" type="text" placeholder="Paris" />
-            </div>
+            <label>Ville</label>
+            <input v-model="form.ville" type="text" placeholder="Paris" />
           </div>
         </div>
-      </template>
+      </div>
 
       <!-- Sécurité -->
       <div class="section-card">
@@ -300,17 +324,42 @@ async function savePassword() {
 
 .profil-page { display: flex; flex-direction: column; gap: 1.5rem; max-width: 680px; }
 
-.page-header h1 { font-size: 1.5rem; font-weight: 900; color: #1a1a0e; margin: 0 0 0.25rem; }
-.header-sub { font-size: 0.875rem; color: #9ca3af; margin: 0; }
+.page-header {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e9e5d6;
+}
+.page-header-eyebrow {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #a8c47a; margin: 0 0 0.35rem; display: block;
+}
+.page-header h1 { font-size: 1.5rem; font-weight: 900; color: #1a1a0e; margin: 0 0 0.25rem; letter-spacing: -0.02em; }
+.header-sub { font-size: 0.85rem; color: #9ca3af; margin: 0; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.role-badge {
+  font-size: 0.7rem; font-weight: 700;
+  background: rgba(168,196,122,0.15); color: #3a5020;
+  padding: 0.15rem 0.55rem; border-radius: 999px;
+  border: 1px solid rgba(168,196,122,0.3);
+}
 
 .loading {
   display: flex; align-items: center; gap: 0.75rem;
   color: #9ca3af; font-size: 0.875rem; padding: 2rem 0;
 }
+
+.load-error {
+  display: flex; align-items: center; gap: 0.75rem;
+  color: #dc2626; font-size: 0.875rem; padding: 2rem 0;
+}
+.load-error svg { width: 18px; height: 18px; flex-shrink: 0; }
+.load-error button {
+  padding: 0.35rem 0.875rem; background: #FCFAF5; color: #dc2626;
+  border: 1.5px solid #dc2626; border-radius: 8px; cursor: pointer;
+  font-size: 0.8rem; font-weight: 600;
+}
 .spinner {
   width: 20px; height: 20px;
-  border: 2px solid #e5e2d3;
-  border-top-color: #515F37;
+  border: 2px solid #e9e5d6;
+  border-top-color: #3a5020;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -320,8 +369,8 @@ async function savePassword() {
 
 /* Section card */
 .section-card {
-  background: #fff;
-  border: 1.5px solid #e5e2d3;
+  background: #FCFAF5;
+  border: 1.5px solid #e9e5d6;
   border-radius: 16px;
   padding: 1.5rem;
   display: flex;
@@ -334,14 +383,23 @@ async function savePassword() {
   align-items: center;
   gap: 0.75rem;
   padding-bottom: 0.875rem;
-  border-bottom: 1px solid #f0ede3;
+  border-bottom: 1px solid #e9e5d6;
 }
-.section-header h2 { font-size: 0.95rem; font-weight: 700; color: #1a1a0e; margin: 0; }
+.section-header h2 {
+  font-size: 0.8rem; font-weight: 700; color: #3a5020; margin: 0;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.section-header h2::before {
+  content: ''; display: inline-block;
+  width: 3px; height: 0.85em;
+  background: #a8c47a; border-radius: 2px;
+}
 .section-badge {
   font-size: 0.7rem; font-weight: 700;
-  background: #f0ede3; color: #515F37;
+  background: rgba(168,196,122,0.15); color: #3a5020;
   padding: 0.15rem 0.55rem; border-radius: 999px;
-  border: 1px solid #d6cda4;
+  border: 1px solid rgba(168,196,122,0.3);
 }
 .section-note { font-size: 0.75rem; color: #9ca3af; margin-left: auto; }
 
@@ -354,7 +412,7 @@ async function savePassword() {
   background: #f0ede3;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  border: 3px solid #e5e2d3;
+  border: 3px solid #c8d9a6;
 }
 .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
 .photo-initials { font-size: 1.5rem; font-weight: 800; color: #515F37; }
@@ -362,36 +420,36 @@ async function savePassword() {
 .btn-outline {
   display: inline-block;
   padding: 0.45rem 1rem;
-  border: 1.5px solid #d6cda4;
+  border: 1.5px solid #e9e5d6;
   border-radius: 8px;
   cursor: pointer;
   font-size: 0.875rem;
-  background: #fff;
+  background: #f5f2eb;
   color: #515F37;
   font-weight: 600;
   transition: all 0.15s;
 }
-.btn-outline:hover { background: #f0ede3; }
+.btn-outline:hover { background: #eef2e8; border-color: #a8c47a; }
 .hint { font-size: 0.75rem; color: #9ca3af; margin-top: 0.35rem; margin-bottom: 0; }
 
 /* Fields */
 .field { display: flex; flex-direction: column; gap: 0.35rem; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; }
 
-label { font-size: 0.825rem; font-weight: 600; color: #374151; }
+label { font-size: 0.8rem; font-weight: 600; color: #515F37; }
 
 input, textarea {
   width: 100%;
   padding: 0.6rem 0.875rem;
-  border: 1.5px solid #e5e2d3;
+  border: 1.5px solid #e9e5d6;
   border-radius: 10px;
   font-size: 0.9rem;
   font-family: inherit;
   color: #1a1a0e;
-  background: #faf8f2;
+  background: #f5f2eb;
   transition: border-color 0.15s, background 0.15s;
 }
-input:focus, textarea:focus { outline: none; border-color: #515F37; background: #fff; }
+input:focus, textarea:focus { outline: none; border-color: #515F37; background: #FCFAF5; }
 textarea { resize: vertical; }
 
 .input-suffix { position: relative; }
@@ -408,16 +466,17 @@ textarea { resize: vertical; }
 .chip-group { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .service-chip {
   padding: 0.3rem 0.8rem;
-  border: 1.5px solid #e5e2d3;
+  border: 1.5px solid #e9e5d6;
   border-radius: 999px;
-  background: #faf8f2;
-  color: #6b7280;
+  background: #f5f2eb;
+  color: #515F37;
   font-size: 0.8rem; font-weight: 500;
+  font-family: inherit;
   cursor: pointer;
   transition: all 0.15s;
 }
-.service-chip:hover { border-color: #515F37; color: #515F37; }
-.service-chip.active { background: #515F37; border-color: #515F37; color: #fff; font-weight: 700; }
+.service-chip:hover { border-color: #a8c47a; background: #eef2e8; }
+.service-chip.active { background: #3a5020; border-color: #3a5020; color: #fff; font-weight: 700; }
 
 /* Checkboxes */
 .checkbox-group { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -429,16 +488,16 @@ textarea { resize: vertical; }
 .checkbox-item input[type="checkbox"] { display: none; }
 .checkbox-box {
   width: 18px; height: 18px;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid #e9e5d6;
   border-radius: 5px;
-  background: #fff;
+  background: #FCFAF5;
   flex-shrink: 0;
   transition: all 0.15s;
   position: relative;
 }
 .checkbox-item input:checked ~ .checkbox-box {
-  background: #515F37;
-  border-color: #515F37;
+  background: #3a5020;
+  border-color: #3a5020;
 }
 .checkbox-item input:checked ~ .checkbox-box::after {
   content: '';
@@ -455,7 +514,7 @@ textarea { resize: vertical; }
 
 .btn-secondary {
   padding: 0.6rem 1.5rem;
-  background: #fff; color: #515F37;
+  background: #FCFAF5; color: #515F37;
   border: 1.5px solid #515F37; border-radius: 10px;
   cursor: pointer; font-weight: 700;
   font-size: 0.9rem;
@@ -480,14 +539,15 @@ textarea { resize: vertical; }
 
 .btn-primary {
   padding: 0.7rem 2rem;
-  background: #515F37; color: #fff;
+  background: #3a5020; color: #fff;
   border: none; border-radius: 10px;
   cursor: pointer; font-weight: 700;
   font-size: 0.95rem;
-  transition: background 0.15s;
+  font-family: inherit;
+  transition: background 0.15s, transform 0.15s;
 }
 .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
-.btn-primary:hover:not(:disabled) { background: #3d4a28; }
+.btn-primary:hover:not(:disabled) { background: #253515; transform: translateY(-1px); }
 
 @media (max-width: 600px) {
   .section-card { padding: 1.125rem; border-radius: 12px; }

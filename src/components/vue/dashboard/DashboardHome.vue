@@ -22,12 +22,16 @@ onMounted(async () => {
 <template>
   <div class="dashboard">
     <div class="welcome-banner">
+      <div class="banner-deco" aria-hidden="true">
+        <svg class="bdeco-leaf bdeco-leaf--1" viewBox="0 0 200 320" fill="none"><ellipse cx="100" cy="160" rx="80" ry="140" fill="rgba(168,196,122,0.07)" transform="rotate(-20 100 160)"/><ellipse cx="100" cy="160" rx="50" ry="110" fill="rgba(168,196,122,0.04)" transform="rotate(-20 100 160)"/></svg>
+        <svg class="bdeco-leaf bdeco-leaf--2" viewBox="0 0 160 260" fill="none"><ellipse cx="80" cy="130" rx="60" ry="110" fill="rgba(168,196,122,0.06)" transform="rotate(30 80 130)"/></svg>
+      </div>
       <div class="welcome-text">
         <span class="welcome-eyebrow">Bienvenue sur Gardee</span>
-        <h1>Bonjour, {{ auth.user?.prenom }} 👋</h1>
+        <h1>Bonjour, <em>{{ auth.user?.prenom }}</em> 👋</h1>
         <p>Gérez votre activité depuis votre espace personnel.</p>
       </div>
-      <img src="/arbreBut.svg" alt="" class="welcome-illustration" />
+      <img src="/img/arbreBut.svg" alt="" class="welcome-illustration" />
     </div>
 
     <div class="stats-row">
@@ -112,7 +116,7 @@ onMounted(async () => {
 
 /* Welcome */
 .welcome-banner {
-  background: linear-gradient(135deg, #515F37 0%, #3d4a28 100%);
+  background: linear-gradient(155deg, #141f0b 0%, #253515 55%, #3a5020 100%);
   border-radius: 20px;
   padding: 2rem 2.5rem;
   display: flex;
@@ -121,36 +125,46 @@ onMounted(async () => {
   overflow: hidden;
   position: relative;
 }
+.banner-deco { position: absolute; inset: 0; pointer-events: none; }
+.bdeco-leaf { position: absolute; }
+.bdeco-leaf--1 { top: -40px; right: 140px; width: 180px; height: 280px; }
+.bdeco-leaf--2 { bottom: -30px; right: -20px; width: 140px; height: 220px; }
+
 .welcome-text { position: relative; z-index: 1; }
 .welcome-eyebrow {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #d6cda4;
+  color: #a8c47a;
   display: block;
   margin-bottom: 0.5rem;
 }
-.welcome-banner h1 { font-size: 1.75rem; font-weight: 900; color: #fff; margin: 0 0 0.4rem; }
-.welcome-banner p { color: rgba(255,255,255,0.7); margin: 0; font-size: 0.95rem; }
+.welcome-banner h1 { font-size: 1.75rem; font-weight: 900; color: #fff; margin: 0 0 0.4rem; letter-spacing: -0.02em; }
+.welcome-banner h1 em { font-style: normal; color: #a8c47a; }
+.welcome-banner p { color: rgba(255,255,255,0.65); margin: 0; font-size: 0.9rem; }
 .welcome-illustration {
   height: 120px;
   opacity: 0.85;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 
 /* Stats */
 .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
 
 .stat-card {
-  background: #fff;
-  border: 1.5px solid #e5e2d3;
+  background: #FCFAF5;
+  border: 1.5px solid #e9e5d6;
   border-radius: 14px;
   padding: 1.25rem;
   display: flex;
   align-items: center;
   gap: 1rem;
+  transition: box-shadow 0.15s, transform 0.15s;
 }
+.stat-card:hover { box-shadow: 0 4px 16px rgba(58,80,32,0.08); transform: translateY(-2px); }
 
 .stat-icon {
   width: 44px; height: 44px;
@@ -159,9 +173,9 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .stat-icon svg { width: 20px; height: 20px; }
-.stat-icon--blue { background: #eff6ff; color: #3b82f6; }
-.stat-icon--orange { background: #fff7ed; color: #f97316; }
-.stat-icon--green { background: #f0ede3; color: #515F37; }
+.stat-icon--blue { background: #eef2e8; color: #3a5020; }
+.stat-icon--orange { background: rgba(230,197,83,0.15); color: #9a7c00; }
+.stat-icon--green { background: rgba(168,196,122,0.2); color: #515F37; }
 
 .stat-val { font-size: 1.75rem; font-weight: 900; color: #1a1a0e; line-height: 1; }
 .stat-label { font-size: 0.78rem; color: #9ca3af; margin-top: 0.2rem; }
@@ -178,7 +192,7 @@ onMounted(async () => {
   align-items: center;
   gap: 0.75rem;
 }
-.section-title::after { content: ''; flex: 1; height: 1px; background: #e5e2d3; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: #e9e5d6; }
 
 /* Shortcuts */
 .shortcuts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
@@ -191,8 +205,8 @@ onMounted(async () => {
   row-gap: 0.15rem;
   align-items: center;
   padding: 1.125rem;
-  background: #fff;
-  border: 1.5px solid #e5e2d3;
+  background: #FCFAF5;
+  border: 1.5px solid #e9e5d6;
   border-radius: 14px;
   text-decoration: none;
   color: inherit;

@@ -9,40 +9,6 @@ import SearchResults from '../components/vue/SearchResults.vue';
   description="Trouvez un jardinier professionnel près de chez vous."
 >
   <Navbar />
-
-  <div class="page-header">
-    <div class="page-header-inner">
-      <h1>Trouvez votre jardinier</h1>
-      <p>Des professionnels vérifiés, disponibles près de chez vous</p>
-    </div>
-  </div>
-
-  <main class="page-content">
-    <SearchResults client:load />
-  </main>
-
+  <SearchResults client:load />
   <Footer />
 </BaseLayout>
-
-<style>
-.page-header {
-  background: linear-gradient(160deg, #515F37 0%, #3d4a28 100%);
-  padding: 2.5rem 2rem;
-}
-.page-header-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-}
-.page-header h1 {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #fff;
-  margin: 0 0 0.35rem;
-}
-.page-header p {
-  color: rgba(255,255,255,0.7);
-  font-size: 0.95rem;
-  margin: 0;
-}
-.page-content { min-height: 60vh; }
-</style>

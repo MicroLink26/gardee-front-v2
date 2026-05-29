@@ -17,6 +17,7 @@ onMounted(async () => {
 <template>
   <div class="admin-home">
     <div class="page-header">
+      <p class="header-eyebrow">Espace staff</p>
       <h1>Administration</h1>
       <p class="header-sub">Vue d'ensemble de la plateforme Gardee</p>
     </div>
@@ -86,31 +87,33 @@ onMounted(async () => {
 
 .admin-home { display: flex; flex-direction: column; gap: 1.75rem; }
 
-.page-header h1 { font-size: 1.5rem; font-weight: 900; color: #1a1a0e; margin: 0 0 0.25rem; }
-.header-sub { font-size: 0.875rem; color: #9ca3af; margin: 0; }
+.page-header { padding-bottom: 1.5rem; border-bottom: 1px solid #e9e5d6; }
+.header-eyebrow { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #a8c47a; margin: 0 0 0.35rem; }
+.page-header h1 { font-size: 1.5rem; font-weight: 900; color: #1a1a0e; margin: 0 0 0.2rem; letter-spacing: -0.02em; }
+.header-sub { font-size: 0.85rem; color: #9ca3af; margin: 0; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
 
 .stat-card {
   display: flex; align-items: center; gap: 1rem;
-  background: #fff; border: 1.5px solid #e5e2d3; border-radius: 16px; padding: 1.25rem;
+  background: #FCFAF5; border: 1.5px solid #e9e5d6; border-radius: 16px; padding: 1.25rem;
   text-decoration: none; color: inherit; transition: all 0.15s;
 }
 .stat-card:hover {
-  border-color: #d6cda4;
-  box-shadow: 0 4px 16px rgba(81,95,55,0.08);
+  border-color: #c8d9a6;
+  box-shadow: 0 4px 16px rgba(58,80,32,0.08);
   transform: translateY(-2px);
 }
-.stat-card--alert { border-color: #fde68a; background: #fffbeb; }
-.stat-card--alert:hover { border-color: #f59e0b; }
+.stat-card--alert { border-color: rgba(230,197,83,0.4); background: rgba(230,197,83,0.05); }
+.stat-card--alert:hover { border-color: rgba(230,197,83,0.7); }
 
 .stat-icon {
   width: 48px; height: 48px; border-radius: 12px;
-  background: #f0ede3; color: #515F37;
+  background: #eef2e8; color: #3a5020;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .stat-icon svg { width: 22px; height: 22px; }
-.stat-card--alert .stat-icon { background: #fef3c7; color: #d97706; }
+.stat-card--alert .stat-icon { background: rgba(230,197,83,0.18); color: #7a6000; }
 
 .stat-body { flex: 1; }
 .stat-value { font-size: 2rem; font-weight: 900; color: #1a1a0e; line-height: 1; }
@@ -124,25 +127,25 @@ onMounted(async () => {
   text-transform: uppercase; color: #515F37; margin: 0;
   display: flex; align-items: center; gap: 0.75rem;
 }
-.section-title::after { content: ''; flex: 1; height: 1px; background: #e5e2d3; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: #e9e5d6; }
 
 .actions-grid { display: flex; flex-direction: column; gap: 0.6rem; }
 
 .action-card {
   display: flex; align-items: center; gap: 1rem;
-  background: #fff; border: 1.5px solid #e5e2d3; border-radius: 14px; padding: 1rem 1.25rem;
+  background: #FCFAF5; border: 1.5px solid #e9e5d6; border-radius: 14px; padding: 1rem 1.25rem;
   text-decoration: none; color: inherit; transition: all 0.15s;
 }
-.action-card:hover { border-color: #d6cda4; box-shadow: 0 4px 16px rgba(81,95,55,0.07); }
+.action-card:hover { border-color: #c8d9a6; box-shadow: 0 4px 16px rgba(58,80,32,0.07); }
 
 .action-icon {
   width: 40px; height: 40px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .action-icon svg { width: 18px; height: 18px; }
-.action-icon--green { background: #f0ede3; color: #515F37; }
-.action-icon--orange { background: #fff7ed; color: #ea580c; }
-.action-icon--blue { background: #eff6ff; color: #3b82f6; }
+.action-icon--green { background: rgba(168,196,122,0.18); color: #3a5020; }
+.action-icon--orange { background: rgba(230,197,83,0.15); color: #7a6000; }
+.action-icon--blue { background: #eef2e8; color: #515F37; }
 
 .action-label { font-size: 0.875rem; font-weight: 700; color: #1a1a0e; }
 .action-desc { font-size: 0.775rem; color: #9ca3af; margin-top: 0.1rem; }

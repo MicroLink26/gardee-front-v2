@@ -50,7 +50,7 @@ async function submit() {
   <div class="rating-page">
     <div class="rating-card">
       <a href="/" class="card-logo">
-        <img src="/logo.png" alt="Gardee" height="40" />
+        <img src="/img/logo.png" alt="Gardee" height="40" />
       </a>
 
       <!-- Chargement -->
@@ -151,7 +151,7 @@ async function submit() {
 }
 
 .rating-card {
-  background: #fff; border: 1.5px solid #e5e2d3;
+  background: #FCFAF5; border: 1.5px solid #e5e2d3;
   border-radius: 20px; padding: 2.5rem;
   width: 100%; max-width: 500px;
   box-shadow: 0 8px 40px rgba(81,95,55,0.08);
@@ -215,7 +215,7 @@ async function submit() {
   display: flex; align-items: center; gap: 0.5rem;
   flex: 1; padding: 0.65rem 1rem;
   border: 1.5px solid #e5e2d3; border-radius: 10px;
-  background: #fff; cursor: pointer; font-size: 0.875rem; font-weight: 600;
+  background: #FCFAF5; cursor: pointer; font-size: 0.875rem; font-weight: 600;
   color: #6b7280; transition: all 0.15s; justify-content: center;
 }
 .rec-btn svg { width: 15px; height: 15px; }
@@ -233,7 +233,7 @@ textarea {
   background: #faf8f2; resize: vertical;
   transition: border-color 0.15s, background 0.15s;
 }
-textarea:focus { outline: none; border-color: #515F37; background: #fff; }
+textarea:focus { outline: none; border-color: #515F37; background: #FCFAF5; }
 textarea::placeholder { color: #b5ae94; }
 
 /* Warning */

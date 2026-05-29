@@ -81,6 +81,7 @@ onMounted(() => {
   <div class="demandes">
     <div class="page-header">
       <div>
+        <p class="header-eyebrow">{{ isPrestataire ? 'Espace prestataire' : 'Mon espace' }}</p>
         <h1>{{ isPrestataire ? 'Mes demandes reçues' : 'Mes réservations' }}</h1>
         <p class="header-sub">{{ total }} demande{{ total > 1 ? 's' : '' }} au total</p>
       </div>
@@ -103,7 +104,7 @@ onMounted(() => {
     <p v-else-if="error" class="error-msg">{{ error }}</p>
 
     <div v-else-if="!filtered.length" class="empty">
-      <img src="/arbreUtiliser.svg" alt="" style="height:100px;opacity:0.5;margin-bottom:1rem" />
+      <img src="/img/arbreUtiliser.svg" alt="" style="height:100px;opacity:0.5;margin-bottom:1rem" />
       <p>Aucune demande dans cette catégorie.</p>
     </div>
 
@@ -165,25 +166,34 @@ onMounted(() => {
 
 .demandes { display: flex; flex-direction: column; gap: 1.5rem; }
 
-.page-header { display: flex; align-items: flex-start; justify-content: space-between; }
-.page-header h1 { font-size: 1.5rem; font-weight: 900; color: #1a1a0e; margin: 0 0 0.2rem; }
-.header-sub { font-size: 0.875rem; color: #9ca3af; margin: 0; }
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e9e5d6;
+}
+.header-eyebrow {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #a8c47a; margin: 0 0 0.35rem;
+}
+.page-header h1 { font-size: 1.5rem; font-weight: 900; color: #1a1a0e; margin: 0 0 0.2rem; letter-spacing: -0.02em; }
+.header-sub { font-size: 0.85rem; color: #9ca3af; margin: 0; }
 
 /* Filters */
 .filter-tabs { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 .filter-tab {
   padding: 0.4rem 1rem;
-  border: 1.5px solid #e5e2d3;
+  border: 1.5px solid #e9e5d6;
   border-radius: 999px;
-  background: #fff;
-  color: #6b7280;
+  background: #f5f2eb;
+  color: #515F37;
   font-size: 0.8rem;
   font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
   transition: all 0.15s;
 }
-.filter-tab:hover { border-color: #515F37; color: #515F37; }
-.filter-tab.active { background: #515F37; border-color: #515F37; color: #fff; }
+.filter-tab:hover { border-color: #a8c47a; background: #eef2e8; }
+.filter-tab.active { background: #3a5020; border-color: #3a5020; color: #fff; }
 
 /* Empty */
 .empty { text-align: center; padding: 3rem 1rem; color: #9ca3af; }
@@ -193,14 +203,16 @@ onMounted(() => {
 .request-list { display: flex; flex-direction: column; gap: 0.875rem; }
 
 .request-card {
-  background: #fff;
-  border: 1.5px solid #e5e2d3;
+  background: #FCFAF5;
+  border: 1.5px solid #e9e5d6;
   border-radius: 16px;
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.875rem;
+  transition: box-shadow 0.15s, border-color 0.15s;
 }
+.request-card:hover { border-color: #c8d9a6; box-shadow: 0 4px 16px rgba(58,80,32,0.07); }
 
 .request-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
 
@@ -227,10 +239,10 @@ onMounted(() => {
   white-space: nowrap;
   flex-shrink: 0;
 }
-.badge-green { background: #f0ede3; color: #515F37; }
-.badge-red { background: #fee2e2; color: #dc2626; }
-.badge-orange { background: #fff7ed; color: #ea580c; }
-.badge-blue { background: #eff6ff; color: #3b82f6; }
+.badge-green { background: rgba(168,196,122,0.18); color: #3a5020; border: 1px solid rgba(168,196,122,0.35); }
+.badge-red { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.badge-orange { background: rgba(230,197,83,0.15); color: #7a6000; border: 1px solid rgba(230,197,83,0.35); }
+.badge-blue { background: rgba(81,95,55,0.1); color: #515F37; border: 1px solid rgba(81,95,55,0.2); }
 
 .request-services { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 .service-tag {
@@ -252,12 +264,12 @@ onMounted(() => {
 
 .request-desc {
   font-size: 0.875rem;
-  color: #374151;
+  color: #515F37;
   margin: 0;
-  padding: 0.75rem;
-  background: #faf8f2;
+  padding: 0.75rem 0.875rem;
+  background: #f5f2eb;
   border-radius: 8px;
-  border-left: 3px solid #d6cda4;
+  border-left: 3px solid #a8c47a;
 }
 
 .request-actions { display: flex; gap: 0.75rem; }
@@ -265,23 +277,25 @@ onMounted(() => {
 .btn-accept {
   display: flex; align-items: center; gap: 0.4rem;
   padding: 0.5rem 1.25rem;
-  background: #515F37; color: #fff;
-  border: none; border-radius: 8px;
+  background: #3a5020; color: #fff;
+  border: none; border-radius: 10px;
   font-weight: 700; font-size: 0.875rem;
-  cursor: pointer; transition: background 0.15s;
+  font-family: inherit;
+  cursor: pointer; transition: background 0.15s, transform 0.15s;
 }
-.btn-accept svg { width: 15px; height: 15px; }
-.btn-accept:hover { background: #3d4a28; }
+.btn-accept svg { width: 14px; height: 14px; }
+.btn-accept:hover { background: #253515; transform: translateY(-1px); }
 
 .btn-refuse {
   padding: 0.5rem 1.25rem;
-  background: #fff; color: #dc2626;
-  border: 1.5px solid #fca5a5;
-  border-radius: 8px;
+  background: #FCFAF5; color: #b91c1c;
+  border: 1.5px solid #fecaca;
+  border-radius: 10px;
   font-weight: 600; font-size: 0.875rem;
+  font-family: inherit;
   cursor: pointer; transition: all 0.15s;
 }
-.btn-refuse:hover { background: #fee2e2; }
+.btn-refuse:hover { background: #fef2f2; border-color: #fca5a5; }
 
 /* Skeleton */
 .skeleton-list { display: flex; flex-direction: column; gap: 0.875rem; }

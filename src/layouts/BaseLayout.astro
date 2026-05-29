@@ -1,4 +1,6 @@
 ---
+import ToastContainer from '../components/vue/ToastContainer.vue';
+
 interface Props {
   title: string;
   description?: string;
@@ -17,18 +19,59 @@ const { title, description = 'Trouvez un jardinier professionnel près de chez v
     <meta property="og:title" content={`${title} — Gardee`} />
     <meta property="og:description" content={description} />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#515F37" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Gardee" />
-    <style>*, *::before, *::after { box-sizing: border-box; } body { margin: 0; padding: 0; }</style>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      body { margin: 0; padding: 0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+
+      :root {
+        --color-brand: #515F37;
+        --color-brand-dark: #3d4a28;
+        --color-brand-light: #a8c47a;
+        --color-accent: #d6cda4;
+        --color-accent-light: #f0ede3;
+        --color-bg: #faf8f2;
+        --color-bg-alt: #f7f3eb;
+        --color-text: #1a1a0e;
+        --color-text-muted: #6b7280;
+        --color-text-faint: #9ca3af;
+        --color-border: #e5e2d3;
+        --color-border-strong: #d6cda4;
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 24px;
+        --radius-full: 999px;
+        --shadow-sm: 0 2px 8px rgba(81,95,55,0.06);
+        --shadow-md: 0 4px 20px rgba(81,95,55,0.10);
+        --shadow-lg: 0 12px 36px rgba(81,95,55,0.14);
+        --transition: 0.15s ease;
+      }
+
+      *:focus-visible {
+        outline: 2.5px solid var(--color-brand);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      ::selection {
+        background: rgba(81, 95, 55, 0.18);
+        color: var(--color-text);
+      }
+
+      img { max-width: 100%; }
+    </style>
   </head>
   <body>
     <slot />
+    <ToastContainer client:only="vue" />
     <script>
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').then((reg) => {
