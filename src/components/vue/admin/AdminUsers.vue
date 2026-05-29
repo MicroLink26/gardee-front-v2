@@ -111,7 +111,7 @@ function roleClass(role: string) {
             </td>
             <td>
               <div class="action-btns">
-                <a :href="`/prestataires/?id=${u._id}`" target="_blank" class="btn-view">Voir</a>
+                <a :href="`/prestataires/${u._id}/`" target="_blank" class="btn-view">Voir</a>
                 <button class="btn-delete" @click="deleteUser(u._id, `${u.prenom} ${u.nom}`)">Suppr.</button>
               </div>
             </td>

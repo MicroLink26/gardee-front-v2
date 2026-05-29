@@ -14,7 +14,7 @@ function stars(rating: number) {
 </script>
 
 <template>
-  <a :href="`/prestataires/?id=${user._id}`" class="card">
+  <a :href="`/prestataires/${user._id}/`" class="card">
     <div class="card-photo">
       <img
         :src="getAvatar(user._id, user.profil_image?.secure_url)"

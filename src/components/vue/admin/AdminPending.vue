@@ -75,7 +75,7 @@ onMounted(() => {
         </div>
 
         <div class="user-actions">
-          <a :href="`/prestataires/?id=${user._id}`" target="_blank" class="btn-view">
+          <a :href="`/prestataires/${user._id}/`" target="_blank" class="btn-view">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             Voir
           </a>
