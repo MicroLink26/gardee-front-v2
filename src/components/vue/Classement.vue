@@ -280,7 +280,7 @@ function stars(n: number) {
               <a
                 v-for="(user, i) in podiumOrder"
                 :key="user._id"
-                :href="`/prestataires/?id=${user._id}`"
+                :href="`/prestataires/${user._id}/`"
                 :class="['podium-card', podiumClass(i), { 'podium-first': PODIUM_RANK[i] === 1 }]"
               >
                 <div class="podium-photo">
@@ -328,7 +328,7 @@ function stars(n: number) {
               <a
                 v-for="(user, i) in listItems"
                 :key="user._id"
-                :href="`/prestataires/?id=${user._id}`"
+                :href="`/prestataires/${user._id}/`"
                 class="rank-card"
               >
                 <span class="rank-num">{{ listRankStart + i }}</span>
