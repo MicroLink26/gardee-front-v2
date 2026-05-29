@@ -54,8 +54,9 @@ const processedReviews = reviews.map((r: any) => {
   };
 });
 
-const avatarIdx = parseInt(id.slice(-2), 16) % 3 + 1;
-const avatarSrc = user?.profil_image?.secure_url ?? `/img/default-avatar-${avatarIdx}.png`;
+const avatarIdx = parseInt(id.slice(-2), 16) % 4;
+const defaultAvatars = ['/img/default-avatar.png', '/img/default-avatar2.png', '/img/default-avatar3.png', '/img/default-avatar4.png'];
+const avatarSrc = user?.profil_image?.secure_url ?? defaultAvatars[avatarIdx];
 
 const fullName = user ? `${user.prenom} ${user.nom}` : 'Jardinier';
 const pageTitle = user ? `${fullName} — Jardinier à ${user.ville}` : 'Profil jardinier';
