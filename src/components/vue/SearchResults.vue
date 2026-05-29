@@ -51,17 +51,13 @@ async function load() {
 }
 
 function search() {
-  page.value = 1;
-  const url = new URL(window.location.href);
-  if (query.value) url.searchParams.set('q', query.value);
-  else url.searchParams.delete('q');
-  window.history.pushState({}, '', url);
-  load();
+  const params = new URLSearchParams();
+  if (query.value) params.set('prestation', query.value);
+  window.location.href = `/carte${params.size ? '?' + params.toString() : ''}`;
 }
 
 function selectService(name: string) {
-  query.value = query.value === name ? '' : name;
-  search();
+  window.location.href = `/carte?prestation=${encodeURIComponent(name)}`;
 }
 
 function goPage(p: number) {

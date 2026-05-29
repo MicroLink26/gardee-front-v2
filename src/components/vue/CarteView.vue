@@ -30,13 +30,30 @@ const locating = ref(false);
 
 const categoriesStore = useCategoriesStore();
 const sortBy = ref<'note' | 'prix' | 'distance'>('note');
+const sortDir = ref<'asc' | 'desc'>('desc');
 const userPosition = ref<{ lat: number; lng: number } | null>(null);
 
 const SORTS = [
-  { val: 'note' as const, label: 'Note ↓' },
-  { val: 'prix' as const, label: 'Prix ↑' },
+  { val: 'note' as const, label: 'Note' },
+  { val: 'prix' as const, label: 'Prix' },
   { val: 'distance' as const, label: 'Distance' },
 ];
+
+const DEFAULT_DIR: Record<string, 'asc' | 'desc'> = {
+  note: 'desc',
+  prix: 'asc',
+  distance: 'asc',
+};
+
+function setSortBy(val: 'note' | 'prix' | 'distance') {
+  if (val === 'distance' && !userPosition.value) { locateMe(); return; }
+  if (sortBy.value === val) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortBy.value = val;
+    sortDir.value = DEFAULT_DIR[val];
+  }
+}
 
 const RATINGS = [
   { label: 'Toutes', val: 0 },
@@ -67,14 +84,15 @@ function geoDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
 
 const sortedAndFiltered = computed(() => {
   const arr = [...filtered.value];
+  const dir = sortDir.value === 'asc' ? 1 : -1;
   if (sortBy.value === 'note') {
-    return arr.sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0));
+    return arr.sort((a, b) => dir * ((a.averageRating ?? 0) - (b.averageRating ?? 0)));
   }
   if (sortBy.value === 'prix') {
     return arr.sort((a, b) => {
       if (!a.tarifHoraire) return 1;
       if (!b.tarifHoraire) return -1;
-      return a.tarifHoraire - b.tarifHoraire;
+      return dir * (a.tarifHoraire - b.tarifHoraire);
     });
   }
   if (sortBy.value === 'distance' && userPosition.value) {
@@ -82,7 +100,7 @@ const sortedAndFiltered = computed(() => {
     return arr.sort((a, b) => {
       const dA = a.location ? geoDistance(lat, lng, a.location.coordinates[1], a.location.coordinates[0]) : Infinity;
       const dB = b.location ? geoDistance(lat, lng, b.location.coordinates[1], b.location.coordinates[0]) : Infinity;
-      return dA - dB;
+      return dir * (dA - dB);
     });
   }
   return arr;
@@ -96,7 +114,7 @@ async function load() {
       ville: ville.value || undefined,
       pageSize: 100,
     });
-    users.value = data.items.filter(u => u.location);
+    users.value = data.items;
   } finally {
     loading.value = false;
   }
@@ -201,6 +219,7 @@ function locateMe() {
         .addTo(map)
         .bindPopup('<div class="gd-popup"><strong>Votre position</strong></div>');
       sortBy.value = 'distance';
+      sortDir.value = 'asc';
       locating.value = false;
     },
     () => { locating.value = false; },
@@ -209,7 +228,19 @@ function locateMe() {
 }
 
 onMounted(async () => {
-  categoriesStore.load();
+  const urlParams = new URLSearchParams(window.location.search);
+  const villeParam = urlParams.get('ville');
+  const prestationParam = urlParams.get('prestation');
+  if (villeParam) ville.value = villeParam;
+
+  await categoriesStore.load();
+
+  if (prestationParam) {
+    const match = categoriesStore.categories.find(c =>
+      c.name.toLowerCase().includes(prestationParam.toLowerCase())
+    );
+    if (match) service.value = match._id;
+  }
 
   L = (await import('leaflet')).default;
   await import('leaflet/dist/leaflet.css');
@@ -241,9 +272,10 @@ function toggleService(s: string) {
   applyFilters();
 }
 
-function selectCard(user: User) {
+async function selectCard(user: User) {
   selectedId.value = user._id;
   mobileView.value = 'carte';
+  await nextTick();
   flyTo(user);
 }
 
@@ -373,9 +405,12 @@ function stars(n: number) {
           :key="s.val"
           :class="['sort-btn', { active: sortBy === s.val, disabled: s.val === 'distance' && !userPosition }]"
           :title="s.val === 'distance' && !userPosition ? 'Activez la géolocalisation pour trier par distance' : ''"
-          @click="s.val !== 'distance' || userPosition ? sortBy = s.val : locateMe()"
+          @click="setSortBy(s.val)"
           type="button"
-        >{{ s.label }}</button>
+        >
+          {{ s.label }}
+          <span class="sort-dir-icon" v-if="sortBy === s.val">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
+        </button>
       </div>
 
       <div class="cards-list">
@@ -420,12 +455,12 @@ function stars(n: number) {
         </div>
       </template>
       <div v-else-if="!sortedAndFiltered.length" class="empty"><span>🌿</span><p>Aucun jardinier pour ces filtres</p></div>
-      <a
+      <div
         v-else
         v-for="user in sortedAndFiltered"
         :key="user._id"
-        :href="`/prestataires/?id=${user._id}`"
         class="mobile-card"
+        @click="selectCard(user)"
       >
         <div class="mobile-card-photo">
           <img :src="getAvatar(user._id, user.profil_image?.secure_url)" :alt="`${user.prenom} ${user.nom}`" />
@@ -445,9 +480,9 @@ function stars(n: number) {
         </div>
         <div class="scard-right">
           <span v-if="user.tarifHoraire" class="scard-price">{{ user.tarifHoraire }} €/h</span>
-          <span class="mobile-card-cta">Voir →</span>
+          <a :href="`/prestataires/?id=${user._id}`" class="mobile-card-cta" @click.stop>Voir →</a>
         </div>
-      </a>
+      </div>
     </div>
 
     <!-- ── MAP ── -->
@@ -637,6 +672,7 @@ function stars(n: number) {
 .sort-btn.active { background: #3a5020; border-color: #3a5020; color: #fff; }
 .sort-btn.disabled { opacity: 0.5; cursor: default; }
 .sort-btn.disabled:hover { border-color: #e9e5d6; background: #f5f2eb; }
+.sort-dir-icon { font-size: 0.7rem; margin-left: 0.15rem; opacity: 0.85; }
 
 .cards-list { overflow-y: auto; flex: 1; padding: 0.5rem; background: #f2efe6; }
 
