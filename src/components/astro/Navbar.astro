@@ -55,19 +55,26 @@ const isActive = (path: string) => currentPath === path ? 'nav-active' : '';
 
 <script>
   const burgerBtn = document.getElementById('burger-btn');
-  const overlay = document.getElementById('mobile-overlay');
+  const overlay = document.getElementById('mobile-overlay') as HTMLElement | null;
   const closeBtn = document.getElementById('mobile-close');
 
   function openMenu() {
-    overlay?.classList.add('open');
+    if (!overlay) return;
+    overlay.style.display = 'block';
+    overlay.offsetHeight; // force reflow so CSS transition fires
+    overlay.classList.add('open');
     burgerBtn?.setAttribute('aria-expanded', 'true');
     document.body.style.overflow = 'hidden';
   }
 
   function closeMenu() {
-    overlay?.classList.remove('open');
+    if (!overlay) return;
+    overlay.classList.remove('open');
     burgerBtn?.setAttribute('aria-expanded', 'false');
     document.body.style.overflow = '';
+    overlay.addEventListener('transitionend', () => {
+      overlay.style.display = 'none';
+    }, { once: true });
   }
 
   burgerBtn?.addEventListener('click', openMenu);
@@ -240,6 +247,5 @@ const isActive = (path: string) => currentPath === path ? 'nav-active' : '';
     .navbar-auth { display: none; }
     .navbar { padding: 0 1.25rem; }
     .burger { display: flex; }
-    .mobile-overlay { display: block; }
   }
 </style>
