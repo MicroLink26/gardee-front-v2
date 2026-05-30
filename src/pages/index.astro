@@ -44,7 +44,7 @@ import Footer from '../components/astro/Footer.astro';
       </div>
       <img src="/img/hero-screenshot.png" alt="Visuel Gardee" class="hero-illus" />
       <p class="hero-right-caption">Pour sublimer votre jardin, choisissez le meilleur jardinier, paysagiste, élagueur ou pisciniste de votre région. Ou laissez une chance aux novices pour des petits travaux à moindre coût.</p>
-      <div class="hero-floating-card" id="hero-badge" style="display:none">
+      <a class="hero-floating-card" id="hero-badge" href="#" style="display:none;text-decoration:none">
         <div class="hfc-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
@@ -52,7 +52,7 @@ import Footer from '../components/astro/Footer.astro';
           <strong>Jardinier trouvé !</strong>
           <span id="hero-badge-dist">Près de chez vous</span>
         </div>
-      </div>
+      </a>
     </div>
   </section>
 
@@ -240,6 +240,7 @@ import Footer from '../components/astro/Footer.astro';
           if (!res.ok) return;
           const { items } = await res.json();
           let minDist = Infinity;
+          let nearestId = null;
           for (const u of items) {
             if (!u.location) continue;
             const [uLng, uLat] = u.location.coordinates;
@@ -247,14 +248,15 @@ import Footer from '../components/astro/Footer.astro';
             const dLng = (uLng - lng) * Math.PI / 180;
             const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat * Math.PI / 180) * Math.cos(uLat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
             const d = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            if (d < minDist) minDist = d;
+            if (d < minDist) { minDist = d; nearestId = u._id; }
           }
-          if (minDist === Infinity) return;
+          if (minDist === Infinity || !nearestId) return;
           const badge = document.getElementById('hero-badge');
           const distEl = document.getElementById('hero-badge-dist');
           if (!badge || !distEl) return;
           const km = minDist < 1 ? '< 1 km' : `${Math.round(minDist)} km`;
           distEl.textContent = `À ${km} de chez vous`;
+          badge.setAttribute('href', `/prestataires/${nearestId}/`);
           badge.style.display = '';
         } catch {}
       }, () => {}, { timeout: 6000, maximumAge: 300000 });
