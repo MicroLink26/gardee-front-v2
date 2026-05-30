@@ -236,7 +236,7 @@ import Footer from '../components/astro/Footer.astro';
       navigator.geolocation.getCurrentPosition(async (pos) => {
         try {
           const { latitude: lat, longitude: lng } = pos.coords;
-          const res = await fetch(`${apiUrl}/ranking?pageSize=20`);
+          const res = await fetch(`${apiUrl}/users/ranking?pageSize=20`);
           if (!res.ok) return;
           const { items } = await res.json();
           let minDist = Infinity;
