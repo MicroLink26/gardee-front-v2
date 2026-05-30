@@ -37,7 +37,6 @@ function starsArr(n: number) {
   return { full, empty: Math.max(0, 5 - full) };
 }
 
-// Pre-process reviews for the template (avoid typed callbacks in JSX)
 const processedReviews = reviews.map((r: any) => {
   const d = r.ratingDetails as Record<string, number> | undefined;
   const vals = d ? Object.values(d).filter((v: unknown): v is number => typeof v === 'number') : [];
@@ -61,8 +60,10 @@ const avatarSrc = user?.profil_image?.secure_url ?? defaultAvatars[avatarIdx];
 const fullName = user ? `${user.prenom} ${user.nom}` : 'Jardinier';
 const pageTitle = user ? `${fullName} — Jardinier à ${user.ville}` : 'Profil jardinier';
 const pageDesc = user?.description
-  ? user.description.slice(0, 155) + (user.description.length > 155 ? '…' : '')
+  ? user.description.slice(0, 155) + (user.description.length > 155 ? '...' : '')
   : `Découvrez le profil de ${fullName}, jardinier professionnel à ${user?.ville ?? ''} sur Gardee.`;
+
+const memberSince = user ? new Date(user.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '';
 ---
 
 <BaseLayout title={pageTitle} description={pageDesc}>
@@ -75,10 +76,7 @@ const pageDesc = user?.description
   ) : (
   <div class="profile-page">
 
-    <!-- HERO COVER -->
-    <div class="hero-cover">
-      <div class="hero-overlay"></div>
-    </div>
+    <div class="hero-cover"></div>
 
     <div class="container">
 
@@ -92,26 +90,48 @@ const pageDesc = user?.description
           <div class="profile-name-row">
             <h1>{fullName}</h1>
             <span class="badge-verified">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               Vérifié
             </span>
           </div>
+
           <p class="profile-ville">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
             {user.ville}
           </p>
+
           {user.numberOfReviews > 0 && (
             <div class="profile-rating">
               <span class="stars-full">{'★'.repeat(starsArr(user.averageRating).full)}</span>
               <span class="stars-empty">{'★'.repeat(starsArr(user.averageRating).empty)}</span>
               <span class="rating-score">{user.averageRating.toFixed(1)}</span>
-              <span class="rating-count">· {user.numberOfReviews} avis</span>
+              <span class="rating-count">({user.numberOfReviews} avis)</span>
             </div>
           )}
-          <div class="profile-tags">
-            {user.prestations?.map((p: string) => (
-              <span class="tag">{catName(p)}</span>
-            ))}
+
+          <div class="trust-badges">
+            {user.isEntrepreneur && (
+              <span class="trust-badge">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                Professionnel
+              </span>
+            )}
+            {user.materielOK && (
+              <span class="trust-badge">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                Materiel inclus
+              </span>
+            )}
+            {user.qualifElagage && (
+              <span class="trust-badge">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Qualifié élagage
+              </span>
+            )}
+            <span class="trust-badge trust-badge--muted">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Membre depuis {memberSince}
+            </span>
           </div>
         </div>
 
@@ -126,23 +146,22 @@ const pageDesc = user?.description
       <!-- BODY -->
       <div class="profile-body">
 
-        <!-- LEFT: CONTENT -->
         <div class="profile-content">
 
           {user.description && (
-            <div class="content-section">
+            <div class="content-card">
               <h2>Présentation</h2>
               <p class="description-text">{user.description}</p>
             </div>
           )}
 
-          <div class="content-section">
+          <div class="content-card">
             <h2>Services proposés</h2>
             <div class="services-grid">
               {user.prestations?.map((p: string) => (
                 <div class="service-item">
                   <div class="service-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                   </div>
                   <span>{catName(p)}</span>
                 </div>
@@ -150,38 +169,53 @@ const pageDesc = user?.description
             </div>
           </div>
 
-          <div class="content-section">
+          <div class="content-card">
             <h2>Informations</h2>
             <div class="info-grid">
               <div class="info-item">
-                <span class="info-label">Zone d'intervention</span>
+                <span class="info-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Zone d'intervention
+                </span>
                 <span class="info-val">{user.ville} et alentours</span>
               </div>
               {user.tarifHoraire && (
                 <div class="info-item">
-                  <span class="info-label">Tarif horaire</span>
+                  <span class="info-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    Tarif horaire
+                  </span>
                   <span class="info-val">{user.tarifHoraire} €/h</span>
                 </div>
               )}
+              {user.telephone && (
+                <div class="info-item">
+                  <span class="info-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    Téléphone
+                  </span>
+                  <span class="info-val">{user.telephone}</span>
+                </div>
+              )}
               <div class="info-item">
-                <span class="info-label">Membre depuis</span>
-                <span class="info-val">
-                  {new Date(user.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                <span class="info-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Membre depuis
                 </span>
+                <span class="info-val">{memberSince}</span>
               </div>
             </div>
           </div>
 
-          <!-- REVIEWS -->
           {totalReviews > 0 && (
-            <div class="content-section">
+            <div class="content-card">
               <h2>Avis clients ({totalReviews})</h2>
               <div class="reviews-list">
                 {processedReviews.map((r) => (
                   <div class="review-card">
                     <div class="review-header">
                       <div class="review-avatar">{r.initial}</div>
-                      <div>
+                      <div class="review-meta">
                         <div class="review-author">{r.author}</div>
                         <div class="review-date">{r.date}</div>
                       </div>
@@ -200,7 +234,6 @@ const pageDesc = user?.description
 
         </div>
 
-        <!-- RIGHT: BOOKING WIDGET (Vue island) -->
         <aside class="booking-aside">
           <BookingWidget
             client:load
@@ -227,125 +260,274 @@ const pageDesc = user?.description
 .profile-page { background: #f2efe6; min-height: 100vh; }
 
 .hero-cover {
-  height: 160px;
-  background: linear-gradient(155deg, #141f0b 0%, #253515 55%, #3a5020 100%);
+  height: 180px;
+  background: linear-gradient(135deg, #141f0b 0%, #1e3015 40%, #2d4a1a 70%, #3a5020 100%);
   position: relative;
 }
-.hero-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.55) 100%);
+.hero-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,0.03) 0px,
+    rgba(255,255,255,0.03) 1px,
+    transparent 1px,
+    transparent 12px
+  );
 }
 
 .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem 5rem; }
 
+/* PROFILE HEADER */
 .profile-header {
-  display: flex; align-items: flex-end; gap: 1.5rem;
-  margin-top: 2rem; margin-bottom: 2.5rem;
-  padding-bottom: 2rem; border-bottom: 1px solid #e9e5d6;
-  position: relative; z-index: 1; flex-wrap: wrap;
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  margin-top: -56px;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #e2dece;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 
 .profile-avatar {
-  width: 120px; height: 120px; border-radius: 50%; overflow: hidden;
-  border: 4px solid #fff; box-shadow: 0 6px 20px rgba(0,0,0,0.18);
-  flex-shrink: 0; background: linear-gradient(135deg, #dde6c8, #a8c47a);
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid #f2efe6;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #dde6c8, #a8c47a);
 }
 .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-.profile-meta { flex: 1; min-width: 200px; }
-.profile-name-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; flex-wrap: wrap; }
-.profile-page h1 { font-size: 1.75rem; font-weight: 900; color: #1a1a0e; margin: 0; letter-spacing: -0.02em; }
+.profile-meta { flex: 1; min-width: 220px; padding-top: 60px; }
+
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.25rem;
+  flex-wrap: wrap;
+}
+.profile-page h1 {
+  font-size: 1.7rem;
+  font-weight: 900;
+  color: #1a1a0e;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
 
 .badge-verified {
-  display: inline-flex; align-items: center; gap: 0.3rem;
-  font-size: 0.72rem; font-weight: 600; color: #3a5020;
-  background: rgba(81,95,55,0.08); border: 1px solid rgba(81,95,55,0.2);
-  padding: 0.2rem 0.6rem; border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #3a5020;
+  background: rgba(81,95,55,0.1);
+  border: 1px solid rgba(81,95,55,0.22);
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
 }
+
 .profile-ville {
-  display: flex; align-items: center; gap: 0.3rem;
-  color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem; margin-top: 0.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
 }
-.profile-rating { display: flex; align-items: center; gap: 0.25rem; font-size: 0.9rem; margin-bottom: 0.6rem; }
+
+.profile-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.875rem;
+  margin-bottom: 0.6rem;
+}
 .stars-full { color: #e6c553; }
-.stars-empty { color: #e0dbd0; }
-.rating-score { font-weight: 700; color: #111827; margin-left: 0.15rem; }
-.rating-count { color: #9ca3af; font-size: 0.8rem; }
-.profile-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-.tag {
-  background: #f0ede3; color: #515F37; border: 1px solid #e0d8c2;
-  padding: 0.2rem 0.65rem; border-radius: 999px;
-  font-size: 0.78rem; font-weight: 600;
+.stars-empty { color: #ddd8c8; }
+.rating-score { font-weight: 700; color: #1a1a0e; margin-left: 0.1rem; }
+.rating-count { color: #9ca3af; font-size: 0.78rem; margin-left: 0.1rem; }
+
+.trust-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+}
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #3a5020;
+  background: rgba(81,95,55,0.08);
+  border: 1px solid rgba(81,95,55,0.18);
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+}
+.trust-badge--muted {
+  color: #8a8070;
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.08);
 }
 
 .tarif-badge {
-  display: flex; flex-direction: column; align-items: center;
-  background: #3a5020; color: #fff;
-  padding: 0.875rem 1.375rem; border-radius: 16px;
-  flex-shrink: 0; box-shadow: 0 4px 16px rgba(58,80,32,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #3a5020;
+  color: #fff;
+  padding: 0.875rem 1.375rem;
+  border-radius: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(58,80,32,0.28);
+  margin-bottom: 0.25rem;
 }
 .tarif-val { font-size: 1.6rem; font-weight: 900; line-height: 1; color: #a8c47a; }
-.tarif-unit { font-size: 0.72rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem; }
+.tarif-unit { font-size: 0.7rem; color: rgba(255,255,255,0.55); margin-top: 0.2rem; }
 
+/* BODY LAYOUT */
 .profile-body {
-  display: grid; grid-template-columns: 1fr 380px;
-  gap: 3rem; align-items: start;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 2rem;
+  align-items: start;
 }
 
-.content-section { margin-bottom: 2.5rem; }
-.content-section h2 {
-  font-size: 0.72rem; font-weight: 700; color: #515F37;
-  margin: 0 0 1rem; padding-bottom: 0.5rem;
+/* CONTENT CARDS */
+.content-card {
+  background: #FCFAF5;
+  border: 1px solid #e9e5d6;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.content-card h2 {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #515F37;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin: 0 0 1rem;
+  padding-bottom: 0.625rem;
   border-bottom: 1px solid #e9e5d6;
-  text-transform: uppercase; letter-spacing: 0.1em;
 }
-.description-text { color: #374151; font-size: 0.95rem; line-height: 1.75; white-space: pre-wrap; }
 
-.services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem; }
+.description-text {
+  color: #374151;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.5rem;
+}
 .service-item {
-  display: flex; align-items: center; gap: 0.6rem;
-  padding: 0.55rem 0.875rem;
-  background: #FCFAF5; border: 1.5px solid #e9e5d6; border-radius: 10px;
-  font-size: 0.875rem; color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.75rem;
+  background: #f5f2eb;
+  border: 1px solid #e4e0d0;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: #374151;
 }
 .service-icon {
-  width: 28px; height: 28px; background: rgba(81,95,55,0.08); color: #3a5020;
-  border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  background: rgba(81,95,55,0.1);
+  color: #3a5020;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.info-grid { display: flex; flex-direction: column; gap: 0; }
-.info-item { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0; border-bottom: 1px solid #e9e5d6; }
-.info-label { font-size: 0.875rem; color: #9ca3af; }
-.info-val { font-size: 0.875rem; font-weight: 600; color: #1a1a0e; }
+.info-grid { display: flex; flex-direction: column; }
+.info-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #f0ede3;
+  gap: 1rem;
+}
+.info-item:last-child { border-bottom: none; }
+.info-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+.info-label svg { flex-shrink: 0; }
+.info-val {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1a1a0e;
+  text-align: right;
+}
 
-.reviews-list { display: flex; flex-direction: column; gap: 1rem; }
+/* REVIEWS */
+.reviews-list { display: flex; flex-direction: column; gap: 0.875rem; }
 .review-card {
-  padding: 1.125rem 1.25rem; background: #FCFAF5;
-  border: 1.5px solid #e9e5d6; border-radius: 14px;
+  padding: 1rem 1.125rem;
+  background: #f7f4ee;
+  border: 1px solid #e9e5d6;
+  border-radius: 12px;
 }
-.review-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.625rem;
+}
 .review-avatar {
-  width: 36px; height: 36px; border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
   background: linear-gradient(135deg, #dde6c8, #a8c47a);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.8rem; font-weight: 800; color: #3a5020; flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #3a5020;
+  flex-shrink: 0;
 }
-.review-author { font-size: 0.875rem; font-weight: 700; color: #1a1a0e; }
-.review-date { font-size: 0.72rem; color: #9ca3af; }
-.review-stars { margin-left: auto; display: flex; align-items: center; gap: 0.2rem; }
-.review-score { font-size: 0.8rem; font-weight: 700; color: #1a1a0e; }
-.review-text { font-size: 0.875rem; color: #374151; line-height: 1.65; }
+.review-meta { flex: 1; }
+.review-author { font-size: 0.85rem; font-weight: 700; color: #1a1a0e; }
+.review-date { font-size: 0.7rem; color: #9ca3af; }
+.review-stars { display: flex; align-items: center; gap: 0.2rem; }
+.review-score { font-size: 0.78rem; font-weight: 700; color: #1a1a0e; }
+.review-text { font-size: 0.85rem; color: #374151; line-height: 1.65; margin: 0; }
 
-.booking-aside { position: sticky; top: 84px; }
+.booking-aside { position: sticky; top: 80px; }
 
+/* RESPONSIVE */
 @media (max-width: 900px) {
   .profile-body { grid-template-columns: 1fr; }
   .booking-aside { position: static; order: -1; }
 }
 @media (max-width: 600px) {
+  .container { padding: 0 1rem 3rem; }
   .profile-page h1 { font-size: 1.4rem; }
-  .profile-header { margin-top: -40px; gap: 1rem; }
-  .profile-avatar { width: 90px; height: 90px; }
-  .container { padding: 0 1rem 4rem; }
+  .profile-avatar { width: 88px; height: 88px; }
+  .profile-header { gap: 1rem; }
+  .profile-meta { padding-top: 50px; }
 }
 </style>

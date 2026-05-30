@@ -22,6 +22,7 @@ const form = ref({
   requesterEmail: '',
   requesterPrenom: '',
   requesterNom: '',
+  address: '',
   prestations: [] as string[],
   description: '',
   desiredAt: '',
@@ -177,6 +178,10 @@ onMounted(() => categoriesStore.load());
             <label>Nom</label>
             <input v-model="form.requesterNom" type="text" />
           </div>
+        </div>
+        <div class="field">
+          <label>Adresse du chantier</label>
+          <input v-model="form.address" type="text" placeholder="12 rue des Lilas, 06240 Beausoleil" />
         </div>
         <div class="field">
           <label>Service(s)</label>
