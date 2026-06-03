@@ -33,6 +33,7 @@
     "@vitejs/plugin-vue": "^5.2.4",
     "@vitest/coverage-istanbul": "^3.2.6",
     "@vitest/coverage-v8": "^4.1.8",
+    "@vue/test-utils": "^2.4.10",
     "happy-dom": "^17.6.1",
     "typescript": "^5.8.0",
     "vitest": "^3.2.6"
