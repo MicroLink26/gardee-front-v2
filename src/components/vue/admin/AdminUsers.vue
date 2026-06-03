@@ -36,8 +36,7 @@ async function deleteUser(id: string, name: string) {
 onMounted(load);
 
 const ROLES: { value: UserRole; label: string }[] = [
-  { value: 'client', label: 'Client' },
-  { value: 'prestataire', label: 'Prestataire' },
+  { value: 'user', label: 'Utilisateur' },
   { value: 'staff', label: 'Staff' },
   { value: 'admin', label: 'Admin' },
 ];
@@ -45,8 +44,7 @@ const ROLES: { value: UserRole; label: string }[] = [
 function roleClass(role: string) {
   if (role === 'admin') return 'role-admin';
   if (role === 'staff') return 'role-staff';
-  if (role === 'prestataire') return 'role-prest';
-  return 'role-client';
+  return 'role-user';
 }
 </script>
 
@@ -77,7 +75,7 @@ function roleClass(role: string) {
         <thead>
           <tr>
             <th>Utilisateur</th>
-            <th>Ville</th>
+            <th>Inscrit le</th>
             <th>Rôle</th>
             <th>Statut</th>
             <th>Actions</th>
@@ -94,7 +92,7 @@ function roleClass(role: string) {
                 </div>
               </div>
             </td>
-            <td class="td-muted">{{ u.ville ?? '—' }}</td>
+            <td class="td-muted">{{ u.createdAt ? new Date(u.createdAt).toLocaleDateString('fr-FR') : '—' }}</td>
             <td>
               <select
                 :value="u.role"
@@ -204,8 +202,7 @@ tr:hover td { background: #faf8f2; }
 .role-select:focus { outline: none; border-color: #515F37; }
 .role-admin { border-color: #a78bfa; color: #7c3aed; background: #f5f3ff; }
 .role-staff { border-color: #93c5fd; color: #2563eb; background: #eff6ff; }
-.role-prest { border-color: rgba(168,196,122,0.4); color: #3a5020; background: rgba(168,196,122,0.1); }
-.role-client { border-color: #e9e5d6; color: #6b7280; background: #f5f2eb; }
+.role-user { border-color: #e9e5d6; color: #6b7280; background: #f5f2eb; }
 
 .status-badge {
   padding: 0.2rem 0.65rem; border-radius: 999px;

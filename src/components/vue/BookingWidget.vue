@@ -28,6 +28,8 @@ const form = ref({
   desiredAt: '',
 });
 
+const desiredTime = ref('');
+
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 const calYear = ref(today.getFullYear());
@@ -72,9 +74,10 @@ function selectDay(d: { date: Date; past: boolean } | null) {
 
 const selectedDateLabel = computed(() => {
   if (!form.value.desiredAt) return null;
-  return new Date(form.value.desiredAt + 'T12:00:00').toLocaleDateString('fr-FR', {
+  const dateStr = new Date(form.value.desiredAt + 'T12:00:00').toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long',
   });
+  return desiredTime.value ? `${dateStr} à ${desiredTime.value}` : dateStr;
 });
 
 const categoryName = computed(() => {
@@ -94,9 +97,13 @@ async function submitRequest() {
   formError.value = '';
   sending.value = true;
   try {
+    const desiredAt = form.value.desiredAt
+      ? form.value.desiredAt + 'T' + (desiredTime.value || '12:00') + ':00'
+      : undefined;
     await createRequest({
       prestataireId: props.prestataireId,
       ...form.value,
+      desiredAt,
       subject: form.value.prestations.join(', ') || undefined,
     });
     formSent.value = true;
@@ -158,9 +165,15 @@ onMounted(() => categoriesStore.load());
         </div>
       </div>
 
-      <div v-if="selectedDateLabel" class="selected-date">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        {{ selectedDateLabel }}
+      <div v-if="form.desiredAt" class="date-time-row">
+        <div class="selected-date">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          {{ selectedDateLabel }}
+        </div>
+        <div class="time-input-wrap">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <input v-model="desiredTime" type="time" class="time-input" min="07:00" max="20:00" />
+        </div>
       </div>
       <div v-else class="date-hint">Sélectionnez une date ci-dessus</div>
 
@@ -186,8 +199,8 @@ onMounted(() => categoriesStore.load());
         <div class="field">
           <label>Service(s)</label>
           <div class="service-chips">
-            <button v-for="s in prestations" :key="s" type="button" :class="['service-chip', { active: form.prestations.includes(s) }]" @click="toggleService(s)">
-              {{ categoryName(s) }}
+            <button v-for="cat in categoriesStore.categories" :key="cat._id" type="button" :class="['service-chip', { active: form.prestations.includes(cat._id) }]" @click="toggleService(cat._id)">
+              {{ cat.name }}
             </button>
           </div>
         </div>
@@ -269,13 +282,29 @@ onMounted(() => categoriesStore.load());
 .cal-day.selected { background: #3a5020; color: #fff; font-weight: 700; }
 .cal-day.past { color: #d6d0c4; cursor: not-allowed; }
 
+.date-time-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-bottom: 1rem; flex-wrap: wrap;
+}
 .selected-date {
   display: flex; align-items: center; gap: 0.4rem;
   background: #f0ede3; color: #3a5020;
   border: 1px solid #c8d9a6; border-radius: 9px;
   padding: 0.5rem 0.875rem;
   font-size: 0.8rem; font-weight: 600;
-  margin-bottom: 1rem; text-transform: capitalize;
+  text-transform: capitalize; flex: 1; min-width: 140px;
+}
+.time-input-wrap {
+  display: flex; align-items: center; gap: 0.35rem;
+  background: #f0ede3; border: 1px solid #c8d9a6; border-radius: 9px;
+  padding: 0.5rem 0.75rem; color: #3a5020;
+}
+.time-input-wrap svg { flex-shrink: 0; }
+.time-input {
+  width: auto !important; padding: 0 !important;
+  border: none !important; background: transparent !important;
+  font-size: 0.8rem; font-weight: 600; color: #3a5020;
+  box-shadow: none !important; outline: none;
 }
 .date-hint { font-size: 0.78rem; color: #b5ae94; text-align: center; margin-bottom: 1rem; padding: 0.4rem; }
 

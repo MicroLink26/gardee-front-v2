@@ -1,12 +1,6 @@
-export type UserRole = 'client' | 'prestataire' | 'staff' | 'admin';
+export type UserRole = 'user' | 'staff' | 'admin';
 
-export interface User {
-  _id: string;
-  email: string;
-  nom: string;
-  prenom: string;
-  telephone: string;
-  role: UserRole;
+export interface PrestataireProfile {
   prestations: string[];
   tarifHoraire?: number;
   description?: string;
@@ -18,7 +12,30 @@ export interface User {
   averageRating: number;
   numberOfReviews: number;
   location?: { type: 'Point'; coordinates: [number, number] };
+}
+
+export interface User {
+  _id: string;
+  email: string;
+  nom: string;
+  prenom: string;
+  telephone?: string;
+  role: UserRole;
+  isPrestataire: boolean;
+  prestataire?: PrestataireProfile | null;
+  is_validated: boolean;
   createdAt: string;
+  // Champs hérités pour compat avec les pages publiques (profil, classement)
+  prestations?: string[];
+  tarifHoraire?: number;
+  description?: string;
+  adresse?: string;
+  codePostal?: string;
+  ville?: string;
+  profil_image?: { secure_url: string; public_id: string };
+  averageRating?: number;
+  numberOfReviews?: number;
+  location?: { type: 'Point'; coordinates: [number, number] };
 }
 
 export type RequestStatus =

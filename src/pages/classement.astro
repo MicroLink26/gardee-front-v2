@@ -3,8 +3,41 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/astro/Navbar.astro';
 import Footer from '../components/astro/Footer.astro';
 import Classement from '../components/vue/Classement.vue';
+
+const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3002/api';
+
+let topUsers: Array<{ _id: string; prenom: string; nom: string; ville?: string; averageRating?: number; numberOfReviews?: number; tarifHoraire?: number }> = [];
+try {
+  const res = await fetch(`${apiUrl}/prestataires/ranking?pageSize=20`);
+  if (res.ok) {
+    const { items } = await res.json();
+    topUsers = items ?? [];
+  }
+} catch {}
+
+const villes = [...new Set(topUsers.map(u => u.ville).filter(Boolean))].slice(0, 5).join(', ');
+const metaDesc = `Comparez les meilleurs jardiniers professionnels vérifiés sur Gardee. Tonte, élagage, taille de haies, paysagisme${villes ? ` à ${villes} et partout en France` : ' partout en France'}. Avis clients et tarifs transparents.`;
+
+const jsonLd = topUsers.length > 0 ? {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  'name': 'Classement des jardiniers professionnels Gardee',
+  'description': metaDesc,
+  'url': 'https://gardee.fr/classement/',
+  'numberOfItems': topUsers.length,
+  'itemListElement': topUsers.map((u, i) => ({
+    '@type': 'ListItem',
+    'position': i + 1,
+    'url': `https://gardee.fr/prestataires/${u._id}/`,
+    'name': `${u.prenom} ${u.nom}${u.ville ? ` — Jardinier à ${u.ville}` : ''}`,
+  })),
+} : undefined;
 ---
-<BaseLayout title="Classement des prestataires" description="Les jardiniers les mieux notés sur Gardee.">
+<BaseLayout
+  title="Classement des jardiniers professionnels"
+  description={metaDesc}
+  jsonLd={jsonLd}
+>
   <Navbar />
   <main>
     <Classement client:load />

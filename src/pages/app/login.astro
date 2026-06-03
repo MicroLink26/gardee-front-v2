@@ -2,6 +2,6 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LoginForm from '../../components/vue/dashboard/LoginForm.vue';
 ---
-<BaseLayout title="Connexion">
+<BaseLayout title="Connexion" noindex={true}>
   <LoginForm client:load />
 </BaseLayout>

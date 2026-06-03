@@ -3,7 +3,7 @@ import BaseLayout from './BaseLayout.astro';
 interface Props { title: string }
 const { title } = Astro.props;
 ---
-<BaseLayout title={title}>
+<BaseLayout title={title} noindex={true}>
   <div id="app-root">
     <slot />
   </div>

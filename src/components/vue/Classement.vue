@@ -310,8 +310,7 @@ function stars(n: number) {
                     <span class="new-badge">Nouveau</span>
                   </div>
                   <div class="podium-tags">
-                    <span v-if="user.prestations.length > 0" class="tag">{{ categoryName(user.prestations[0]) }}</span>
-                    <span v-if="user.prestations.length > 1" class="tag tag--more">+{{ user.prestations.length - 1 }}</span>
+                    <span v-for="p in user.prestations" :key="p" class="tag">{{ categoryName(p) }}</span>
                   </div>
                 </div>
               </a>
@@ -348,8 +347,7 @@ function stars(n: number) {
                     <span class="rc-sm">({{ user.numberOfReviews }})</span>
                   </div>
                   <div class="rank-tags">
-                    <span v-if="user.prestations.length > 0" class="tag-sm">{{ categoryName(user.prestations[0]) }}</span>
-                    <span v-if="user.prestations.length > 1" class="tag-sm tag-sm--more">+{{ user.prestations.length - 1 }}</span>
+                    <span v-for="p in user.prestations" :key="p" class="tag-sm">{{ categoryName(p) }}</span>
                   </div>
                 </div>
                 <div class="rank-right">
@@ -598,7 +596,7 @@ function stars(n: number) {
 }
 .podium-first .podium-photo { height: 220px; }
 .podium-photo img {
-  width: 100%; height: 100%; object-fit: cover;
+  width: 100%; height: 100%; object-fit: cover; object-position: top;
   transition: transform 0.38s;
 }
 .podium-card:hover .podium-photo img { transform: scale(1.07); }
@@ -653,14 +651,12 @@ function stars(n: number) {
   border-radius: 999px; padding: 0.15rem 0.6rem;
 }
 
-.podium-tags { display: flex; gap: 0.3rem; }
+.podium-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 .tag {
   background: #f0ede3; color: #515F37; border: 1px solid #d6cda4;
   padding: 0.18rem 0.6rem; border-radius: 999px;
   font-size: 0.72rem; font-weight: 600;
-  max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.tag--more { background: #e5e2d3; color: #9ca3af; flex-shrink: 0; max-width: none; }
 
 /* ══ RANK LIST ═══════════════════════════════════════════════════ */
 .rank-list { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -705,14 +701,12 @@ function stars(n: number) {
 .rank-rating { display: flex; align-items: center; gap: 1px; margin-top: 0.3rem; }
 .rv-sm { font-size: 0.72rem; font-weight: 700; color: #515F37; margin-left: 0.2rem; }
 .rc-sm { font-size: 0.68rem; color: #9ca3af; }
-.rank-tags { display: flex; gap: 0.25rem; margin-top: 0.35rem; }
+.rank-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.35rem; }
 .tag-sm {
   background: #f0ede3; color: #515F37; border: 1px solid #d6cda4;
   padding: 0.1rem 0.45rem; border-radius: 999px;
   font-size: 0.68rem; font-weight: 600;
-  max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.tag-sm--more { background: #e5e2d3; color: #9ca3af; max-width: none; }
 
 .rank-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; flex-shrink: 0; }
 .rank-price { font-size: 0.875rem; font-weight: 800; color: #3a5020; }

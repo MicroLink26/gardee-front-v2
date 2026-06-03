@@ -18,6 +18,8 @@ onMounted(async () => {
     await auth.fetchMe();
     if (auth.isLoggedIn) window.location.href = '/app/dashboard';
   }
+  const emailParam = new URLSearchParams(window.location.search).get('email');
+  if (emailParam) email.value = emailParam;
 });
 
 async function submit() {
@@ -142,6 +144,10 @@ async function submit() {
           </button>
         </form>
 
+        <div class="login-footer">
+          <span>Pas de compte client ?</span>
+          <a href="/app/register">Créer un compte →</a>
+        </div>
         <div class="login-footer">
           <span>Pas encore prestataire ?</span>
           <a href="/postuler">Rejoindre Gardee →</a>

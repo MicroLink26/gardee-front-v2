@@ -32,3 +32,13 @@ export async function forgotPassword(email: string): Promise<void> {
 export async function resetPassword(token: string, password: string): Promise<void> {
   await api.post('/auth/reset-password', { token, password });
 }
+
+export async function checkEmail(email: string): Promise<{ exists: boolean }> {
+  const { data } = await api.get('/auth/check-email', { params: { email } });
+  return data;
+}
+
+export async function register(email: string, password: string, nom: string, prenom: string): Promise<{ user: User; accessToken: string }> {
+  const { data } = await api.post('/auth/register', { email, password, nom, prenom });
+  return data;
+}

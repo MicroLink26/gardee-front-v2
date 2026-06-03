@@ -6,24 +6,24 @@ export async function searchPrestataires(params: {
   sort?: 'rating' | 'price_asc' | 'distance';
   lat?: number; lng?: number;
 }): Promise<PaginatedResult<User>> {
-  const { data } = await api.get('/users/search', { params });
+  const { data } = await api.get('/prestataires/search', { params });
   return data;
 }
 
 export async function getRanking(params: {
   prestation?: string; ville?: string; page?: number; pageSize?: number;
 }): Promise<PaginatedResult<User>> {
-  const { data } = await api.get('/users/ranking', { params });
+  const { data } = await api.get('/prestataires/ranking', { params });
   return data;
 }
 
 export async function getPrestataire(id: string): Promise<User> {
-  const { data } = await api.get(`/users/${id}`);
+  const { data } = await api.get(`/prestataires/${id}`);
   return data.user;
 }
 
 export async function getReviews(id: string, params: { page?: number; pageSize?: number }) {
-  const { data } = await api.get(`/users/${id}/reviews`, { params });
+  const { data } = await api.get(`/prestataires/${id}/reviews`, { params });
   return data;
 }
 
@@ -40,7 +40,7 @@ export async function updateMyProfile(formData: FormData): Promise<User> {
 }
 
 export async function registerPrestataire(formData: FormData): Promise<void> {
-  await api.post('/users/register/prestataire', formData, {
+  await api.post('/prestataires/register', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 }

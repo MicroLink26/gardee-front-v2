@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RegisterForm from '../../components/vue/dashboard/RegisterForm.vue';
+---
+<BaseLayout title="Créer un compte" noindex={true}>
+  <RegisterForm client:load />
+</BaseLayout>

@@ -2,10 +2,19 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/astro/Navbar.astro';
 import CarteView from '../components/vue/CarteView.vue';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Map',
+  'name': 'Carte des jardiniers professionnels — Gardee',
+  'url': 'https://gardee.fr/carte/',
+  'description': 'Localisez les jardiniers professionnels vérifiés près de chez vous sur la carte interactive Gardee.',
+};
 ---
 <BaseLayout
-  title="Trouver un jardinier"
-  description="Trouvez un jardinier professionnel près de chez vous grâce à la carte interactive Gardee."
+  title="Carte des jardiniers près de chez vous"
+  description="Localisez les jardiniers professionnels vérifiés près de chez vous sur la carte interactive Gardee. Tonte, élagage, taille de haies, paysagisme — filtrez par prestation et trouvez le bon professionnel."
+  jsonLd={jsonLd}
 >
   <Navbar />
   <CarteView client:load />

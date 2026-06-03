@@ -38,21 +38,22 @@ const photoPreview = ref('');
 onMounted(async () => {
   try {
     const [user] = await Promise.all([getMyProfile(), categories.load()]);
+    const prest = user.prestataire;
     form.value = {
       email: user.email ?? '',
       nom: user.nom ?? '', prenom: user.prenom ?? '', telephone: user.telephone ?? '',
-      prestations: [...(user.prestations ?? [])],
-      tarifHoraire: user.tarifHoraire?.toString() ?? '',
-      description: user.description ?? '',
-      adresse: user.adresse ?? '', codePostal: user.codePostal ?? '', ville: user.ville ?? '',
-      materielOK: (user as Record<string, unknown>).materielOK as boolean ?? false,
-      isEntrepreneur: (user as Record<string, unknown>).isEntrepreneur as boolean ?? false,
-      siret: (user as Record<string, unknown>).siret as string ?? '',
-      qualifElagage: (user as Record<string, unknown>).qualifElagage as boolean ?? false,
-      contactCom: (user as Record<string, unknown>).contactCom as boolean ?? false,
+      prestations: [...(prest?.prestations ?? [])],
+      tarifHoraire: prest?.tarifHoraire?.toString() ?? '',
+      description: prest?.description ?? '',
+      adresse: prest?.adresse ?? '', codePostal: prest?.codePostal ?? '', ville: prest?.ville ?? '',
+      materielOK: (prest as Record<string, unknown> | undefined)?.materielOK as boolean ?? false,
+      isEntrepreneur: (prest as Record<string, unknown> | undefined)?.isEntrepreneur as boolean ?? false,
+      siret: (prest as Record<string, unknown> | undefined)?.siret as string ?? '',
+      qualifElagage: (prest as Record<string, unknown> | undefined)?.qualifElagage as boolean ?? false,
+      contactCom: (prest as Record<string, unknown> | undefined)?.contactCom as boolean ?? false,
       consentDataProcessing: (user as Record<string, unknown>).consentDataProcessing as boolean ?? false,
     };
-    photoPreview.value = user.profil_image?.secure_url ?? '';
+    photoPreview.value = prest?.profil_image?.secure_url ?? '';
   } catch {
     loadError.value = true;
   } finally {
@@ -193,7 +194,7 @@ async function savePassword() {
       </div>
 
       <!-- Activité -->
-      <template v-if="true">
+      <template v-if="auth.isPrestataire">
         <div class="section-card">
           <div class="section-header">
             <h2>Activité</h2>

@@ -9,9 +9,10 @@ export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(null);
 
   const isLoggedIn = computed(() => !!accessToken.value);
-  const isPrestataire = computed(() => user.value?.role === 'prestataire');
+  const isPrestataire = computed(() => user.value?.isPrestataire === true || user.value?.role === 'staff' || user.value?.role === 'admin');
   const isStaff = computed(() => user.value?.role === 'staff' || user.value?.role === 'admin');
   const isAdmin = computed(() => user.value?.role === 'admin');
+
 
   async function login(email: string, password: string) {
     const res = await authService.login(email, password);

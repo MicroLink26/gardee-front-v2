@@ -6,9 +6,10 @@ const props = defineProps<{ token: string }>();
 const status = ref<'loading' | 'success' | 'error'>('loading');
 
 onMounted(async () => {
-  if (!props.token) { status.value = 'error'; return; }
+  const token = props.token || new URLSearchParams(window.location.search).get('token') || '';
+  if (!token) { status.value = 'error'; return; }
   try {
-    await confirmRequest(props.token);
+    await confirmRequest(token);
     status.value = 'success';
   } catch {
     status.value = 'error';

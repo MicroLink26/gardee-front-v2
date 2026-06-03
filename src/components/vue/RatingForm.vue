@@ -22,10 +22,13 @@ const CRITERIA: { key: keyof RatingDetails; label: string; icon: string }[] = [
 
 const allRated = () => CRITERIA.every(c => ratings.value[c.key] > 0);
 
+const resolvedToken = () => props.token || new URLSearchParams(window.location.search).get('token') || '';
+
 onMounted(async () => {
-  if (!props.token) { state.value = 'error'; return; }
+  const token = resolvedToken();
+  if (!token) { state.value = 'error'; return; }
   try {
-    await validateToken(props.token);
+    await validateToken(token);
     state.value = 'form';
   } catch {
     state.value = 'error';
@@ -36,7 +39,7 @@ async function submit() {
   if (!allRated()) return;
   sending.value = true;
   try {
-    await submitReview({ token: props.token, ratings: ratings.value, recommend: recommend.value, comment: comment.value || undefined });
+    await submitReview({ token: resolvedToken(), ratings: ratings.value, recommend: recommend.value, comment: comment.value || undefined });
     state.value = 'success';
   } catch {
     alert('Une erreur est survenue, veuillez réessayer.');

@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProposalResponse from '../../../components/vue/ProposalResponse.vue';
+---
+<BaseLayout title="Décliner la date proposée" noindex={true}>
+  <ProposalResponse client:load action="refuse" />
+</BaseLayout>
