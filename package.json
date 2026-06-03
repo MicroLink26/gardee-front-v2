@@ -6,7 +6,9 @@
     "dev": "astro dev --host",
     "build": "astro build",
     "preview": "astro preview",
-    "type-check": "astro check"
+    "type-check": "astro check",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@astrojs/node": "^9.0.0",
@@ -25,8 +27,14 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@pinia/testing": "^1.0.3",
     "@types/leaflet": "^1.9.14",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "typescript": "^5.8.0"
+    "@vitejs/plugin-vue": "^5.2.4",
+    "@vitest/coverage-istanbul": "^3.2.6",
+    "@vitest/coverage-v8": "^4.1.8",
+    "happy-dom": "^17.6.1",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.6"
   }
 }

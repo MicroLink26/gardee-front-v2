@@ -1,0 +1,15 @@
+import { defineConfig } from 'vitest/config';
+import vue from '@vitejs/plugin-vue';
+
+export default defineConfig({
+  plugins: [vue()],
+  test: {
+    environment: 'happy-dom',
+    globals: true,
+    coverage: {
+      provider: 'istanbul',
+      include: ['src/services/**/*.ts', 'src/stores/**/*.ts'],
+      exclude: ['src/**/*.test.ts'],
+    },
+  },
+});
