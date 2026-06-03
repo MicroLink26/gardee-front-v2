@@ -8,8 +8,10 @@ import { REQUEST_STATUS_LABELS } from '../../../types';
 
 const { categoryName, categoriesStore } = useCategoryName();
 
+type RequestWithPerspective = ServiceRequest & { _perspective: 'provider' | 'client' };
+
 const auth = useAuthStore();
-const requests = ref<ServiceRequest[]>([]);
+const requests = ref<RequestWithPerspective[]>([]);
 const total = ref(0);
 const loading = ref(true);
 const error = ref('');
@@ -35,9 +37,21 @@ const filtered = computed(() => {
 async function load() {
   loading.value = true;
   try {
-    const data = isPrestataire.value ? await listMyRequests() : await listMyClientRequests();
-    requests.value = data.items;
-    total.value = data.total;
+    if (isPrestataire.value) {
+      const [asProvider, asClient] = await Promise.all([listMyRequests(), listMyClientRequests()]);
+      const seen = new Set<string>();
+      const merged: RequestWithPerspective[] = [
+        ...asProvider.items.map(r => ({ ...r, _perspective: 'provider' as const })),
+        ...asClient.items.map(r => ({ ...r, _perspective: 'client' as const })),
+      ].filter(r => { if (seen.has(r._id)) return false; seen.add(r._id); return true; });
+      merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      requests.value = merged;
+      total.value = merged.length;
+    } else {
+      const data = await listMyClientRequests();
+      requests.value = data.items.map(r => ({ ...r, _perspective: 'client' as const }));
+      total.value = data.total;
+    }
   } catch {
     error.value = 'Impossible de charger les demandes.';
   } finally {
@@ -96,7 +110,8 @@ function openMessage(id: string) {
 async function submitMessage(id: string) {
   if (!messageContent.value.trim()) return;
   const content = messageContent.value.trim();
-  if (auth.isPrestataire) {
+  const req = requests.value.find(r => r._id === id);
+  if (req?._perspective === 'provider') {
     await sendMessage(id, content);
   } else {
     await clientSendMessage(id, content);
@@ -128,7 +143,7 @@ onMounted(async () => {
     <div class="page-header">
       <div>
         <p class="header-eyebrow">{{ isPrestataire ? 'Espace prestataire' : 'Mon espace' }}</p>
-        <h1>{{ isPrestataire ? 'Mes demandes reçues' : 'Mes réservations' }}</h1>
+        <h1>{{ isPrestataire ? 'Mes demandes' : 'Mes réservations' }}</h1>
         <p class="header-sub">{{ total }} demande{{ total > 1 ? 's' : '' }} au total</p>
       </div>
     </div>
@@ -166,9 +181,14 @@ onMounted(async () => {
               <div class="who-email">{{ req.requesterEmail }}</div>
             </div>
           </div>
-          <span :class="['status-badge', statusBadgeClass(req.status)]">
-            {{ REQUEST_STATUS_LABELS[req.status] }}
-          </span>
+          <div class="badges">
+            <span v-if="isPrestataire" :class="['perspective-badge', req._perspective === 'provider' ? 'badge-provider' : 'badge-requester']">
+              {{ req._perspective === 'provider' ? 'Reçue' : 'Envoyée' }}
+            </span>
+            <span :class="['status-badge', statusBadgeClass(req.status)]">
+              {{ REQUEST_STATUS_LABELS[req.status] }}
+            </span>
+          </div>
         </div>
 
         <div class="request-services">
@@ -206,7 +226,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <template v-if="isPrestataire && ['sent_to_provider', 'client_accepted'].includes(req.status)">
+        <template v-if="req._perspective === 'provider' && ['sent_to_provider', 'client_accepted'].includes(req.status)">
           <div v-if="proposingId !== req._id" class="request-actions">
             <template v-if="req.status === 'sent_to_provider'">
               <button class="btn-accept" @click="accept(req._id)">
@@ -240,7 +260,7 @@ onMounted(async () => {
             </div>
           </div>
         </template>
-        <div v-if="isPrestataire && req.status === 'scheduled'" class="request-actions">
+        <div v-if="req._perspective === 'provider' && req.status === 'scheduled'" class="request-actions">
           <button class="btn-complete" @click="complete(req._id)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
             Marquer comme terminée
@@ -326,6 +346,18 @@ onMounted(async () => {
 .request-card:hover { border-color: #c8d9a6; box-shadow: 0 4px 16px rgba(58,80,32,0.07); }
 
 .request-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+
+.badges { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+
+.perspective-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.badge-provider { background: #eef2e8; color: #3a5020; border: 1px solid #a8c47a; }
+.badge-requester { background: rgba(99,102,241,0.08); color: #4f46e5; border: 1px solid rgba(99,102,241,0.25); }
 
 .request-who { display: flex; align-items: center; gap: 0.75rem; }
 

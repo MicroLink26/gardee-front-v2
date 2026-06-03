@@ -12,10 +12,17 @@ const doneCount = computed(() => requests.value.filter(r => r.status === 'comple
 onMounted(async () => {
   try {
     await auth.fetchMe();
-    const data = auth.user?.isPrestataire
-      ? await listMyRequests()
-      : await listMyClientRequests();
-    requests.value = data.items;
+    if (auth.user?.isPrestataire) {
+      const [asProvider, asClient] = await Promise.all([listMyRequests(), listMyClientRequests()]);
+      const seen = new Set<string>();
+      requests.value = [...asProvider.items, ...asClient.items].filter(r => {
+        if (seen.has(r._id)) return false;
+        seen.add(r._id);
+        return true;
+      });
+    } else {
+      requests.value = (await listMyClientRequests()).items;
+    }
   } catch { /* non-bloquant */ }
 });
 </script>
