@@ -11,7 +11,8 @@ const doneCount = computed(() => requests.value.filter(r => r.status === 'comple
 
 onMounted(async () => {
   try {
-    const data = (auth.isPrestataire || auth.isStaff)
+    await auth.fetchMe();
+    const data = auth.user?.isPrestataire
       ? await listMyRequests()
       : await listMyClientRequests();
     requests.value = data.items;
@@ -31,7 +32,6 @@ onMounted(async () => {
         <h1>Bonjour, <em>{{ auth.user?.prenom }}</em> 👋</h1>
         <p>Gérez votre activité depuis votre espace personnel.</p>
       </div>
-      <img src="/img/arbreBut.svg" alt="" class="welcome-illustration" />
     </div>
 
     <div class="stats-row">
