@@ -7,10 +7,12 @@ interface Props {
   loading?: 'lazy' | 'eager';
   class?: string;
   style?: string;
+  decoding?: 'auto' | 'sync' | 'async';
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: 'lazy',
+  decoding: 'async',
 });
 
 // Determine if image has a WebP version available
@@ -27,6 +29,7 @@ const webpSrc = hasWebP ? props.src.replace(/\.(png|jpg|jpeg)$/i, '.webp') : nul
       :width="width"
       :height="height"
       :loading="loading"
+      :decoding="decoding"
       :class="class"
       :style="style"
     />
@@ -38,6 +41,7 @@ const webpSrc = hasWebP ? props.src.replace(/\.(png|jpg|jpeg)$/i, '.webp') : nul
     :width="width"
     :height="height"
     :loading="loading"
+    :decoding="decoding"
     :class="class"
     :style="style"
   />

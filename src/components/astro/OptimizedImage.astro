@@ -9,6 +9,7 @@ interface Props {
   style?: string;
   sizes?: string;
   srcset?: string;
+  decoding?: 'auto' | 'sync' | 'async';
 }
 
 const {
@@ -21,6 +22,7 @@ const {
   style,
   sizes,
   srcset,
+  decoding = 'async',
 } = Astro.props;
 
 // Determine if image has a WebP version available
@@ -37,6 +39,7 @@ const webpSrc = hasWebP ? src.replace(/\.(png|jpg|jpeg)$/i, '.webp') : null;
       {width}
       {height}
       {loading}
+      {decoding}
       class={className}
       style={style}
       {srcset}
@@ -50,6 +53,7 @@ const webpSrc = hasWebP ? src.replace(/\.(png|jpg|jpeg)$/i, '.webp') : null;
     {width}
     {height}
     {loading}
+    {decoding}
     class={className}
     style={style}
     {srcset}
