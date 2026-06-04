@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, nextTick, watch, onUnmounted } from 'vue';
 import { getRanking } from '../../services/users';
 import { useCategoryName } from '../../composables/useCategoryName';
-import { getAvatar } from '../../composables/useAvatar';
+import { getAvatar, getInitialAvatar } from '../../composables/useAvatar';
 import type { User } from '../../types';
 
 const { categoryName, categoriesStore } = useCategoryName();

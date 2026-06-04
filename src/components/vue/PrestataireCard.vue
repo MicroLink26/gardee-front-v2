@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { User } from '../../types';
-import { getAvatar } from '../../composables/useAvatar';
 import { useCategoryName } from '../../composables/useCategoryName';
+import AvatarImage from './AvatarImage.vue';
 
 defineProps<{ user: User }>();
 
@@ -16,8 +16,11 @@ function stars(rating: number) {
 <template>
   <a :href="`/prestataires/${user._id}/`" class="card">
     <div class="card-photo">
-      <img
-        :src="getAvatar(user._id, user.profil_image?.secure_url)"
+      <AvatarImage
+        :userId="user._id"
+        :prenom="user.prenom"
+        :nom="user.nom"
+        :imageUrl="user.profil_image?.secure_url"
         :alt="`${user.prenom} ${user.nom}`"
         loading="lazy"
       />
