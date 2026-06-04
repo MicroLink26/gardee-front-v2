@@ -1,4 +1,6 @@
 ---
+import OptimizedImage from './OptimizedImage.astro';
+
 const currentPath = Astro.url.pathname;
 const isActive = (path: string) => currentPath.startsWith(path) ? 'nav-active' : '';
 const isExact = (path: string) => currentPath === path ? 'nav-active' : '';
@@ -7,7 +9,7 @@ const isExact = (path: string) => currentPath === path ? 'nav-active' : '';
   <!-- Logo -->
   <div class="navbar-brand">
     <a href="/">
-      <img src="/img/logo.png" alt="Gardee" height="40" style="display:block;object-fit:contain;" />
+      <OptimizedImage src="/img/logo.png" alt="Gardee" height="40" style="display:block;object-fit:contain;" />
     </a>
   </div>
 
@@ -64,7 +66,7 @@ const isExact = (path: string) => currentPath === path ? 'nav-active' : '';
 <div class="mobile-overlay" id="mobile-overlay">
   <div class="mobile-menu" id="mobile-menu">
     <div class="mobile-menu-header">
-      <img src="/img/logo.png" alt="Gardee" height="36" />
+      <OptimizedImage src="/img/logo.png" alt="Gardee" height="36" />
       <button class="mobile-close" id="mobile-close" aria-label="Fermer">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>

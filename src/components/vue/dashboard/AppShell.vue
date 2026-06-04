@@ -4,6 +4,7 @@ import { useAuthStore } from '../../../stores/auth';
 import { getAvatar } from '../../../composables/useAvatar';
 import { subscribeToPush } from '../../../composables/usePushNotifications';
 import { api } from '../../../services/api';
+import OptimizedImage from '../OptimizedImage.vue';
 
 const auth = useAuthStore();
 const props = defineProps<{ requireRole?: 'prestataire' | 'staff' | 'admin' }>();
@@ -66,7 +67,7 @@ const userAvatarUrl = computed(() =>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <a href="/"><img src="/img/logo.png" alt="Gardee" height="36" /></a>
+        <a href="/"><OptimizedImage src="/img/logo.png" alt="Gardee" height="36" /></a>
       </div>
 
       <div v-if="auth.user" class="sidebar-user">
