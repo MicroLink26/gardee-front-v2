@@ -158,5 +158,14 @@ const fullTitle = `${title} — Gardee`;
         initReveal();
       }
     </script>
+
+    <!-- Service Worker registration for offline support -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js').catch(() => {
+          // Silently fail if service worker registration fails
+        });
+      }
+    </script>
   </body>
 </html>
