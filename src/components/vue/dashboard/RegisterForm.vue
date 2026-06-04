@@ -2,17 +2,21 @@
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
 import { checkEmail, register } from '../../../services/auth';
+import EmailVerificationScreen from '../EmailVerificationScreen.vue';
 
 const auth = useAuthStore();
 const email = ref('');
 const prenom = ref('');
 const nom = ref('');
 const password = ref('');
+const passwordConfirm = ref('');
 const showPassword = ref(false);
 const error = ref('');
 const loading = ref(false);
 const emailExists = ref(false);
+const emailBanned = ref(false);
 const emailChecked = ref(false);
+const pendingVerificationUserId = ref<string | null>(null);
 
 const redirect = typeof window !== 'undefined'
   ? (new URLSearchParams(window.location.search).get('redirect') ?? '/app/dashboard')
@@ -34,14 +38,15 @@ async function verifyEmail() {
   if (!email.value.trim()) return;
   try {
     const res = await checkEmail(email.value.trim());
-    emailExists.value = res.exists;
+    emailExists.value = res.exists && !res.bannedPermanently;
+    emailBanned.value = res.bannedPermanently ?? false;
     emailChecked.value = true;
   } catch { /* non bloquant */ }
 }
 
 async function submit() {
   error.value = '';
-  if (!email.value || !password.value || !nom.value || !prenom.value) {
+  if (!email.value || !password.value || !passwordConfirm.value || !nom.value || !prenom.value) {
     error.value = 'Tous les champs sont requis.';
     return;
   }
@@ -49,16 +54,29 @@ async function submit() {
     error.value = 'Le mot de passe doit contenir au moins 8 caractères.';
     return;
   }
+  if (password.value !== passwordConfirm.value) {
+    error.value = 'Les mots de passe ne correspondent pas.';
+    return;
+  }
   loading.value = true;
   try {
     const res = await register(email.value.trim(), password.value, nom.value.trim(), prenom.value.trim());
-    auth.accessToken = res.accessToken;
-    auth.user = res.user;
+    if ('requiresVerification' in res && res.requiresVerification) {
+      pendingVerificationUserId.value = res.userId;
+      return;
+    }
+    auth.accessToken = (res as { accessToken: string }).accessToken;
+    auth.user = (res as { user: typeof auth.user }).user;
     window.location.href = redirect;
   } catch (e: unknown) {
     const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
-    error.value = msg ?? 'Une erreur est survenue.';
-    if (msg?.includes('existe déjà')) emailExists.value = true;
+    if (msg?.includes('ne peut plus être utilisée')) {
+      emailBanned.value = true;
+    } else if (msg?.includes('existe déjà')) {
+      emailExists.value = true;
+    } else {
+      error.value = msg ?? 'Une erreur est survenue. Veuillez réessayer dans un instant.';
+    }
   } finally {
     loading.value = false;
   }
@@ -66,7 +84,9 @@ async function submit() {
 </script>
 
 <template>
-  <div class="login-page">
+  <EmailVerificationScreen v-if="pendingVerificationUserId" :userId="pendingVerificationUserId" :redirect="redirect" />
+
+  <div v-else class="login-page">
     <aside class="login-aside">
       <div class="aside-deco" aria-hidden="true">
         <svg class="deco-leaf deco-leaf--1" viewBox="0 0 200 320" fill="none"><ellipse cx="100" cy="160" rx="80" ry="140" fill="rgba(168,196,122,0.07)" transform="rotate(-20 100 160)"/><ellipse cx="100" cy="160" rx="50" ry="110" fill="rgba(168,196,122,0.05)" transform="rotate(-20 100 160)"/></svg>
@@ -86,7 +106,12 @@ async function submit() {
           <p>Déjà inscrit ? <a :href="`/app/login?redirect=${encodeURIComponent(redirect)}`">Se connecter</a></p>
         </div>
 
-        <div v-if="emailExists && emailChecked" class="alert-exists">
+        <div v-if="emailBanned && emailChecked" class="alert-banned">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          Cette adresse email ne peut plus être utilisée sur Gardee.
+        </div>
+
+        <div v-else-if="emailExists && emailChecked" class="alert-exists">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           Un compte existe déjà avec cet email.
           <a :href="`/app/login?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(redirect)}`">Se connecter →</a>
@@ -124,6 +149,16 @@ async function submit() {
                 <svg v-if="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
               </button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="password-confirm">Confirmer le mot de passe</label>
+            <div class="password-wrap">
+              <input
+                id="password-confirm" :type="showPassword ? 'text' : 'password'" v-model="passwordConfirm"
+                autocomplete="new-password" placeholder="Répétez le mot de passe" required
+              />
             </div>
           </div>
 
@@ -191,6 +226,11 @@ async function submit() {
   padding: 0.75rem 1rem; font-size: 0.875rem; color: #92400e;
 }
 .alert-exists a { color: #3a5020; font-weight: 700; text-decoration: none; margin-left: auto; }
+.alert-banned {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px;
+  padding: 0.75rem 1rem; font-size: 0.875rem; color: #991b1b;
+}
 
 .login-form { display: flex; flex-direction: column; gap: 1rem; }
 
