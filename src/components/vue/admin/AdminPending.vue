@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { api } from '../../../services/api';
-import { getAvatar } from '../../../composables/useAvatar';
+import AvatarImage from '../AvatarImage.vue';
 import { useCategoryName } from '../../../composables/useCategoryName';
 import type { User } from '../../../types';
 
@@ -99,7 +99,7 @@ onMounted(() => {
         <!-- Ligne principale -->
         <div class="user-row">
           <div class="user-photo">
-            <img :src="getAvatar(user._id, prest(user)?.profil_image?.secure_url as string)" :alt="`${user.prenom} ${user.nom}`" />
+            <AvatarImage :userId="user._id" :prenom="user.prenom" :nom="user.nom" :imageUrl="prest(user)?.profil_image?.secure_url as string" :alt="`${user.prenom} ${user.nom}`" />
           </div>
 
           <div class="user-info">

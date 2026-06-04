@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { getPrestataire, getReviews } from '../../services/users';
 import { createRequest } from '../../services/requests';
-import { getAvatar } from '../../composables/useAvatar';
+import AvatarImage from './AvatarImage.vue';
 import { useCategoriesStore } from '../../stores/categories';
 import type { User } from '../../types';
 
@@ -181,7 +181,7 @@ const DAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
     <div class="container">
       <div class="profile-header">
         <div class="profile-avatar">
-          <img :src="getAvatar(user._id, user.profil_image?.secure_url)" :alt="`${user.prenom} ${user.nom}`" />
+          <AvatarImage :userId="user._id" :prenom="user.prenom" :nom="user.nom" :imageUrl="user.profil_image?.secure_url" :alt="`${user.prenom} ${user.nom}`" />
         </div>
 
         <div class="profile-meta">
