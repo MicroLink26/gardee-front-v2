@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { registerPrestataire } from '../../services/users';
 import { useCategoriesStore } from '../../stores/categories';
 import EmailVerificationScreen from './EmailVerificationScreen.vue';
 import ImageCropper from './ImageCropper.vue';
 
 const categoriesStore = useCategoriesStore();
+const DRAFT_STORAGE_KEY = 'gardee-postuler-draft';
 
 const step = ref(1);
 const loading = ref(false);
@@ -40,6 +41,7 @@ const form = ref({
 const photoPreview = ref('');
 const cropperSrc = ref('');
 const qualifElagagePreview = ref('');
+const emailError = ref('');
 
 const availableCategories = computed(() => {
   return categoriesStore.categories.filter(cat => {
@@ -61,7 +63,58 @@ const contactComText = computed(() => {
   return 'J\'accepte de recevoir du contenu commercial sélectionné pour les jardiniers passionnés qui souhaitent s\'équiper au meilleur prix.';
 });
 
-onMounted(() => categoriesStore.load());
+const emailValid = computed(() => {
+  if (!form.value.email) return true; // Empty is ok, required is checked on submit
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email);
+});
+
+function loadDraft() {
+  try {
+    const draft = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (draft) {
+      const data = JSON.parse(draft);
+      Object.assign(form.value, data);
+      photoPreview.value = data.photoPreview || '';
+      step.value = data.step || 1;
+    }
+  } catch (e) {
+    // Silently fail on corrupted storage
+  }
+}
+
+function saveDraft() {
+  try {
+    const draft = {
+      ...form.value,
+      photoPreview: photoPreview.value,
+      step: step.value,
+      photo: null, // Don't store blob
+      qualifElagageFile: null, // Don't store blob
+    };
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch (e) {
+    // Silently fail on storage quota
+  }
+}
+
+function clearDraft() {
+  try {
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+  } catch (e) {
+    // Silently fail
+  }
+}
+
+onMounted(() => {
+  categoriesStore.load();
+  loadDraft();
+});
+
+watch(() => form.value, saveDraft, { deep: true, throttle: 1000 });
+
+watch(() => form.value.email, () => {
+  emailError.value = form.value.email && !emailValid.value ? 'Email invalide' : '';
+});
 
 function setProfilType(type: 'amateur' | 'professionnel') {
   form.value.profilType = type;
@@ -112,15 +165,37 @@ function nextStep() {
     if (!form.value.prenom || !form.value.nom || !form.value.email || !form.value.password || !form.value.telephone) {
       error.value = 'Veuillez remplir tous les champs obligatoires.'; return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
+      error.value = 'Email invalide.'; return;
+    }
     if (form.value.password.length < 8) {
       error.value = 'Le mot de passe doit contenir au moins 8 caractères.'; return;
     }
+    if (form.value.telephone.replace(/\D/g, '').length < 9) {
+      error.value = 'Numéro de téléphone invalide.'; return;
+    }
   }
-  if (step.value === 2 && form.value.prestations.length === 0) {
-    error.value = 'Sélectionnez au moins un service.'; return;
+  if (step.value === 2) {
+    if (form.value.prestations.length === 0) {
+      error.value = 'Sélectionnez au moins un service.'; return;
+    }
+    if (form.value.profilType === 'professionnel' && !form.value.siret) {
+      error.value = 'Le numéro SIRET est obligatoire pour les professionnels.'; return;
+    }
+    if (form.value.profilType === 'professionnel' && !/^\d{14}$/.test(form.value.siret.replace(/\D/g, ''))) {
+      error.value = 'Le SIRET doit contenir 14 chiffres.'; return;
+    }
+    if (hasElagage.value && form.value.profilType === 'professionnel' && !form.value.qualifElagageFile) {
+      error.value = 'La justification d\'assurance est obligatoire pour l\'élagage.'; return;
+    }
   }
-  if (step.value === 3 && (!form.value.adresse || !form.value.codePostal || !form.value.ville)) {
-    error.value = 'Veuillez renseigner votre adresse complète.'; return;
+  if (step.value === 3) {
+    if (!form.value.adresse || !form.value.codePostal || !form.value.ville) {
+      error.value = 'Veuillez renseigner votre adresse complète.'; return;
+    }
+    if (!/^\d{5}$/.test(form.value.codePostal.replace(/\D/g, ''))) {
+      error.value = 'Le code postal doit contenir 5 chiffres.'; return;
+    }
   }
   step.value++;
 }
@@ -144,12 +219,25 @@ async function submit() {
     const result = await registerPrestataire(fd);
     if ((result as Record<string, unknown>)?.requiresVerification) {
       pendingVerificationUserId.value = (result as Record<string, unknown>).userId as string;
+      clearDraft();
     } else {
       done.value = true;
+      clearDraft();
     }
   } catch (e: unknown) {
-    const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
-    error.value = msg ?? 'Une erreur est survenue. Veuillez réessayer.';
+    const err = e as { response?: { data?: { error?: string }; status?: number } };
+    const msg = err.response?.data?.error;
+    const status = err.response?.status;
+
+    if (status === 409) {
+      error.value = 'Cet email est déjà utilisé. Connectez-vous ou utilisez une autre adresse.';
+    } else if (status === 400) {
+      error.value = msg || 'Vérifiez les informations saisies.';
+    } else if (status === 500) {
+      error.value = 'Erreur serveur. Veuillez réessayer dans quelques instants.';
+    } else {
+      error.value = msg ?? 'Une erreur est survenue. Vérifiez votre connexion et réessayez.';
+    }
   } finally {
     loading.value = false;
   }
@@ -272,7 +360,8 @@ const BENEFITS = [
           </div>
           <div class="field">
             <label>Email <span class="req">*</span></label>
-            <input v-model="form.email" type="email" placeholder="jean.dupont@email.fr" />
+            <input v-model="form.email" type="email" placeholder="jean.dupont@email.fr" :class="{ 'input-error': emailError }" />
+            <p v-if="emailError" class="field-error">{{ emailError }}</p>
           </div>
           <div class="field">
             <label>Mot de passe <span class="req">*</span></label>
@@ -1047,6 +1136,18 @@ textarea { resize: vertical; }
   padding: 0.6rem 0.875rem;
   margin-bottom: 1rem;
   max-width: 540px;
+}
+
+.input-error {
+  border-color: #fca5a5 !important;
+  background-color: #fef2f2 !important;
+}
+
+.field-error {
+  font-size: 0.73rem;
+  color: #dc2626;
+  margin: 0.2rem 0 0;
+  font-weight: 500;
 }
 
 /* Navigation */
