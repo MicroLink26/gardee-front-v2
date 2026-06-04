@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, nextTick, watch, onUnmounted } from 'vue';
 import { getRanking } from '../../services/users';
 import { useCategoryName } from '../../composables/useCategoryName';
-import { getAvatar, getInitialAvatar } from '../../composables/useAvatar';
+import AvatarImage from './AvatarImage.vue';
 import type { User } from '../../types';
 
 const { categoryName, categoriesStore } = useCategoryName();
@@ -384,7 +384,7 @@ onMounted(observeReveal);
                 :style="`transition-delay:${podiumIntroActive ? 0 : i * 0.1}s`"
               >
                 <div class="podium-photo">
-                  <img :src="getAvatar(user._id, user.profil_image?.secure_url)" :alt="`${user.prenom} ${user.nom}`" loading="lazy" />
+                  <AvatarImage :userId="user._id" :prenom="user.prenom" :nom="user.nom" :imageUrl="user.profil_image?.secure_url" :alt="`${user.prenom} ${user.nom}`" loading="lazy" />
                   <div class="podium-overlay"></div>
                   <div class="podium-badge">
                     <span class="podium-medal">{{ podiumMedal(i) }}</span>
@@ -435,7 +435,7 @@ onMounted(observeReveal);
               >
                 <span class="rank-num">{{ listRankStart + i }}</span>
                 <div class="rank-photo">
-                  <img :src="getAvatar(user._id, user.profil_image?.secure_url)" :alt="`${user.prenom} ${user.nom}`" loading="lazy" />
+                  <AvatarImage :userId="user._id" :prenom="user.prenom" :nom="user.nom" :imageUrl="user.profil_image?.secure_url" :alt="`${user.prenom} ${user.nom}`" loading="lazy" />
                 </div>
                 <div class="rank-body">
                   <div class="rank-name">{{ user.prenom }} {{ user.nom }}</div>

@@ -17,7 +17,12 @@ const props = withDefaults(defineProps<Props>(), {
 function getAvatarSrc(): string {
   if (props.imageUrl) return props.imageUrl;
   if (props.prenom || props.nom) {
-    return getInitialAvatar(props.prenom ?? '', props.nom ?? '', props.userId);
+    try {
+      return getInitialAvatar(props.prenom ?? '', props.nom ?? '', props.userId);
+    } catch {
+      // Fallback if btoa is not available (Node/test environment)
+      return getAvatar(props.userId);
+    }
   }
   return getAvatar(props.userId);
 }

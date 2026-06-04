@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import { getRanking } from '../../services/users';
 import { useCategoriesStore } from '../../stores/categories';
 import { useCategoryName } from '../../composables/useCategoryName';
-import { getAvatar } from '../../composables/useAvatar';
+import AvatarImage from './AvatarImage.vue';
 import type { User } from '../../types';
 
 const { categoryName } = useCategoryName();
@@ -535,7 +535,7 @@ function stars(n: number) {
         </template>
         <div v-else-if="!sortedAndFiltered.length" class="empty"><span>🌿</span><p>Aucun jardinier pour ces filtres</p></div>
         <button v-else v-for="user in sortedAndFiltered" :key="user._id" :id="`card-${user._id}`" :class="['scard', { selected: selectedId === user._id }]" @click="selectCard(user)" type="button">
-          <div class="scard-photo"><img :src="getAvatar(user._id, user.profil_image?.secure_url)" :alt="`${user.prenom} ${user.nom}`" /></div>
+          <div class="scard-photo"><AvatarImage :userId="user._id" :prenom="user.prenom" :nom="user.nom" :imageUrl="user.profil_image?.secure_url" :alt="`${user.prenom} ${user.nom}`" /></div>
           <div class="scard-body">
             <div class="scard-name">{{ user.prenom }} {{ user.nom }}</div>
             <div class="scard-ville">{{ user.ville }}</div>
@@ -577,7 +577,7 @@ function stars(n: number) {
         @click="selectCard(user)"
       >
         <div class="mobile-card-photo">
-          <img :src="getAvatar(user._id, user.profil_image?.secure_url)" :alt="`${user.prenom} ${user.nom}`" />
+          <AvatarImage :userId="user._id" :prenom="user.prenom" :nom="user.nom" :imageUrl="user.profil_image?.secure_url" :alt="`${user.prenom} ${user.nom}`" />
         </div>
         <div class="mobile-card-body">
           <div class="mobile-card-name">{{ user.prenom }} {{ user.nom }}</div>
@@ -624,7 +624,7 @@ function stars(n: number) {
         </div>
         <div class="pp-body">
           <div class="pp-photo">
-            <img :src="getAvatar(profilePanel._id, profilePanel.profil_image?.secure_url)" :alt="`${profilePanel.prenom} ${profilePanel.nom}`" />
+            <AvatarImage :userId="profilePanel._id" :prenom="profilePanel.prenom" :nom="profilePanel.nom" :imageUrl="profilePanel.profil_image?.secure_url" :alt="`${profilePanel.prenom} ${profilePanel.nom}`" />
           </div>
           <h3 class="pp-name">{{ profilePanel.prenom }} {{ profilePanel.nom }}</h3>
           <p class="pp-ville">

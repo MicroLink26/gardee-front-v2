@@ -39,5 +39,10 @@ export function getInitialAvatar(prenom: string, nom: string, id: string): strin
           fill="white" text-anchor="middle" dominant-baseline="middle">${initials}</text>
   </svg>`;
 
+  // Fallback if btoa is not available (Node/test environment)
+  if (typeof btoa === 'undefined') {
+    return AVATARS[hashId(id) % 4];
+  }
+
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
