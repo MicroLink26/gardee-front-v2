@@ -1,6 +1,7 @@
 ---
 import ToastContainer from '../components/vue/ToastContainer.vue';
 import WebVitalsTracker from '../components/vue/WebVitalsTracker.vue';
+import ErrorBoundary from '../components/vue/ErrorBoundary.vue';
 
 interface Props {
   title: string;
@@ -103,7 +104,9 @@ const fullTitle = `${title} — Gardee`;
     </style>
   </head>
   <body>
-    <slot />
+    <ErrorBoundary client:only="vue">
+      <slot />
+    </ErrorBoundary>
     <ToastContainer client:only="vue" />
     <WebVitalsTracker client:only="vue" />
     <!-- Scroll reveal animations -->
