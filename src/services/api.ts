@@ -35,6 +35,18 @@ api.interceptors.response.use(
         setAccessToken(null);
       }
     }
+
+    // Enhance error messages for better UX
+    if (error.code === 'ECONNABORTED') {
+      error.userMessage = 'La requête a dépassé le délai imparti. Veuillez réessayer.';
+    } else if (!error.response) {
+      error.userMessage = 'Connexion impossible. Vérifiez votre connexion Internet.';
+    } else if (error.response.status >= 500) {
+      error.userMessage = 'Erreur serveur. Veuillez réessayer dans quelques instants.';
+    } else if (error.response.status === 429) {
+      error.userMessage = 'Trop de requêtes. Veuillez attendre quelques secondes.';
+    }
+
     return Promise.reject(error);
   }
 );

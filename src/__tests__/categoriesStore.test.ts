@@ -14,6 +14,8 @@ describe('useCategoriesStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    // Mock localStorage
+    localStorage.clear();
   });
 
   it('starts with empty categories and loaded=false', () => {
