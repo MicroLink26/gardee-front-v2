@@ -11,6 +11,11 @@ const users = ref<User[]>([]);
 const loading = ref(true);
 const expandedId = ref<string | null>(null);
 
+const rejectModal = ref<{ userId: string; name: string } | null>(null);
+const rejectType = ref<'temporary' | 'permanent'>('temporary');
+const rejectReason = ref('');
+const rejectLoading = ref(false);
+
 function prest(user: User) {
   return user.prestataire as Record<string, unknown> | undefined;
 }
@@ -32,11 +37,26 @@ async function validate(id: string) {
   if (expandedId.value === id) expandedId.value = null;
 }
 
-async function deleteUser(id: string, name: string) {
-  if (!confirm(`Supprimer définitivement ${name} ?`)) return;
-  await api.delete(`/admin/users/${id}`);
-  users.value = users.value.filter(u => u._id !== id);
-  if (expandedId.value === id) expandedId.value = null;
+function openRejectModal(id: string, name: string) {
+  rejectModal.value = { userId: id, name };
+  rejectType.value = 'temporary';
+  rejectReason.value = '';
+}
+
+async function confirmReject() {
+  if (!rejectModal.value) return;
+  rejectLoading.value = true;
+  try {
+    await api.put(`/admin/prestataires/${rejectModal.value.userId}/reject`, {
+      type: rejectType.value,
+      reason: rejectReason.value.trim() || undefined,
+    });
+    users.value = users.value.filter(u => u._id !== rejectModal.value!.userId);
+    if (expandedId.value === rejectModal.value.userId) expandedId.value = null;
+    rejectModal.value = null;
+  } finally {
+    rejectLoading.value = false;
+  }
 }
 
 function formatDate(iso: string) {
@@ -105,8 +125,8 @@ onMounted(() => {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               {{ expandedId === user._id ? 'Masquer' : 'Détails' }}
             </button>
-            <button class="btn-delete" @click="deleteUser(user._id, `${user.prenom} ${user.nom}`)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+            <button class="btn-delete" @click="openRejectModal(user._id, `${user.prenom} ${user.nom}`)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
               Refuser
             </button>
             <button class="btn-validate" @click="validate(user._id)">
@@ -181,9 +201,9 @@ onMounted(() => {
           </div>
 
           <div class="detail-actions">
-            <button class="btn-delete btn-delete--lg" @click="deleteUser(user._id, `${user.prenom} ${user.nom}`)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-              Refuser et supprimer
+            <button class="btn-delete btn-delete--lg" @click="openRejectModal(user._id, `${user.prenom} ${user.nom}`)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              Refuser ce prestataire
             </button>
             <button class="btn-validate btn-validate--lg" @click="validate(user._id)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
@@ -192,6 +212,49 @@ onMounted(() => {
           </div>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject modal -->
+  <div v-if="rejectModal" class="reject-overlay" @click.self="rejectModal = null">
+    <div class="reject-modal">
+      <h3>Refuser la candidature</h3>
+      <p class="reject-name">{{ rejectModal.name }}</p>
+
+      <div class="reject-type">
+        <button
+          :class="['type-btn', { 'type-btn--on': rejectType === 'temporary' }]"
+          @click="rejectType = 'temporary'"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Refus temporaire
+          <span class="type-hint">L'adresse reste utilisable</span>
+        </button>
+        <button
+          :class="['type-btn', 'type-btn--danger', { 'type-btn--on': rejectType === 'permanent' }]"
+          @click="rejectType = 'permanent'"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          Refus définitif
+          <span class="type-hint">L'adresse est bannie</span>
+        </button>
+      </div>
+
+      <div class="reject-reason-field">
+        <label>Motif du refus <span class="optional">(facultatif)</span></label>
+        <textarea v-model="rejectReason" rows="3" placeholder="Précisez la raison du refus pour informer le candidat…"></textarea>
+      </div>
+
+      <div class="reject-actions">
+        <button class="btn-cancel" @click="rejectModal = null">Annuler</button>
+        <button
+          :class="['btn-confirm-reject', { 'btn-confirm-reject--permanent': rejectType === 'permanent' }]"
+          :disabled="rejectLoading"
+          @click="confirmReject"
+        >
+          {{ rejectLoading ? 'En cours…' : rejectType === 'permanent' ? 'Bannir définitivement' : 'Refuser temporairement' }}
+        </button>
       </div>
     </div>
   </div>
@@ -375,4 +438,62 @@ onMounted(() => {
   .user-card { flex-wrap: wrap; }
   .user-actions { width: 100%; justify-content: flex-end; }
 }
+
+/* ── REJECT MODAL ── */
+.reject-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.reject-modal {
+  background: #FCFAF5; border-radius: 18px;
+  padding: 1.75rem; max-width: 460px; width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.reject-modal h3 { font-size: 1.1rem; font-weight: 800; color: #1a1a0e; margin: 0 0 0.25rem; }
+.reject-name { font-size: 0.85rem; color: #6b7280; margin: 0 0 1.25rem; }
+.reject-type { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; }
+.type-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+  padding: 0.875rem 0.5rem;
+  border: 2px solid #e9e5d6; border-radius: 12px;
+  background: #f5f2eb; color: #515F37;
+  font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; font-family: inherit;
+}
+.type-btn:hover { border-color: #a8c47a; background: #eef2e8; }
+.type-btn--on { border-color: #3a5020; background: #eef2e8; color: #3a5020; }
+.type-btn--danger { color: #b91c1c; background: #fff1f2; border-color: #fecaca; }
+.type-btn--danger:hover { border-color: #f87171; background: #fee2e2; }
+.type-btn--danger.type-btn--on { border-color: #dc2626; background: #fee2e2; color: #991b1b; }
+.type-hint { font-size: 0.68rem; font-weight: 400; color: inherit; opacity: 0.7; }
+.reject-reason-field { margin-bottom: 1.25rem; }
+.reject-reason-field label { display: block; font-size: 0.75rem; font-weight: 700; color: #6b6347; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.4rem; }
+.optional { font-weight: 400; text-transform: none; color: #9ca3af; }
+.reject-reason-field textarea {
+  width: 100%; padding: 0.65rem 0.875rem;
+  border: 1.5px solid #e9e5d6; border-radius: 10px;
+  font-size: 0.875rem; color: #1a1a0e; background: #f5f2eb;
+  outline: none; resize: vertical; font-family: inherit;
+  transition: border-color 0.15s;
+}
+.reject-reason-field textarea:focus { border-color: #3a5020; }
+.reject-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+.btn-cancel {
+  padding: 0.65rem 1.25rem;
+  background: none; color: #6b7280; border: 1.5px solid #e9e5d6; border-radius: 10px;
+  font-size: 0.875rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-cancel:hover { border-color: #9ca3af; color: #374151; }
+.btn-confirm-reject {
+  padding: 0.65rem 1.5rem;
+  background: #d97706; color: #fff; border: none; border-radius: 10px;
+  font-size: 0.875rem; font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: background 0.15s;
+}
+.btn-confirm-reject:hover { background: #b45309; }
+.btn-confirm-reject--permanent { background: #dc2626; }
+.btn-confirm-reject--permanent:hover { background: #b91c1c; }
+.btn-confirm-reject:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

@@ -27,7 +27,7 @@ async function submitForgot() {
     await forgotPassword(email.value.trim().toLowerCase());
     done.value = true;
   } catch {
-    error.value = 'Une erreur est survenue.';
+    error.value = 'Une erreur est survenue. Veuillez réessayer dans un instant.';
   } finally {
     loading.value = false;
   }

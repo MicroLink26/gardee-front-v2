@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
+import EmailVerificationScreen from '../EmailVerificationScreen.vue';
 
 const auth = useAuthStore();
 const email = ref('');
@@ -8,6 +9,7 @@ const password = ref('');
 const showPassword = ref(false);
 const error = ref('');
 const loading = ref(false);
+const pendingVerificationUserId = ref<string | null>(null);
 
 const redirect = typeof window !== 'undefined'
   ? (new URLSearchParams(window.location.search).get('redirect') ?? '/app/dashboard')
@@ -28,8 +30,13 @@ async function submit() {
   try {
     await auth.login(email.value, password.value);
     window.location.href = redirect;
-  } catch {
-    error.value = 'Email ou mot de passe incorrect.';
+  } catch (e: unknown) {
+    const data = (e as { response?: { data?: { requiresVerification?: boolean; userId?: string; error?: string } } })?.response?.data;
+    if (data?.requiresVerification && data.userId) {
+      pendingVerificationUserId.value = data.userId;
+    } else {
+      error.value = data?.error ?? 'Email ou mot de passe incorrect.';
+    }
   } finally {
     loading.value = false;
   }
@@ -37,7 +44,9 @@ async function submit() {
 </script>
 
 <template>
-  <div class="login-page">
+  <EmailVerificationScreen v-if="pendingVerificationUserId" :userId="pendingVerificationUserId" :redirect="redirect" />
+
+  <div v-else class="login-page">
     <aside class="login-aside">
       <!-- Botanical decorations -->
       <div class="aside-deco" aria-hidden="true">
@@ -58,28 +67,29 @@ async function submit() {
       </a>
 
       <div class="aside-content">
-        <h2>L'espace <em>pro</em><br>des jardiniers</h2>
-        <p>Gérez vos demandes, votre profil et votre activité depuis un seul endroit.</p>
-        <ul class="aside-features">
-          <li>
-            <span class="feat-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h4"/></svg>
-            </span>
-            <span>Suivez vos demandes en temps réel</span>
-          </li>
-          <li>
-            <span class="feat-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            </span>
-            <span>Consultez vos avis clients</span>
-          </li>
-          <li>
-            <span class="feat-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>
-            </span>
-            <span>Apparaissez sur la carte Gardee</span>
-          </li>
-        </ul>
+        <h2>Bienvenue sur <em>Gardee</em></h2>
+        <p>Votre espace personnel pour gérer vos demandes et votre activité.</p>
+
+        <div class="aside-tabs">
+          <div class="aside-tab">
+            <div class="aside-tab-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div>
+              <strong>Vous êtes client ?</strong>
+              <span>Suivez vos réservations et échangez avec vos jardiniers.</span>
+            </div>
+          </div>
+          <div class="aside-tab">
+            <div class="aside-tab-icon aside-tab-icon--pro">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <strong>Vous êtes jardinier ?</strong>
+              <span>Gérez votre profil, vos demandes et votre classement.</span>
+            </div>
+          </div>
+        </div>
 
         <div class="aside-stats">
           <span>+500 prestataires</span>
@@ -96,9 +106,8 @@ async function submit() {
     <main class="login-main">
       <div class="login-box">
         <div class="login-header">
-          <div class="login-eyebrow">Espace professionnel</div>
           <h1>Connexion</h1>
-          <p>Bienvenue sur votre espace Gardee</p>
+          <p>Accédez à votre espace client ou prestataire</p>
         </div>
 
         <form @submit.prevent="submit" class="login-form">
@@ -208,20 +217,24 @@ async function submit() {
   line-height: 1.65;
 }
 
-.aside-features { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.875rem; }
-.aside-features li { display: flex; align-items: center; gap: 0.875rem; }
-
-.feat-icon {
-  width: 36px; height: 36px;
-  background: rgba(168,196,122,0.15);
-  border: 1px solid rgba(168,196,122,0.25);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  color: #a8c47a;
-  flex-shrink: 0;
+.aside-tabs { display: flex; flex-direction: column; gap: 0.75rem; margin: 1.5rem 0; }
+.aside-tab {
+  display: flex; align-items: flex-start; gap: 0.875rem;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px; padding: 0.875rem 1rem;
 }
-
-.aside-features li span:last-child { color: rgba(255,255,255,0.82); font-size: 0.875rem; line-height: 1.4; }
+.aside-tab-icon {
+  width: 38px; height: 38px; flex-shrink: 0;
+  background: rgba(168,196,122,0.15); border: 1px solid rgba(168,196,122,0.25);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  color: #a8c47a;
+}
+.aside-tab-icon--pro {
+  background: rgba(58,80,32,0.3); border-color: rgba(168,196,122,0.4); color: #c8e09a;
+}
+.aside-tab div:last-child { display: flex; flex-direction: column; gap: 0.2rem; }
+.aside-tab strong { font-size: 0.85rem; color: #fff; font-weight: 700; }
+.aside-tab span { font-size: 0.78rem; color: rgba(255,255,255,0.6); line-height: 1.4; }
 
 .aside-stats {
   display: flex;

@@ -33,8 +33,8 @@ const jsonLd = {
         <svg viewBox="0 0 10 10" width="8" height="8" fill="currentColor"><circle cx="5" cy="5" r="5"/></svg>
         Plateforme certifiée
       </span>
-      <h1>Votre jardin mérite<br>le <em>meilleur</em></h1>
-      <p class="hero-sub">Des jardiniers professionnels vérifiés, près de chez vous. Comparez, réservez, profitez.</p>
+      <h1 data-i18n-key="hero-title">Votre jardin mérite<br>le <em>meilleur</em></h1>
+      <p class="hero-sub" data-i18n-key="hero-sub">Des jardiniers professionnels vérifiés, près de chez vous. Comparez, réservez, profitez.</p>
 
       <div class="search-pills">
         <span class="pills-label">Populaire :</span>
@@ -54,13 +54,17 @@ const jsonLd = {
     </div>
 
     <div class="hero-right">
-      <div class="hero-deco">
-        <div class="hero-deco-ring hero-deco-ring--1"></div>
-        <div class="hero-deco-ring hero-deco-ring--2"></div>
-        <div class="hero-deco-ring hero-deco-ring--3"></div>
+      <div class="hero-video-wrap">
+        <video
+          id="hero-video"
+          class="hero-video"
+          src="/hero.mp4"
+          muted
+          loop
+          playsinline
+          preload="metadata"
+        ></video>
       </div>
-      <img src="/img/hero-screenshot.png" alt="Visuel Gardee" class="hero-illus" />
-      <p class="hero-right-caption">Pour sublimer votre jardin, choisissez le meilleur jardinier, paysagiste, élagueur ou pisciniste de votre région. Ou laissez une chance aux novices pour des petits travaux à moindre coût.</p>
       <a class="hero-floating-card" id="hero-badge" href="#" style="display:none;text-decoration:none">
         <div class="hfc-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg>
@@ -74,7 +78,7 @@ const jsonLd = {
   </section>
 
   <!-- ══ CHIFFRES CLÉS ══════════════════════════════════════════════ -->
-  <div class="trust-strip">
+  <div class="trust-strip reveal">
     <div class="trust-item">
       <div class="trust-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -101,7 +105,7 @@ const jsonLd = {
   </div>
 
   <!-- ══ NOS SERVICES ═══════════════════════════════════════════════ -->
-  <section class="services-section">
+  <section class="services-section reveal">
     <div class="container">
       <p class="eyebrow">NOS SERVICES</p>
       <h2 class="section-title">Une plateforme,<br>deux façons d'en profiter</h2>
@@ -148,7 +152,7 @@ const jsonLd = {
   </section>
 
   <!-- ══ COMMENT ÇA MARCHE ══════════════════════════════════════════ -->
-  <section class="how-section">
+  <section class="how-section reveal">
     <div class="container">
       <p class="eyebrow eyebrow--dark">COMMENT ÇA MARCHE</p>
       <h2 class="section-title">Simple comme bonjour</h2>
@@ -158,6 +162,11 @@ const jsonLd = {
           <div class="how-step-top">
             <span class="how-num">01</span>
             <div class="how-connector"></div>
+          </div>
+          <!-- Placeholder vidéo -->
+          <div class="video-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Vidéo à venir</span>
           </div>
           <div class="how-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="26" height="26"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -171,6 +180,11 @@ const jsonLd = {
             <span class="how-num">02</span>
             <div class="how-connector"></div>
           </div>
+          <!-- Placeholder vidéo -->
+          <div class="video-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Vidéo à venir</span>
+          </div>
           <div class="how-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="26" height="26"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </div>
@@ -181,6 +195,11 @@ const jsonLd = {
         <div class="how-step">
           <div class="how-step-top">
             <span class="how-num">03</span>
+          </div>
+          <!-- Placeholder vidéo -->
+          <div class="video-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Vidéo à venir</span>
           </div>
           <div class="how-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="26" height="26"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -194,7 +213,7 @@ const jsonLd = {
   </section>
 
   <!-- ══ CTA BAND ═══════════════════════════════════════════════════ -->
-  <section class="cta-band">
+  <section class="cta-band reveal">
     <div class="container cta-band-inner">
       <div class="cta-band-text">
         <h2>Prêt à sublimer votre jardin ?</h2>
@@ -208,7 +227,7 @@ const jsonLd = {
   </section>
 
   <!-- ══ FAQ ════════════════════════════════════════════════════════ -->
-  <section class="faq-section">
+  <section class="faq-section reveal">
     <div class="container">
       <div class="faq-header">
         <p class="eyebrow">VOS QUESTIONS</p>
@@ -277,6 +296,48 @@ const jsonLd = {
           badge.style.display = '';
         } catch {}
       }, () => {}, { timeout: 6000, maximumAge: 300000 });
+    }
+  </script>
+
+  <script>
+    // Hero video autoplay — compatible iOS/Android
+    (function() {
+      const video = document.getElementById('hero-video') as HTMLVideoElement | null;
+      if (!video) return;
+      // Attempt play — required on some mobile browsers even with muted+playsinline
+      const tryPlay = () => {
+        video.play().catch(() => {
+          // Fallback: show static poster if video can't play
+          video.style.display = 'none';
+        });
+      };
+      if (document.readyState === 'complete') {
+        tryPlay();
+      } else {
+        window.addEventListener('load', tryPlay, { once: true });
+      }
+      // Also trigger on first user interaction (some strict mobile browsers)
+      document.addEventListener('touchstart', () => {
+        if (video.paused) video.play().catch(() => {});
+      }, { once: true, passive: true });
+    })();
+  </script>
+
+  <script>
+    // Apply saved language on page load
+    const PAGE_TRANSLATIONS: Record<string, Record<string, string>> = {
+      en: {
+        'hero-title': 'Your garden deserves<br>the <em>best</em>',
+        'hero-sub': 'Verified professional gardeners, near you. Compare, book, enjoy.',
+      },
+    };
+
+    const lang = localStorage.getItem('gardee-lang') ?? 'fr';
+    if (lang === 'en') {
+      document.querySelectorAll('[data-i18n-key]').forEach(el => {
+        const key = el.getAttribute('data-i18n-key')!;
+        if (PAGE_TRANSLATIONS.en[key]) el.innerHTML = PAGE_TRANSLATIONS.en[key];
+      });
     }
   </script>
 </BaseLayout>
@@ -401,52 +462,29 @@ const jsonLd = {
 
 .hero-right {
   position: relative;
-  background: linear-gradient(135deg, #c8d9a6 0%, #b0c480 60%, #8fa85a 100%);
+  background: #0f0f0f;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: 0;
 }
-.hero-deco {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.hero-deco-ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.18);
-}
-.hero-deco-ring--1 { width: 400px; height: 400px; top: -100px; right: -100px; }
-.hero-deco-ring--2 { width: 300px; height: 300px; top: -50px; right: -50px; }
-.hero-deco-ring--3 { width: 600px; height: 600px; bottom: -200px; left: -200px; border-color: rgba(255,255,255,0.08); }
 
-.hero-illus {
+.hero-video-wrap {
   position: relative;
-  max-width: 460px;
   width: 100%;
-  height: auto;
-  object-fit: contain;
-  display: block;
-  filter: drop-shadow(0 24px 48px rgba(0,0,0,0.2));
-  z-index: 1;
+  height: 100%;
+  min-height: 400px;
+  overflow: hidden;
 }
 
-.hero-right-caption {
-  position: relative;
-  z-index: 2;
-  max-width: 380px;
-  text-align: center;
-  font-size: 0.85rem;
-  color: rgba(255,255,255,0.82);
-  line-height: 1.65;
-  padding: 0.875rem 1.25rem;
-  background: rgba(0,0,0,0.18);
-  border-radius: 12px;
-  backdrop-filter: blur(4px);
-  margin-top: 1rem;
+.hero-video {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  object-fit: cover;
+  display: block;
 }
 
 .hero-floating-card {
@@ -722,6 +760,26 @@ const jsonLd = {
   margin-left: 0.75rem;
 }
 
+.video-placeholder {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #e8e5dc;
+  border: 2px dashed #c8c4b4;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #a8a090;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.video-placeholder svg { opacity: 0.5; }
+
 .how-icon {
   display: inline-flex;
   align-items: center;
@@ -914,9 +972,9 @@ const jsonLd = {
 
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; min-height: auto; }
-  .hero-right { height: auto; padding: 2.5rem 1.5rem 3rem; }
-  .hero-illus { max-width: 280px; }
-  .hero-right-caption { margin-top: 1.25rem; }
+  .hero-right { height: 56vw; min-height: 300px; max-height: 500px; }
+  .hero-video-wrap { height: 100%; }
+  .hero-video { min-height: 0; height: 100%; }
   .hero-left { padding: 3.5rem 2rem; }
   .hero-floating-card { display: none; }
   .how-grid { grid-template-columns: 1fr; gap: 1rem; }

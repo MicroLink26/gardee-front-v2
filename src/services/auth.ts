@@ -38,7 +38,20 @@ export async function checkEmail(email: string): Promise<{ exists: boolean }> {
   return data;
 }
 
-export async function register(email: string, password: string, nom: string, prenom: string): Promise<{ user: User; accessToken: string }> {
+export async function register(email: string, password: string, nom: string, prenom: string): Promise<{ user: User; accessToken: string } | { requiresVerification: true; userId: string }> {
   const { data } = await api.post('/auth/register', { email, password, nom, prenom });
   return data;
+}
+
+export async function verifyEmail(userId: string, code: string): Promise<{ user: User; accessToken: string }> {
+  const { data } = await api.post('/auth/verify-email', { userId, code });
+  return data;
+}
+
+export async function resendVerification(userId: string): Promise<void> {
+  await api.post('/auth/resend-verification', { userId });
+}
+
+export async function changePassword(current: string, newPwd: string): Promise<void> {
+  await api.put('/auth/change-password', { current, newPwd });
 }

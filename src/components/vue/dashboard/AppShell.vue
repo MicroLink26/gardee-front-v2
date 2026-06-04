@@ -3,11 +3,15 @@ import { onMounted, ref, computed } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
 import { getAvatar } from '../../../composables/useAvatar';
 import { subscribeToPush } from '../../../composables/usePushNotifications';
+import { api } from '../../../services/api';
 
 const auth = useAuthStore();
 const props = defineProps<{ requireRole?: 'prestataire' | 'staff' | 'admin' }>();
 
 const currentPath = ref('');
+const showRejectionPing = ref(false);
+const pendingCount = ref(0);
+const pendingReviewsCount = ref(0);
 
 function isActive(path: string) {
   return currentPath.value === path || currentPath.value.startsWith(path + '/');
@@ -22,8 +26,23 @@ onMounted(async () => {
   }
   if (props.requireRole === 'staff' && !auth.isStaff) window.location.href = '/app/dashboard';
   if (props.requireRole === 'admin' && !auth.isAdmin) window.location.href = '/app/dashboard';
+  if (auth.user?.rejectedTemporarily && !auth.user?.rejectionPingShown) {
+    showRejectionPing.value = true;
+  }
+  if (auth.isStaff) {
+    api.get('/admin/pending?pageSize=1').then(r => { pendingCount.value = r.data.total ?? 0; }).catch(() => {});
+    api.get('/admin/reviews/pending?pageSize=1').then(r => { pendingReviewsCount.value = r.data.total ?? 0; }).catch(() => {});
+  }
   subscribeToPush().catch(() => {});
 });
+
+async function dismissRejectionPing() {
+  showRejectionPing.value = false;
+  if (auth.user) {
+    await api.post(`/admin/ping-shown/${auth.user._id}`).catch(() => {});
+    auth.user.rejectionPingShown = true;
+  }
+}
 
 async function logout() {
   await auth.logout();
@@ -87,6 +106,12 @@ const userAvatarUrl = computed(() =>
           <a href="/app/admin/pending" :class="['nav-item', { active: isActive('/app/admin/pending') }]">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             En attente
+            <span v-if="pendingCount > 0" class="nav-badge">{{ pendingCount }}</span>
+          </a>
+          <a href="/app/admin/reviews" :class="['nav-item', { active: isActive('/app/admin/reviews') }]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Avis
+            <span v-if="pendingReviewsCount > 0" class="nav-badge">{{ pendingReviewsCount }}</span>
           </a>
           <a href="/app/admin/users" :class="['nav-item', { active: isActive('/app/admin/users') }]">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
@@ -100,6 +125,10 @@ const userAvatarUrl = computed(() =>
       </nav>
 
       <div class="sidebar-footer">
+        <a href="/app/parametres" :class="['footer-link', { active: isActive('/app/parametres') }]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Paramètres
+        </a>
         <a href="/" class="footer-link">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           Retour au site
@@ -141,6 +170,25 @@ const userAvatarUrl = computed(() =>
       </div>
     </main>
 
+    <!-- Rejection ping modal -->
+    <div v-if="showRejectionPing" class="ping-overlay" @click.self="dismissRejectionPing">
+      <div class="ping-modal">
+        <div class="ping-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <h3>Votre profil nécessite des modifications</h3>
+        <p>Votre profil prestataire n'est pas encore diffusé. Des corrections sont nécessaires pour qu'il puisse être publié.</p>
+        <div v-if="auth.user?.rejectionReason" class="ping-reason">
+          <strong>Motif :</strong> {{ auth.user.rejectionReason }}
+        </div>
+        <p class="ping-sub">Rendez-vous dans <strong>Mon profil</strong> pour effectuer les modifications demandées, puis soumettez votre profil à nouveau.</p>
+        <div class="ping-actions">
+          <a href="/app/profil" class="ping-btn-primary">Modifier mon profil</a>
+          <button class="ping-btn-secondary" @click="dismissRejectionPing">J'ai compris</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Mobile bottom nav -->
     <nav class="mobile-bottom-nav" v-if="auth.user">
       <a href="/app/dashboard" :class="['mbn-item', { active: isActive('/app/dashboard') }]">
@@ -163,6 +211,10 @@ const userAvatarUrl = computed(() =>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         <span>Admin</span>
       </a>
+      <a href="/app/parametres" :class="['mbn-item', { active: isActive('/app/parametres') }]">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span>Réglages</span>
+      </a>
       <button class="mbn-item mbn-logout" @click="logout">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
         <span>Sortir</span>
@@ -174,12 +226,13 @@ const userAvatarUrl = computed(() =>
 <style scoped>
 * { box-sizing: border-box; }
 
-.app-shell { display: flex; min-height: 100vh; }
+.app-shell { display: flex; min-height: 100vh; align-items: flex-start; }
 
 /* ── SIDEBAR ── */
 .sidebar {
   width: 256px;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   background: linear-gradient(180deg, #141f0b 0%, #253515 60%, #2e3f1c 100%);
   display: flex;
   flex-direction: column;
@@ -233,6 +286,12 @@ const userAvatarUrl = computed(() =>
   transition: all 0.15s;
 }
 .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto; background: #dc2626; color: #fff;
+  font-size: 0.65rem; font-weight: 800; min-width: 18px; height: 18px;
+  border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+  padding: 0 4px; line-height: 1;
+}
 .nav-item:hover { background: rgba(168,196,122,0.12); color: #fff; }
 .nav-item.active { background: rgba(168,196,122,0.22); color: #a8c47a; font-weight: 700; border-left: 3px solid #a8c47a; padding-left: calc(0.75rem - 3px); }
 
@@ -404,4 +463,47 @@ const userAvatarUrl = computed(() =>
   .mbn-logout { color: rgba(255,255,255,0.45); }
   .mbn-logout:hover { color: #fca5a5; }
 }
+
+/* ── REJECTION PING MODAL ── */
+.ping-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.ping-modal {
+  background: #FCFAF5; border-radius: 20px;
+  padding: 2rem; max-width: 480px; width: 100%;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+  text-align: center;
+}
+.ping-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: #fef3c7; border: 2px solid #fcd34d;
+  color: #92400e;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+.ping-modal h3 { font-size: 1.1rem; font-weight: 800; color: #1a1a0e; margin: 0 0 0.75rem; }
+.ping-modal p { font-size: 0.9rem; color: #6b7280; line-height: 1.6; margin: 0 0 0.75rem; }
+.ping-reason {
+  background: #f5f2eb; border: 1px solid #e2dece; border-radius: 10px;
+  padding: 0.75rem 1rem; font-size: 0.85rem; color: #374151;
+  text-align: left; margin-bottom: 0.75rem;
+}
+.ping-sub { font-size: 0.82rem; color: #9ca3af; margin-bottom: 1.5rem !important; }
+.ping-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.ping-btn-primary {
+  display: inline-flex; align-items: center;
+  background: #3a5020; color: #fff; border: none; border-radius: 10px;
+  padding: 0.7rem 1.4rem; font-size: 0.875rem; font-weight: 700;
+  cursor: pointer; text-decoration: none; transition: background 0.15s; font-family: inherit;
+}
+.ping-btn-primary:hover { background: #2a3c16; }
+.ping-btn-secondary {
+  background: none; color: #6b7280; border: 1.5px solid #e2dece; border-radius: 10px;
+  padding: 0.7rem 1.4rem; font-size: 0.875rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.ping-btn-secondary:hover { border-color: #9ca3af; color: #374151; }
 </style>

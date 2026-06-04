@@ -2,17 +2,27 @@
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import { getRanking } from '../../services/users';
 import { useCategoriesStore } from '../../stores/categories';
+import { useCategoryName } from '../../composables/useCategoryName';
 import { getAvatar } from '../../composables/useAvatar';
 import type { User } from '../../types';
+
+const { categoryName } = useCategoryName();
 
 const service = ref('');
 const ville = ref('');
 const minRating = ref(0);
 const maxTarif = ref(150);
+const profilTypeFilter = ref<'all' | 'amateur' | 'professionnel'>('all');
 const users = ref<User[]>([]);
 const loading = ref(false);
 const selectedId = ref<string | null>(null);
+const profilePanel = ref<User | null>(null);
 const mapEl = ref<HTMLDivElement>();
+
+// Location gate
+const showLocationGate = ref(false);
+const locationInput = ref('');
+const locationGateLoading = ref(false);
 
 // Mobile state
 const mobileView = ref<'carte' | 'liste'>('carte');
@@ -66,12 +76,14 @@ const filtered = computed(() =>
   users.value.filter(u => {
     if (minRating.value > 0 && (u.averageRating ?? 0) < minRating.value) return false;
     if (maxTarif.value < 150 && u.tarifHoraire && u.tarifHoraire > maxTarif.value) return false;
+    if (profilTypeFilter.value === 'professionnel' && !u.prestataire?.isEntrepreneur) return false;
+    if (profilTypeFilter.value === 'amateur' && u.prestataire?.isEntrepreneur) return false;
     return true;
   })
 );
 
 const hasActiveFilters = computed(() =>
-  !!(service.value || ville.value || minRating.value > 0 || maxTarif.value < 150)
+  !!(service.value || ville.value || minRating.value > 0 || maxTarif.value < 150 || profilTypeFilter.value !== 'all')
 );
 
 function geoDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
@@ -165,9 +177,13 @@ function updateMarkers() {
           <strong>${user.prenom} ${user.nom}</strong>
           <span>${user.ville}</span>
           ${user.tarifHoraire ? `<span class="gd-popup-tarif">${user.tarifHoraire} €/h</span>` : ''}
-          <a href="/prestataires/${user._id}">Voir le profil →</a>
+          <button class="gd-popup-btn" data-id="${user._id}">Voir le profil →</button>
         </div>
       `)
+      .on('popupopen', () => {
+        const btn = document.querySelector(`.gd-popup-btn[data-id="${user._id}"]`);
+        btn?.addEventListener('click', () => openProfilePanel(user), { once: true });
+      })
       .on('click', () => {
         selectedId.value = user._id;
         document.getElementById(`card-${user._id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -249,15 +265,37 @@ onMounted(async () => {
   await import('leaflet.markercluster/dist/MarkerCluster.Default.css');
 
   map = L.map(mapEl.value!).setView([46.8, 2.3], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
-    maxZoom: 18,
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19,
   }).addTo(map);
-
-  locateMe();
 
   await load();
   updateMarkers();
+
+  // Ask for geolocation; if denied, show location gate
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        userPosition.value = { lat: latitude, lng: longitude };
+        map.flyTo([latitude, longitude], 12, { duration: 1.2 });
+        const youIcon = L.divIcon({ html: '<div class="you-marker"></div>', className: '', iconSize: [16, 16], iconAnchor: [8, 8] });
+        if (youMarker) map.removeLayer(youMarker);
+        youMarker = L.marker([latitude, longitude], { icon: youIcon }).addTo(map).bindPopup('<div class="gd-popup"><strong>Votre position</strong></div>');
+        sortBy.value = 'distance';
+        sortDir.value = 'asc';
+      },
+      () => {
+        // Geolocation denied — show location gate only if no URL params already set
+        if (!villeParam && !prestationParam) {
+          showLocationGate.value = true;
+        }
+      },
+      { timeout: 5000, maximumAge: 60000 }
+    );
+  }
 });
 
 onUnmounted(() => { if (map) map.remove(); });
@@ -284,7 +322,31 @@ function resetFilters() {
   ville.value = '';
   minRating.value = 0;
   maxTarif.value = 150;
+  profilTypeFilter.value = 'all';
   applyFilters();
+}
+
+function openProfilePanel(user: User) {
+  profilePanel.value = user;
+}
+
+async function submitLocationGate() {
+  const input = locationInput.value.trim();
+  if (!input) return;
+  locationGateLoading.value = true;
+  ville.value = input;
+  showLocationGate.value = false;
+  locationGateLoading.value = false;
+  await load();
+  updateMarkers();
+  // Try to zoom to the typed city via Nominatim
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(input)},France&format=json&limit=1`);
+    const data = await res.json() as Array<{ lat: string; lon: string }>;
+    if (data[0] && map) {
+      map.flyTo([parseFloat(data[0].lat), parseFloat(data[0].lon)], 11, { duration: 1.2 });
+    }
+  } catch { /* non bloquant */ }
 }
 
 function setMinRating(val: number) {
@@ -303,6 +365,45 @@ function stars(n: number) {
 </script>
 
 <template>
+  <!-- ── LOCATION GATE ── -->
+  <Transition name="gate">
+    <div v-if="showLocationGate" class="location-gate">
+      <div class="gate-card">
+        <div class="gate-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <h2>Où cherchez-vous un jardinier ?</h2>
+        <p>Entrez votre ville ou code postal pour trouver les prestataires près de chez vous.</p>
+        <form @submit.prevent="submitLocationGate" class="gate-form">
+          <div class="gate-row">
+            <input
+              v-model="locationInput"
+              type="text"
+              placeholder="Paris, 75001, Lyon…"
+              class="gate-input"
+              autofocus
+            />
+            <button type="submit" class="gate-btn" :disabled="!locationInput.trim() || locationGateLoading">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
+          </div>
+          <div class="gate-cats">
+            <button
+              v-for="cat in categoriesStore.categories.slice(0, 5)"
+              :key="cat._id"
+              type="button"
+              :class="['gate-chip', { active: service === cat._id }]"
+              @click="service = service === cat._id ? '' : cat._id"
+            >{{ cat.name }}</button>
+          </div>
+        </form>
+        <button class="gate-skip" @click="showLocationGate = false" type="button">
+          Voir toute la France →
+        </button>
+      </div>
+    </div>
+  </Transition>
+
   <div class="carte-layout">
 
     <!-- ── MOBILE STICKY HEADER ── -->
@@ -384,6 +485,15 @@ function stars(n: number) {
         </div>
 
         <div class="filter-group">
+          <label class="filter-label">Type de profil</label>
+          <div class="rating-group">
+            <button :class="['rating-btn', { active: profilTypeFilter === 'all' }]" @click="profilTypeFilter = 'all'; updateMarkers()">Tous</button>
+            <button :class="['rating-btn', { active: profilTypeFilter === 'amateur' }]" @click="profilTypeFilter = 'amateur'; updateMarkers()">Amateur</button>
+            <button :class="['rating-btn', { active: profilTypeFilter === 'professionnel' }]" @click="profilTypeFilter = 'professionnel'; updateMarkers()">Pro</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
           <label class="filter-label">
             Tarif max
             <span class="filter-value">{{ maxTarif < 150 ? maxTarif + ' €/h' : 'Illimité' }}</span>
@@ -434,10 +544,14 @@ function stars(n: number) {
               <span class="s-empty" v-for="i in stars(user.averageRating).empty" :key="`e${i}`">★</span>
               <span class="scard-rating-val">{{ user.averageRating.toFixed(1) }}</span>
             </div>
+            <div v-if="user.prestations?.length" class="scard-services">
+              <span v-for="p in user.prestations.slice(0, 2)" :key="p">{{ categoryName(p) }}</span>
+              <span v-if="user.prestations.length > 2" class="scard-more">+{{ user.prestations.length - 2 }}</span>
+            </div>
           </div>
           <div class="scard-right">
             <span v-if="user.tarifHoraire" class="scard-price">{{ user.tarifHoraire }} €/h</span>
-            <a :href="`/prestataires/${user._id}`" class="scard-link" @click.stop>Profil →</a>
+            <button class="scard-link" @click.stop="openProfilePanel(user)" type="button">Profil →</button>
           </div>
         </button>
       </div>
@@ -500,6 +614,41 @@ function stars(n: number) {
       </button>
     </div>
 
+    <!-- ── PROFILE PANEL (right) ── -->
+    <Transition name="panel">
+      <div v-if="profilePanel" class="profile-panel">
+        <div class="pp-header">
+          <button class="pp-close" @click="profilePanel = null" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="pp-body">
+          <div class="pp-photo">
+            <img :src="getAvatar(profilePanel._id, profilePanel.profil_image?.secure_url)" :alt="`${profilePanel.prenom} ${profilePanel.nom}`" />
+          </div>
+          <h3 class="pp-name">{{ profilePanel.prenom }} {{ profilePanel.nom }}</h3>
+          <p class="pp-ville">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>
+            {{ profilePanel.ville }}
+          </p>
+          <div v-if="(profilePanel.numberOfReviews ?? 0) > 0" class="pp-rating">
+            <span class="s-full" v-for="i in stars(profilePanel.averageRating ?? 0).full" :key="`f${i}`">★</span>
+            <span class="s-empty" v-for="i in stars(profilePanel.averageRating ?? 0).empty" :key="`e${i}`">★</span>
+            <span class="pp-rating-val">{{ (profilePanel.averageRating ?? 0).toFixed(1) }}</span>
+            <span class="pp-rating-count">({{ profilePanel.numberOfReviews }} avis)</span>
+          </div>
+          <div v-if="profilePanel.tarifHoraire" class="pp-tarif">{{ profilePanel.tarifHoraire }} €/h</div>
+          <div class="pp-services">
+            <span v-for="p in (profilePanel.prestations ?? [])" :key="p" class="pp-service-chip">{{ categoryName(p) }}</span>
+          </div>
+          <a :href="`/prestataires/${profilePanel._id}/`" class="pp-cta">
+            Voir le profil complet
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+        </div>
+      </div>
+    </Transition>
+
     <!-- ── FILTER DRAWER (mobile) ── -->
     <Transition name="drawer">
       <div v-if="showFilterDrawer" class="drawer-backdrop" @click="showFilterDrawer = false">
@@ -513,6 +662,14 @@ function stars(n: number) {
           </div>
 
           <div class="drawer-body">
+            <div class="drawer-section">
+              <label class="drawer-label">Type de profil</label>
+              <div class="rating-group">
+                <button :class="['rating-btn', { active: profilTypeFilter === 'all' }]" @click="profilTypeFilter = 'all'">Tous</button>
+                <button :class="['rating-btn', { active: profilTypeFilter === 'amateur' }]" @click="profilTypeFilter = 'amateur'">Amateur</button>
+                <button :class="['rating-btn', { active: profilTypeFilter === 'professionnel' }]" @click="profilTypeFilter = 'professionnel'">Pro</button>
+              </div>
+            </div>
             <div class="drawer-section">
               <label class="drawer-label">Note minimum</label>
               <div class="rating-group">
@@ -708,6 +865,15 @@ function stars(n: number) {
 .s-full { color: #e6c553; }
 .s-empty { color: #e0dbd0; }
 .scard-rating-val { margin-left: 0.25rem; color: #515F37; font-weight: 600; font-size: 0.72rem; }
+.scard-services {
+  display: flex; flex-wrap: wrap; gap: 0.2rem; margin-top: 0.3rem;
+}
+.scard-services span {
+  font-size: 0.65rem; color: #6b6347;
+  background: #f0ede3; border: 1px solid #d6cda4;
+  padding: 0.08rem 0.4rem; border-radius: 999px;
+}
+.scard-more { color: #9ca3af !important; background: transparent !important; border-color: transparent !important; }
 .scard-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; flex-shrink: 0; }
 .scard-price { font-size: 0.78rem; font-weight: 700; color: #3a5020; background: rgba(168,196,122,0.15); padding: 0.15rem 0.5rem; border-radius: 6px; border: 1px solid rgba(168,196,122,0.3); }
 .scard.selected .scard-price { background: rgba(168,196,122,0.25); border-color: #a8c47a; color: #3a5020; }
@@ -1054,6 +1220,174 @@ function stars(n: number) {
 .drawer-enter-active .filter-drawer, .drawer-leave-active .filter-drawer { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .drawer-enter-from, .drawer-leave-to { opacity: 0; }
 .drawer-enter-from .filter-drawer, .drawer-leave-to .filter-drawer { transform: translateY(100%); }
+
+/* Profile panel */
+.profile-panel {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 320px;
+  background: #FCFAF5;
+  border-left: 1px solid #e9e5d6;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.12);
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.pp-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.75rem 0.875rem 0;
+  position: sticky;
+  top: 0;
+  background: #FCFAF5;
+  z-index: 1;
+}
+.pp-close {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: #f0ede3; border: none; border-radius: 8px;
+  cursor: pointer; color: #6b7280; transition: background 0.15s;
+}
+.pp-close:hover { background: #e2dece; color: #374151; }
+.pp-body {
+  padding: 0.5rem 1.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+}
+.pp-photo {
+  width: 88px; height: 88px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #e9e5d6;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.pp-photo img { width: 100%; height: 100%; object-fit: cover; }
+.pp-name { font-size: 1.05rem; font-weight: 800; color: #1a1a0e; margin: 0; }
+.pp-ville {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-size: 0.8rem; color: #9ca3af;
+}
+.pp-rating {
+  display: flex; align-items: center; gap: 0.2rem;
+  font-size: 0.85rem;
+}
+.pp-rating-val { font-weight: 700; color: #1a1a0e; }
+.pp-rating-count { font-size: 0.75rem; color: #9ca3af; }
+.pp-tarif {
+  font-size: 1.1rem; font-weight: 800; color: #3a5020;
+  background: rgba(58,80,32,0.08);
+  padding: 0.3rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(58,80,32,0.15);
+}
+.pp-services {
+  display: flex; flex-wrap: wrap; gap: 0.3rem;
+  justify-content: center;
+}
+.pp-service-chip {
+  background: #f0ede3; color: #515F37;
+  border: 1px solid #d6cda4;
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem; font-weight: 600;
+}
+.pp-cta {
+  display: flex; align-items: center; gap: 0.4rem; justify-content: center;
+  margin-top: 0.75rem;
+  background: #3a5020; color: #fff;
+  text-decoration: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 700; font-size: 0.875rem;
+  transition: background 0.15s;
+  width: 100%;
+}
+.pp-cta:hover { background: #2a3c16; }
+
+/* Panel transition */
+.panel-enter-active, .panel-leave-active { transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1); }
+.panel-enter-from, .panel-leave-to { transform: translateX(100%); }
+
+/* Location gate */
+.location-gate {
+  position: fixed; inset: 0; z-index: 800;
+  background: linear-gradient(135deg, #1a2410 0%, #253515 50%, #3a5020 100%);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem;
+}
+.gate-card {
+  background: #FCFAF5; border-radius: 24px;
+  padding: 2.5rem 2rem; max-width: 480px; width: 100%;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.3);
+  text-align: center;
+}
+.gate-icon {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(58,80,32,0.1); color: #3a5020;
+  border: 2px solid rgba(58,80,32,0.18);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+.gate-card h2 { font-size: 1.25rem; font-weight: 900; color: #1a1a0e; margin: 0 0 0.625rem; }
+.gate-card p { font-size: 0.9rem; color: #6b7280; line-height: 1.6; margin: 0 0 1.5rem; }
+.gate-form { display: flex; flex-direction: column; gap: 0.875rem; }
+.gate-row { display: flex; gap: 0.5rem; }
+.gate-input {
+  flex: 1; padding: 0.875rem 1rem;
+  border: 1.5px solid #e9e5d6; border-radius: 12px;
+  font-size: 1rem; color: #1a1a0e; background: #f5f2eb;
+  outline: none; font-family: inherit;
+  transition: border-color 0.15s;
+}
+.gate-input:focus { border-color: #3a5020; background: #FCFAF5; }
+.gate-btn {
+  width: 52px; height: 52px; border-radius: 12px;
+  background: #3a5020; color: #fff; border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; transition: background 0.15s;
+}
+.gate-btn:hover:not(:disabled) { background: #2a3c16; }
+.gate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.gate-cats { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; }
+.gate-chip {
+  padding: 0.3rem 0.875rem;
+  border: 1.5px solid #e9e5d6; border-radius: 999px;
+  background: #f5f2eb; color: #515F37;
+  font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; font-family: inherit;
+}
+.gate-chip:hover { border-color: #3a5020; color: #3a5020; }
+.gate-chip.active { background: #3a5020; border-color: #3a5020; color: #fff; }
+.gate-skip {
+  display: block; margin-top: 1.25rem;
+  background: none; border: none; color: #9ca3af;
+  font-size: 0.85rem; cursor: pointer; font-family: inherit;
+  transition: color 0.15s;
+}
+.gate-skip:hover { color: #6b7280; }
+
+/* Gate transition */
+.gate-enter-active, .gate-leave-active { transition: opacity 0.3s ease; }
+.gate-enter-from, .gate-leave-to { opacity: 0; }
+
+/* Profile panel — full screen on mobile */
+@media (max-width: 600px) {
+  .profile-panel { width: 100%; left: 0; right: 0; top: 0; }
+  .panel-enter-from, .panel-leave-to { transform: translateY(100%); }
+}
+
+/* Popup button style */
+.gd-popup-btn {
+  display: block; width: 100%;
+  background: #3a5020; color: #fff; border: none; border-radius: 6px;
+  padding: 0.4rem 0.75rem; font-size: 0.78rem; font-weight: 700;
+  cursor: pointer; margin-top: 0.4rem; font-family: inherit;
+}
+.gd-popup-btn:hover { background: #2a3c16; }
 </style>
 
 <!-- Global styles for Leaflet -->

@@ -7,10 +7,10 @@ import BookingWidget from '../../components/vue/BookingWidget.vue';
 export async function getStaticPaths() {
   const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3002/api';
   try {
-    const res = await fetch(`${apiUrl}/prestataires/ranking?pageSize=500`);
+    const res = await fetch(`${apiUrl}/prestataires/all-ids`);
     if (!res.ok) return [];
-    const { items } = await res.json();
-    return (items ?? []).map((u: { _id: string }) => ({ params: { id: u._id } }));
+    const { ids } = await res.json();
+    return (ids ?? []).map((id: string) => ({ params: { id } }));
   } catch {
     return [];
   }
@@ -38,11 +38,23 @@ function starsArr(n: number) {
   return { full, empty: Math.max(0, 5 - full) };
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  time: 'Délai',
+  quality: 'Qualité',
+  sympathy: 'Sympathie',
+  value: 'Rapport qualité/prix',
+  punctuality: 'Ponctualité',
+};
+
 const processedReviews = reviews.map((r: any) => {
   const d = r.ratingDetails as Record<string, number> | undefined;
   const vals = d ? Object.values(d).filter((v: unknown): v is number => typeof v === 'number') : [];
   const avg = vals.length ? vals.reduce((a: number, b: number) => a + b, 0) / vals.length : 0;
   const stars = starsArr(avg);
+  const details = d ? Object.entries(d)
+    .filter(([, v]) => typeof v === 'number')
+    .map(([key, val]) => ({ key, label: CATEGORY_LABELS[key] ?? key, val: val as number, pct: Math.round((val as number / 5) * 100) }))
+    : [];
   return {
     author: (r.requesterPrenom as string) || 'Client',
     date: new Date(r.ratingGivenAt as string).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
@@ -51,8 +63,31 @@ const processedReviews = reviews.map((r: any) => {
     starsFullStr: '★'.repeat(stars.full),
     starsEmptyStr: '★'.repeat(stars.empty),
     initial: ((r.requesterPrenom as string)?.[0] ?? '?').toUpperCase(),
+    details,
+    recommend: r.recommend as boolean | undefined,
   };
 });
+
+// Calcul des moyennes globales par catégorie
+const categoryAverages = (() => {
+  if (!reviews.length) return [];
+  const sums: Record<string, { total: number; count: number }> = {};
+  for (const r of reviews) {
+    const d = (r as any).ratingDetails as Record<string, number> | undefined;
+    if (!d) continue;
+    for (const [key, val] of Object.entries(d)) {
+      if (typeof val !== 'number') continue;
+      if (!sums[key]) sums[key] = { total: 0, count: 0 };
+      sums[key].total += val;
+      sums[key].count += 1;
+    }
+  }
+  return Object.entries(sums).map(([key, { total, count }]) => ({
+    key, label: CATEGORY_LABELS[key] ?? key,
+    avg: total / count,
+    pct: Math.round((total / count / 5) * 100),
+  }));
+})();
 
 const avatarIdx = parseInt(id.slice(-2), 16) % 4;
 const defaultAvatars = ['/img/default-avatar.png', '/img/default-avatar2.png', '/img/default-avatar3.png', '/img/default-avatar4.png'];
@@ -246,6 +281,22 @@ const jsonLd = user ? {
           {totalReviews > 0 && (
             <div class="content-card">
               <h2>Avis clients ({totalReviews})</h2>
+
+              {/* Moyennes globales par catégorie */}
+              {categoryAverages.length > 0 && (
+                <div class="cat-averages">
+                  {categoryAverages.map((c) => (
+                    <div class="cat-row" key={c.key}>
+                      <span class="cat-label">{c.label}</span>
+                      <div class="cat-bar-wrap">
+                        <div class="cat-bar" style={`width:${c.pct}%`}></div>
+                      </div>
+                      <span class="cat-val">{c.avg.toFixed(1)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div class="reviews-list">
                 {processedReviews.map((r) => (
                   <div class="review-card">
@@ -261,6 +312,23 @@ const jsonLd = user ? {
                         <span class="review-score">{r.avgStr}</span>
                       </div>
                     </div>
+                    {r.recommend && (
+                      <div class="review-recommend">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        Recommande ce prestataire
+                      </div>
+                    )}
+                    {r.details.length > 0 && (
+                      <div class="review-details">
+                        {r.details.map((d) => (
+                          <div class="rd-row" key={d.key}>
+                            <span class="rd-label">{d.label}</span>
+                            <div class="rd-bar-wrap"><div class="rd-bar" style={`width:${d.pct}%`}></div></div>
+                            <span class="rd-val">{d.val}/5</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {r.comment && <p class="review-text">{r.comment}</p>}
                   </div>
                 ))}
@@ -519,6 +587,36 @@ const jsonLd = user ? {
 }
 
 /* REVIEWS */
+/* Category averages */
+.cat-averages {
+  display: flex; flex-direction: column; gap: 0.5rem;
+  margin-bottom: 1.25rem; padding-bottom: 1.25rem;
+  border-bottom: 1px solid #e9e5d6;
+}
+.cat-row { display: flex; align-items: center; gap: 0.75rem; }
+.cat-label { font-size: 0.75rem; color: #6b7280; width: 130px; flex-shrink: 0; }
+.cat-bar-wrap { flex: 1; height: 6px; background: #e9e5d6; border-radius: 999px; overflow: hidden; }
+.cat-bar { height: 100%; background: linear-gradient(90deg, #3a5020, #a8c47a); border-radius: 999px; transition: width 0.6s ease; }
+.cat-val { font-size: 0.75rem; font-weight: 700; color: #3a5020; width: 28px; text-align: right; flex-shrink: 0; }
+
+/* Review detail bars */
+.review-recommend {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-size: 0.75rem; font-weight: 600; color: #3a5020;
+  margin-bottom: 0.5rem;
+}
+.review-recommend svg { color: #3a5020; }
+.review-details {
+  display: flex; flex-direction: column; gap: 0.3rem;
+  margin-bottom: 0.625rem;
+  background: #f5f2eb; border-radius: 8px; padding: 0.625rem 0.75rem;
+}
+.rd-row { display: flex; align-items: center; gap: 0.5rem; }
+.rd-label { font-size: 0.68rem; color: #9ca3af; width: 110px; flex-shrink: 0; }
+.rd-bar-wrap { flex: 1; height: 4px; background: #e2dece; border-radius: 999px; overflow: hidden; }
+.rd-bar { height: 100%; background: #3a5020; border-radius: 999px; }
+.rd-val { font-size: 0.68rem; font-weight: 700; color: #515F37; width: 28px; text-align: right; flex-shrink: 0; }
+
 .reviews-list { display: flex; flex-direction: column; gap: 0.875rem; }
 .review-card {
   padding: 1rem 1.125rem;
@@ -565,5 +663,8 @@ const jsonLd = user ? {
   .profile-avatar { width: 88px; height: 88px; }
   .profile-header { gap: 1rem; }
   .profile-meta { padding-top: 50px; }
+  .cat-label { width: 90px; font-size: 0.68rem; }
+  .rd-label { width: 80px; font-size: 0.62rem; }
+  .services-grid { grid-template-columns: 1fr; }
 }
 </style>

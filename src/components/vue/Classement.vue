@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick, watch, onUnmounted } from 'vue';
 import { getRanking } from '../../services/users';
 import { useCategoryName } from '../../composables/useCategoryName';
 import { getAvatar } from '../../composables/useAvatar';
@@ -9,8 +9,9 @@ const { categoryName, categoriesStore } = useCategoryName();
 
 const users = ref<User[]>([]);
 const total = ref(0);
+const platformTotal = ref(0);
 const page = ref(1);
-const pageSize = 12;
+const pageSize = 50;
 const prestation = ref('');
 const ville = ref('');
 const minRating = ref(0);
@@ -18,7 +19,6 @@ const maxTarif = ref(200);
 const sortBy = ref<'rating' | 'price' | 'reviews'>('rating');
 const loading = ref(false);
 
-const totalPages = computed(() => Math.ceil(total.value / pageSize));
 const resultsRef = ref<HTMLElement | null>(null);
 
 const RATINGS = [
@@ -106,14 +106,78 @@ function resetFilters() {
   search();
 }
 
-onMounted(() => {
+onMounted(async () => {
   categoriesStore.load();
   const q = new URLSearchParams(window.location.search).get('q');
   if (q) prestation.value = q;
+  // Fetch platform total (no filters) once
+  getRanking({ pageSize: 1 }).then(d => { platformTotal.value = d.total; }).catch(() => {});
   load();
 });
 
 const PODIUM_RANK = [2, 1, 3];
+
+// Hover aperçu étendu (1.5s hover)
+const hoveredId = ref<string | null>(null);
+const pinnedId = ref<string | null>(null);
+let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+
+function onCardMouseenter(id: string) {
+  hoverTimer = setTimeout(() => { hoveredId.value = id; }, 1500);
+}
+function onCardMouseleave() {
+  if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+  hoveredId.value = null;
+}
+function onCardClick(id: string) {
+  pinnedId.value = pinnedId.value === id ? null : id;
+}
+
+// Top-3 intro animation
+const podiumIntroActive = ref(false);
+const podiumIntroStep = ref(0); // 0=idle, 1=show#3, 2=show#2, 3=show#1-big, 4=settle
+const podiumIntroTimers: ReturnType<typeof setTimeout>[] = [];
+
+function runPodiumIntro() {
+  if (podiumIntroActive.value) return;
+  podiumIntroActive.value = true;
+  podiumIntroStep.value = 1;
+  podiumIntroTimers.push(setTimeout(() => { podiumIntroStep.value = 2; }, 600));
+  podiumIntroTimers.push(setTimeout(() => { podiumIntroStep.value = 3; }, 1200));
+  podiumIntroTimers.push(setTimeout(() => { podiumIntroStep.value = 4; }, 2000));
+  podiumIntroTimers.push(setTimeout(() => {
+    podiumIntroActive.value = false;
+    podiumIntroStep.value = 0;
+  }, 2800));
+}
+
+let podiumObs: IntersectionObserver | null = null;
+const podiumSectionRef = ref<HTMLElement | null>(null);
+
+function initPodiumIntroObserver() {
+  nextTick(() => {
+    if (!podiumSectionRef.value) return;
+    podiumObs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          runPodiumIntro();
+          podiumObs?.disconnect();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    podiumObs.observe(podiumSectionRef.value);
+  });
+}
+
+watch(users, () => {
+  if (users.value.length >= 3) initPodiumIntroObserver();
+});
+
+onUnmounted(() => {
+  podiumIntroTimers.forEach(clearTimeout);
+  podiumObs?.disconnect();
+});
 
 function podiumClass(podiumIndex: number) {
   const rank = PODIUM_RANK[podiumIndex];
@@ -132,6 +196,28 @@ function podiumMedal(podiumIndex: number) {
 function stars(n: number) {
   return { full: Math.round(n), empty: 5 - Math.round(n) };
 }
+
+let revealObs: IntersectionObserver | null = null;
+
+function observeReveal() {
+  nextTick(() => {
+    if (!revealObs) {
+      revealObs = new IntersectionObserver(
+        (entries) => entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('visible');
+            revealObs!.unobserve(e.target);
+          }
+        }),
+        { threshold: 0.08, rootMargin: '0px 0px -20px 0px' }
+      );
+    }
+    document.querySelectorAll('.rank-card.reveal:not(.visible), .podium-card.reveal:not(.visible)').forEach(el => revealObs!.observe(el));
+  });
+}
+
+watch(users, observeReveal);
+onMounted(observeReveal);
 </script>
 
 <template>
@@ -228,11 +314,18 @@ function stars(n: number) {
           <span class="spinner"></span> Chargement…
         </span>
         <template v-else>
-          <span class="meta-count">
-            <strong>{{ filtered.length }}</strong> prestataire{{ filtered.length > 1 ? 's' : '' }}
-            <template v-if="prestation"> · {{ categoryName(prestation) }}</template>
-            <template v-if="ville"> · {{ ville }}</template>
-          </span>
+          <div class="meta-count-wrap">
+            <span class="meta-count">
+              <template v-if="prestation || ville || minRating > 0 || maxTarif < 200">
+                <strong>{{ total }}</strong> résultat{{ total > 1 ? 's' : '' }}
+                <template v-if="prestation"> · {{ categoryName(prestation) }}</template>
+                <template v-if="ville"> · {{ ville }}</template>
+              </template>
+              <template v-else>
+                <strong>{{ platformTotal || total }}</strong> prestataire{{ (platformTotal || total) > 1 ? 's' : '' }} sur la plateforme
+              </template>
+            </span>
+          </div>
           <button
             v-if="prestation || ville || minRating > 0 || maxTarif < 200"
             class="reset-btn"
@@ -271,17 +364,24 @@ function stars(n: number) {
         <template v-else>
 
           <!-- ── Podium ── -->
-          <div v-if="showPodium" class="podium-section">
+          <div v-if="showPodium" class="podium-section" ref="podiumSectionRef">
             <h2 class="section-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 21h8m-4-4v4M6.5 3h11L19 9c0 3.31-3.13 6-7 6s-7-2.69-7-6l1.5-6zM3 9h3m15 0h-3"/></svg>
               Podium
             </h2>
-            <div class="podium-grid">
+            <div :class="['podium-grid', { 'podium-intro': podiumIntroActive }]">
               <a
                 v-for="(user, i) in podiumOrder"
                 :key="user._id"
                 :href="`/prestataires/${user._id}/`"
-                :class="['podium-card', podiumClass(i), { 'podium-first': PODIUM_RANK[i] === 1 }]"
+                :class="[
+                  'podium-card', 'reveal', podiumClass(i),
+                  { 'podium-first': PODIUM_RANK[i] === 1 },
+                  { 'pi-hidden': podiumIntroActive && podiumIntroStep < (PODIUM_RANK[i] === 3 ? 1 : PODIUM_RANK[i] === 2 ? 2 : 3) },
+                  { 'pi-featured': podiumIntroActive && podiumIntroStep === 3 && PODIUM_RANK[i] === 1 },
+                  { 'pi-settling': podiumIntroActive && podiumIntroStep === 4 },
+                ]"
+                :style="`transition-delay:${podiumIntroActive ? 0 : i * 0.1}s`"
               >
                 <div class="podium-photo">
                   <img :src="getAvatar(user._id, user.profil_image?.secure_url)" :alt="`${user.prenom} ${user.nom}`" loading="lazy" />
@@ -324,11 +424,14 @@ function stars(n: number) {
               {{ showPodium ? 'Suite du classement' : page > 1 ? `Page ${page}` : 'Classement' }}
             </h2>
             <div class="rank-list">
-              <a
+              <div
                 v-for="(user, i) in listItems"
                 :key="user._id"
-                :href="`/prestataires/${user._id}/`"
-                class="rank-card"
+                :class="['rank-card', 'reveal', { 'rank-card--expanded': hoveredId === user._id || pinnedId === user._id }]"
+                :style="`transition-delay:${Math.min(i * 0.06, 0.4)}s`"
+                @mouseenter="onCardMouseenter(user._id)"
+                @mouseleave="onCardMouseleave"
+                @click="onCardClick(user._id)"
               >
                 <span class="rank-num">{{ listRankStart + i }}</span>
                 <div class="rank-photo">
@@ -344,41 +447,38 @@ function stars(n: number) {
                     <span class="sf"><span v-for="j in stars(user.averageRating).full"  :key="`f${j}`">★</span></span>
                     <span class="se"><span v-for="j in stars(user.averageRating).empty" :key="`e${j}`">★</span></span>
                     <span class="rv-sm">{{ user.averageRating.toFixed(1) }}</span>
-                    <span class="rc-sm">({{ user.numberOfReviews }})</span>
+                    <span class="rc-sm">({{ user.numberOfReviews }} avis)</span>
                   </div>
                   <div class="rank-tags">
                     <span v-for="p in user.prestations" :key="p" class="tag-sm">{{ categoryName(p) }}</span>
                   </div>
+                  <!-- Aperçu étendu (hover ou clic) -->
+                  <div v-if="hoveredId === user._id || pinnedId === user._id" class="rank-preview">
+                    <div v-if="user.tarifHoraire" class="preview-tarif">{{ user.tarifHoraire }} €/h</div>
+                    <div v-if="user.prestations.length" class="preview-services">
+                      <span v-for="p in user.prestations.slice(0, 4)" :key="p" class="preview-chip">{{ categoryName(p) }}</span>
+                      <span v-if="user.prestations.length > 4" class="preview-chip preview-chip--more">+{{ user.prestations.length - 4 }}</span>
+                    </div>
+                    <a :href="`/prestataires/${user._id}/`" class="preview-cta" @click.stop>
+                      Voir la page du profil →
+                    </a>
+                  </div>
                 </div>
                 <div class="rank-right">
-                  <span v-if="user.tarifHoraire" class="rank-price">{{ user.tarifHoraire }} €/h</span>
-                  <span class="rank-cta">
+                  <span v-if="user.tarifHoraire && hoveredId !== user._id && pinnedId !== user._id" class="rank-price">{{ user.tarifHoraire }} €/h</span>
+                  <span v-if="hoveredId !== user._id && pinnedId !== user._id" class="rank-cta">
                     Voir le profil
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><polyline points="9 18 15 12 9 6"/></svg>
                   </span>
                 </div>
-              </a>
+              </div>
             </div>
           </div>
 
-          <!-- Pagination -->
-          <div v-if="totalPages > 1" class="pagination">
-            <button class="pag-btn" :disabled="page === 1" @click="goPage(page - 1)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
-              Précédent
-            </button>
-            <div class="pag-nums">
-              <button
-                v-for="p in totalPages" :key="p"
-                :class="['pag-num', { 'pag-num--on': p === page }]"
-                @click="goPage(p)"
-              >{{ p }}</button>
-            </div>
-            <span class="pag-indicator">{{ page }} / {{ totalPages }}</span>
-            <button class="pag-btn" :disabled="page === totalPages" @click="goPage(page + 1)">
-              Suivant
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
+          <!-- Top 50 notice -->
+          <div v-if="total > 50 && filtered.length >= 50" class="top50-notice">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Seuls les <strong>50 meilleurs jardiniers</strong> sont affichés dans ce classement.
           </div>
 
         </template>
@@ -473,16 +573,10 @@ function stars(n: number) {
 .map-btn:hover { color: #a8c47a; border-color: #a8c47a; }
 
 .chip-scroll-wrap { position: relative; }
-.chip-fade {
-  position: absolute; right: 0; top: 0; bottom: 0; width: 50px;
-  background: linear-gradient(to right, transparent, rgba(20,35,11,0.85));
-  pointer-events: none;
-}
+.chip-fade { display: none; }
 .chip-group {
-  display: flex; flex-wrap: nowrap; gap: 0.45rem;
-  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px;
+  display: flex; flex-wrap: wrap; gap: 0.45rem; padding-bottom: 2px;
 }
-.chip-group::-webkit-scrollbar { display: none; }
 .chip {
   padding: 0.35rem 0.9rem;
   border: 1.5px solid rgba(255,255,255,0.18); border-radius: 999px;
@@ -520,6 +614,7 @@ function stars(n: number) {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 1.75rem; min-height: 28px;
 }
+.meta-count-wrap { display: flex; flex-direction: column; gap: 0.1rem; }
 .meta-count { font-size: 0.875rem; color: #515F37; }
 .meta-count strong { font-weight: 700; }
 .meta-loading { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #6b7280; }
@@ -568,6 +663,16 @@ function stars(n: number) {
   gap: 1rem;
   align-items: end;
 }
+
+/* ── Podium intro animation ── */
+.podium-card { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s, border-color 0.18s, opacity 0.4s, scale 0.5s; }
+.pi-hidden { opacity: 0; transform: translateY(40px) scale(0.85); pointer-events: none; }
+.pi-featured {
+  transform: translateY(-18px) scale(1.08) !important;
+  box-shadow: 0 32px 64px rgba(212,168,51,0.35) !important;
+  z-index: 10; position: relative;
+}
+.pi-settling { transition: transform 0.6s ease, box-shadow 0.4s ease, opacity 0.4s, scale 0.5s; }
 
 .podium-card {
   display: flex; flex-direction: column;
@@ -651,11 +756,12 @@ function stars(n: number) {
   border-radius: 999px; padding: 0.15rem 0.6rem;
 }
 
-.podium-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.podium-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; justify-content: center; width: 100%; }
 .tag {
-  background: #f0ede3; color: #515F37; border: 1px solid #d6cda4;
-  padding: 0.18rem 0.6rem; border-radius: 999px;
-  font-size: 0.72rem; font-weight: 600;
+  padding: 0.25rem 0.65rem; border: 1.5px solid #e9e5d6; border-radius: 999px;
+  background: #f5f2eb; color: #515F37;
+  font-size: 0.75rem; font-weight: 500;
+  white-space: normal; word-break: break-word;
 }
 
 /* ══ RANK LIST ═══════════════════════════════════════════════════ */
@@ -665,10 +771,42 @@ function stars(n: number) {
   display: flex; align-items: center; gap: 1rem;
   padding: 0.9rem 1.125rem;
   background: #FCFAF5; border: 1.5px solid #e5e2d3; border-radius: 14px;
-  text-decoration: none; color: inherit;
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  color: inherit; cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.2s, transform 0.15s;
   position: relative;
 }
+.rank-card--expanded {
+  align-items: flex-start;
+  border-color: #a8c47a;
+  box-shadow: 0 6px 24px rgba(58,80,32,0.12);
+  transform: translateX(4px);
+}
+.rank-card--expanded::before { width: 3px; }
+
+/* Aperçu étendu */
+.rank-preview {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e9e5d6;
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.preview-tarif { font-size: 1rem; font-weight: 800; color: #3a5020; }
+.preview-services { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.preview-chip {
+  background: rgba(58,80,32,0.08); color: #3a5020;
+  border: 1px solid rgba(58,80,32,0.2);
+  padding: 0.18rem 0.55rem; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 600;
+}
+.preview-chip--more { background: #f0ede3; color: #9ca3af; border-color: #d6cda4; }
+.preview-cta {
+  display: inline-flex; align-items: center;
+  background: #3a5020; color: #fff;
+  text-decoration: none; padding: 0.5rem 1rem;
+  border-radius: 8px; font-size: 0.8rem; font-weight: 700;
+  transition: background 0.15s; width: fit-content;
+}
+.preview-cta:hover { background: #2a3c16; }
 .rank-card::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 0;
   background: #3a5020; border-radius: 14px 0 0 14px;
@@ -692,7 +830,7 @@ function stars(n: number) {
 }
 .rank-photo img { width: 100%; height: 100%; object-fit: cover; }
 
-.rank-body { flex: 1; min-width: 0; }
+.rank-body { flex: 1; min-width: 0; overflow: hidden; }
 .rank-name { font-size: 0.9rem; font-weight: 700; color: #1a1a0e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rank-ville {
   display: flex; align-items: center; gap: 0.25rem;
@@ -701,11 +839,15 @@ function stars(n: number) {
 .rank-rating { display: flex; align-items: center; gap: 1px; margin-top: 0.3rem; }
 .rv-sm { font-size: 0.72rem; font-weight: 700; color: #515F37; margin-left: 0.2rem; }
 .rc-sm { font-size: 0.68rem; color: #9ca3af; }
-.rank-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.35rem; }
+.rank-tags {
+  display: flex; flex-wrap: wrap; gap: 0.3rem;
+  margin-top: 0.4rem; width: 100%;
+}
 .tag-sm {
-  background: #f0ede3; color: #515F37; border: 1px solid #d6cda4;
-  padding: 0.1rem 0.45rem; border-radius: 999px;
-  font-size: 0.68rem; font-weight: 600;
+  padding: 0.25rem 0.65rem; border: 1.5px solid #e9e5d6; border-radius: 999px;
+  background: #f5f2eb; color: #515F37;
+  font-size: 0.75rem; font-weight: 500;
+  white-space: normal; word-break: break-word;
 }
 
 .rank-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; flex-shrink: 0; }
@@ -720,6 +862,14 @@ function stars(n: number) {
 .rank-card:hover .rank-cta svg { transform: translateX(3px); }
 
 /* ══ PAGINATION ══════════════════════════════════════════════════ */
+.top50-notice {
+  display: flex; align-items: center; gap: 0.5rem; justify-content: center;
+  margin-top: 2.5rem; padding: 1rem 1.5rem;
+  background: #f5f2eb; border: 1px solid #ddd8c8; border-radius: 14px;
+  font-size: 0.85rem; color: #6b6347;
+}
+.top50-notice svg { color: #a8c47a; flex-shrink: 0; }
+
 .pagination {
   display: flex; align-items: center; justify-content: center;
   gap: 0.75rem; margin-top: 3rem; flex-wrap: wrap;
@@ -759,6 +909,9 @@ function stars(n: number) {
   .map-btn { display: none; }
   .pag-nums { display: none; }
   .pag-indicator { display: block; }
+  /* Chips en scroll horizontal sur mobile */
+  .chip-group { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+  .chip-group::-webkit-scrollbar { display: none; }
 }
 @media (max-width: 600px) {
   .podium-grid { grid-template-columns: 1fr; align-items: unset; }

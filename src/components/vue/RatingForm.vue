@@ -42,7 +42,7 @@ async function submit() {
     await submitReview({ token: resolvedToken(), ratings: ratings.value, recommend: recommend.value, comment: comment.value || undefined });
     state.value = 'success';
   } catch {
-    alert('Une erreur est survenue, veuillez réessayer.');
+    state.value = 'error';
   } finally {
     sending.value = false;
   }

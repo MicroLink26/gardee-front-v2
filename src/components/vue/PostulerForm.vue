@@ -1,17 +1,25 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { registerPrestataire } from '../../services/users';
 import { useCategoriesStore } from '../../stores/categories';
+import EmailVerificationScreen from './EmailVerificationScreen.vue';
+import ImageCropper from './ImageCropper.vue';
 
 const categoriesStore = useCategoriesStore();
 
 const step = ref(1);
 const loading = ref(false);
 const done = ref(false);
+const pendingVerificationUserId = ref<string | null>(null);
 const error = ref('');
+
+const ELAGAGE_NAMES = ['élagage', 'elagage', 'Élagage'];
+const JARDINAGE_VOISINS_NAMES = ['jardinage entre voisins', 'jardinage entre voisins (hors professionnel)'];
 
 const form = ref({
   prenom: '', nom: '', email: '', password: '', telephone: '',
+  phonePrefix: '+33',
+  profilType: 'amateur' as 'amateur' | 'professionnel',
   prestations: [] as string[],
   tarifHoraire: '',
   description: '',
@@ -19,6 +27,7 @@ const form = ref({
   isEntrepreneur: false,
   siret: '',
   qualifElagage: false,
+  qualifElagageFile: null as File | null,
   adresse: '',
   codePostal: '',
   ville: '',
@@ -29,8 +38,42 @@ const form = ref({
 });
 
 const photoPreview = ref('');
+const cropperSrc = ref('');
+const qualifElagagePreview = ref('');
+
+const availableCategories = computed(() => {
+  return categoriesStore.categories.filter(cat => {
+    const nameLower = cat.name.toLowerCase();
+    if (JARDINAGE_VOISINS_NAMES.some(n => nameLower.includes(n))) return false;
+    if (form.value.profilType === 'amateur' && ELAGAGE_NAMES.some(n => nameLower.includes(n))) return false;
+    return true;
+  });
+});
+
+const hasElagage = computed(() =>
+  form.value.prestations.some(p => ELAGAGE_NAMES.some(n => p.toLowerCase().includes(n)))
+);
+
+const contactComText = computed(() => {
+  if (form.value.profilType === 'professionnel') {
+    return 'J\'accepte de recevoir du contenu commercial exclusivement réservé aux jardiniers professionnels, avec des offres et des tarifs négociés.';
+  }
+  return 'J\'accepte de recevoir du contenu commercial sélectionné pour les jardiniers passionnés qui souhaitent s\'équiper au meilleur prix.';
+});
 
 onMounted(() => categoriesStore.load());
+
+function setProfilType(type: 'amateur' | 'professionnel') {
+  form.value.profilType = type;
+  form.value.isEntrepreneur = type === 'professionnel';
+  // Remove élagage from prestations if switching to amateur
+  if (type === 'amateur') {
+    form.value.prestations = form.value.prestations.filter(
+      p => !ELAGAGE_NAMES.some(n => p.toLowerCase().includes(n))
+    );
+    form.value.qualifElagage = false;
+  }
+}
 
 function togglePrestation(name: string) {
   const idx = form.value.prestations.indexOf(name);
@@ -41,8 +84,26 @@ function togglePrestation(name: string) {
 function onPhotoChange(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (!file) return;
-  form.value.photo = file;
-  photoPreview.value = URL.createObjectURL(file);
+  cropperSrc.value = URL.createObjectURL(file);
+  // Reset input so same file can be re-selected
+  (e.target as HTMLInputElement).value = '';
+}
+
+function onCropDone(blob: Blob) {
+  form.value.photo = new File([blob], 'profil.jpg', { type: 'image/jpeg' });
+  photoPreview.value = URL.createObjectURL(blob);
+  cropperSrc.value = '';
+}
+
+function cancelCrop() {
+  cropperSrc.value = '';
+}
+
+function onQualifElagageChange(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  form.value.qualifElagageFile = file;
+  qualifElagagePreview.value = file.name;
 }
 
 function nextStep() {
@@ -71,14 +132,21 @@ async function submit() {
   try {
     const fd = new FormData();
     const fields = { ...form.value } as Record<string, unknown>;
+    // Merge prefix into telephone
+    const fullTelephone = `${form.value.phonePrefix}${form.value.telephone.replace(/^0/, '')}`;
     for (const [key, val] of Object.entries(fields)) {
-      if (key === 'photo') continue;
+      if (key === 'photo' || key === 'qualifElagageFile' || key === 'phonePrefix') continue;
+      if (key === 'telephone') { fd.append('telephone', fullTelephone); continue; }
       if (Array.isArray(val)) val.forEach(v => fd.append(key, v));
       else fd.append(key, String(val));
     }
     if (form.value.photo) fd.append('photo', form.value.photo);
-    await registerPrestataire(fd);
-    done.value = true;
+    const result = await registerPrestataire(fd);
+    if ((result as Record<string, unknown>)?.requiresVerification) {
+      pendingVerificationUserId.value = (result as Record<string, unknown>).userId as string;
+    } else {
+      done.value = true;
+    }
   } catch (e: unknown) {
     const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
     error.value = msg ?? 'Une erreur est survenue. Veuillez réessayer.';
@@ -103,7 +171,11 @@ const BENEFITS = [
 </script>
 
 <template>
-  <div class="postuler-layout">
+  <EmailVerificationScreen v-if="pendingVerificationUserId" :userId="pendingVerificationUserId" redirect="/app/profil" />
+
+  <ImageCropper v-else-if="cropperSrc" :src="cropperSrc" @crop="onCropDone" @cancel="cancelCrop" />
+
+  <div v-else class="postuler-layout">
 
     <!-- ── PANNEAU GAUCHE ── -->
     <aside class="postuler-aside">
@@ -208,24 +280,85 @@ const BENEFITS = [
           </div>
           <div class="field">
             <label>Téléphone <span class="req">*</span></label>
-            <input v-model="form.telephone" type="tel" placeholder="06 12 34 56 78" />
+            <div class="phone-wrap">
+              <select v-model="form.phonePrefix" class="phone-prefix">
+                <option value="+33">🇫🇷 +33</option>
+                <option value="+32">🇧🇪 +32</option>
+                <option value="+41">🇨🇭 +41</option>
+                <option value="+352">🇱🇺 +352</option>
+                <option value="+44">🇬🇧 +44</option>
+                <option value="+49">🇩🇪 +49</option>
+                <option value="+34">🇪🇸 +34</option>
+                <option value="+39">🇮🇹 +39</option>
+                <option value="+351">🇵🇹 +351</option>
+                <option value="+1">🇺🇸 +1</option>
+              </select>
+              <input v-model="form.telephone" type="tel" placeholder="06 12 34 56 78" class="phone-input" />
+            </div>
           </div>
         </div>
 
         <!-- ── ÉTAPE 2 — Activité ── -->
         <div v-if="step === 2" class="form-step">
+
+          <!-- Bouton Amateur / Professionnel -->
+          <div class="field">
+            <label>Type de profil <span class="req">*</span></label>
+            <div class="profil-toggle">
+              <button
+                type="button"
+                :class="['profil-btn', { 'profil-btn--on': form.profilType === 'amateur' }]"
+                @click="setProfilType('amateur')"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Amateur
+                <small>Particulier ou passionné</small>
+              </button>
+              <button
+                type="button"
+                :class="['profil-btn', { 'profil-btn--on': form.profilType === 'professionnel' }]"
+                @click="setProfilType('professionnel')"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                Professionnel
+                <small>Auto-entrepreneur ou entreprise</small>
+              </button>
+            </div>
+          </div>
+
           <div class="field">
             <label>Services proposés <span class="req">*</span></label>
             <p class="field-hint">Sélectionnez au moins un service</p>
             <div class="service-chips">
               <button
-                v-for="cat in categoriesStore.categories" :key="cat._id"
+                v-for="cat in availableCategories" :key="cat._id"
                 type="button"
-                :class="['chip', { active: form.prestations.includes(cat.name) }]"
-                @click="togglePrestation(cat.name)"
+                :class="['chip', { active: form.prestations.includes(cat._id) }]"
+                @click="togglePrestation(cat._id)"
               >{{ cat.name }}</button>
             </div>
           </div>
+
+          <!-- Justificatif élagage si service élagage sélectionné -->
+          <div v-if="hasElagage && form.profilType === 'professionnel'" class="field elagage-doc-field">
+            <label>Certification élagage ou justificatif d'assurance <span class="req">*</span></label>
+            <p class="field-hint">Joignez votre certificat de qualification ou votre attestation d'assurance responsabilité civile</p>
+            <div class="file-upload-wrap">
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" @change="onQualifElagageChange" id="qualif-input" class="visually-hidden" />
+              <label for="qualif-input" class="btn-upload">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                {{ qualifElagagePreview || 'Joindre le document' }}
+              </label>
+            </div>
+          </div>
+
+          <!-- SIRET si professionnel -->
+          <div v-if="form.profilType === 'professionnel'" class="field">
+            <label>Numéro SIRET ou K-bis <span class="req">*</span></label>
+            <p class="field-hint">Votre numéro SIRET à 14 chiffres sera vérifié</p>
+            <input v-model="form.siret" type="text" maxlength="14" placeholder="Ex : 12345678901234" />
+          </div>
+
           <div class="field-row">
             <div class="field">
               <label>Tarif horaire (€/h)</label>
@@ -241,18 +374,6 @@ const BENEFITS = [
               <input v-model="form.materielOK" type="checkbox" />
               <span>Je dispose de mon propre matériel</span>
             </label>
-            <label class="checkbox-label">
-              <input v-model="form.qualifElagage" type="checkbox" />
-              <span>J'ai une qualification en élagage</span>
-            </label>
-            <label class="checkbox-label">
-              <input v-model="form.isEntrepreneur" type="checkbox" />
-              <span>Je suis auto-entrepreneur / entreprise</span>
-            </label>
-          </div>
-          <div v-if="form.isEntrepreneur" class="field">
-            <label>Numéro SIRET</label>
-            <input v-model="form.siret" type="text" maxlength="14" placeholder="14 chiffres" />
           </div>
         </div>
 
@@ -278,7 +399,7 @@ const BENEFITS = [
           </div>
           <label class="checkbox-label">
             <input v-model="form.contactCom" type="checkbox" />
-            <span>J'accepte de recevoir des informations commerciales de Gardee</span>
+            <span>{{ contactComText }}</span>
           </label>
         </div>
 
@@ -318,7 +439,7 @@ const BENEFITS = [
               <div class="recap-item"><span>Nom</span><strong>{{ form.prenom }} {{ form.nom }}</strong></div>
               <div class="recap-item"><span>Email</span><strong>{{ form.email }}</strong></div>
               <div class="recap-item"><span>Ville</span><strong>{{ form.ville }}</strong></div>
-              <div class="recap-item"><span>Services</span><strong>{{ form.prestations.join(', ') || '—' }}</strong></div>
+              <div class="recap-item"><span>Services</span><strong>{{ form.prestations.map(id => categoriesStore.categories.find(c => c._id === id)?.name ?? id).join(', ') || '—' }}</strong></div>
             </div>
           </div>
         </div>
@@ -681,6 +802,73 @@ input:focus, textarea:focus {
 
 textarea { resize: vertical; }
 
+/* Phone field */
+.phone-wrap {
+  display: flex;
+  gap: 0.4rem;
+}
+.phone-prefix {
+  width: 110px;
+  flex-shrink: 0;
+  padding: 0.55rem 0.5rem;
+  border: 1.5px solid #e0d8c2;
+  border-radius: 9px;
+  font-size: 0.8rem;
+  color: #1a1a0e;
+  background: #f5f2eb;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+.phone-prefix:focus { border-color: #3a5020; }
+.phone-input { flex: 1; }
+
+/* Profil toggle Amateur / Pro */
+.profil-toggle {
+  display: flex;
+  gap: 0.75rem;
+}
+.profil-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1rem 0.75rem;
+  border: 2px solid #e9e5d6;
+  border-radius: 14px;
+  background: #f5f2eb;
+  color: #515F37;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+  font-family: inherit;
+}
+.profil-btn small {
+  font-size: 0.73rem;
+  font-weight: 400;
+  color: #9ca3af;
+}
+.profil-btn:hover { border-color: #a8c47a; background: #eef2e8; }
+.profil-btn--on {
+  border-color: #3a5020;
+  background: linear-gradient(135deg, #eef2e8, #f5f7f0);
+  color: #3a5020;
+  box-shadow: 0 4px 12px rgba(58,80,32,0.12);
+}
+.profil-btn--on small { color: #6b8a3a; }
+
+/* Élagage doc upload */
+.elagage-doc-field {
+  background: #fff8e7;
+  border: 1.5px solid #fcd34d;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.file-upload-wrap { margin-top: 0.25rem; }
+
 /* Services chips */
 .service-chips {
   display: flex;
@@ -923,5 +1111,10 @@ textarea { resize: vertical; }
   .postuler-main { padding: 2rem 1.5rem 3rem; }
   .field-row, .recap-grid { grid-template-columns: 1fr; }
   .stepper { display: none; }
+}
+@media (max-width: 480px) {
+  .profil-toggle { flex-direction: column; }
+  .phone-wrap { flex-direction: row; }
+  .phone-prefix { width: 90px; font-size: 0.75rem; }
 }
 </style>

@@ -1,0 +1,132 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/astro/Navbar.astro';
+import Footer from '../components/astro/Footer.astro';
+---
+<BaseLayout
+  title="Page introuvable"
+  description="La page que vous cherchez n'existe pas ou a été déplacée."
+  noindex={true}
+>
+  <Navbar />
+  <main class="not-found">
+    <div class="nf-deco" aria-hidden="true">
+      <svg class="nf-leaf nf-leaf-a" viewBox="0 0 220 300" xmlns="http://www.w3.org/2000/svg">
+        <path d="M110,8 C175,8 212,65 212,150 C212,235 175,292 110,292 C45,292 8,235 8,150 C8,65 45,8 110,8Z" fill="rgba(168,196,122,0.06)"/>
+      </svg>
+      <svg class="nf-leaf nf-leaf-b" viewBox="0 0 180 260" xmlns="http://www.w3.org/2000/svg">
+        <path d="M90,6 C148,6 174,58 174,130 C174,202 148,254 90,254 C32,254 6,202 6,130 C6,58 32,6 90,6Z" fill="rgba(168,196,122,0.04)"/>
+      </svg>
+    </div>
+
+    <div class="nf-content">
+      <div class="nf-code">404</div>
+      <h1>Page introuvable</h1>
+      <p>La page que vous cherchez n'existe pas ou a été déplacée. Pas de panique — votre jardin, lui, est toujours là.</p>
+
+      <div class="nf-actions">
+        <a href="/" class="btn-primary">Retour à l'accueil</a>
+        <a href="/carte" class="btn-secondary">Trouver un jardinier</a>
+      </div>
+
+      <nav class="nf-links">
+        <a href="/classement">Classement</a>
+        <a href="/postuler">Devenir prestataire</a>
+        <a href="/contact">Contact</a>
+      </nav>
+    </div>
+  </main>
+  <Footer />
+</BaseLayout>
+
+<style>
+* { box-sizing: border-box; }
+
+.not-found {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f2efe6;
+  position: relative;
+  overflow: hidden;
+  padding: 4rem 2rem;
+}
+
+.nf-deco { position: absolute; inset: 0; pointer-events: none; }
+.nf-leaf { position: absolute; }
+.nf-leaf-a { width: 400px; height: 540px; right: -120px; top: -100px; }
+.nf-leaf-b { width: 300px; height: 430px; left: -100px; bottom: -120px; }
+
+.nf-content {
+  text-align: center;
+  max-width: 520px;
+  position: relative;
+  z-index: 1;
+}
+
+.nf-code {
+  font-size: 8rem;
+  font-weight: 900;
+  color: #c8d9a6;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  margin-bottom: 0.5rem;
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #1a1a0e;
+  margin: 0 0 1rem;
+  letter-spacing: -0.03em;
+}
+
+p {
+  font-size: 1rem;
+  color: #6b7280;
+  line-height: 1.7;
+  margin: 0 0 2rem;
+}
+
+.nf-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.btn-primary {
+  padding: 0.875rem 1.75rem;
+  background: #3a5020; color: #fff;
+  text-decoration: none; border-radius: 12px;
+  font-weight: 700; font-size: 0.95rem;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: #2a3c16; }
+
+.btn-secondary {
+  padding: 0.875rem 1.75rem;
+  background: #fff; color: #3a5020;
+  text-decoration: none; border-radius: 12px;
+  font-weight: 700; font-size: 0.95rem;
+  border: 2px solid #c8d9a6;
+  transition: all 0.15s;
+}
+.btn-secondary:hover { border-color: #3a5020; background: #f0f5e8; }
+
+.nf-links {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.nf-links a {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.nf-links a:hover { color: #3a5020; }
+</style>

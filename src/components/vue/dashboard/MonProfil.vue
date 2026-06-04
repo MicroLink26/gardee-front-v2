@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
 import { getMyProfile, updateMyProfile, changePassword } from '../../../services/users';
 import { useCategoriesStore } from '../../../stores/categories';
 import { useToastStore } from '../../../stores/toast';
+import ImageCropper from '../ImageCropper.vue';
 
 const auth = useAuthStore();
 const categories = useCategoriesStore();
@@ -34,6 +35,7 @@ const pwError = ref('');
 
 const photoFile = ref<File | null>(null);
 const photoPreview = ref('');
+const cropperSrc = ref('');
 
 onMounted(async () => {
   try {
@@ -61,17 +63,40 @@ onMounted(async () => {
   }
 });
 
-function togglePrestation(name: string) {
-  const idx = form.value.prestations.indexOf(name);
+const ELAGAGE_NAMES = ['élagage', 'elagage', 'Élagage'];
+
+const availableCategories = computed(() =>
+  categories.categories.filter(cat => {
+    const n = cat.name.toLowerCase();
+    if (form.value.isEntrepreneur) return true;
+    return !ELAGAGE_NAMES.some(e => n.includes(e));
+  })
+);
+
+function togglePrestation(id: string) {
+  const idx = form.value.prestations.indexOf(id);
   if (idx >= 0) form.value.prestations.splice(idx, 1);
-  else form.value.prestations.push(name);
+  else form.value.prestations.push(id);
+}
+
+function removeElagage() {
+  const elagageIds = categories.categories
+    .filter(c => ELAGAGE_NAMES.some(e => c.name.toLowerCase().includes(e)))
+    .map(c => c._id);
+  form.value.prestations = form.value.prestations.filter(p => !elagageIds.includes(p));
 }
 
 function onPhotoChange(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (!file) return;
-  photoFile.value = file;
-  photoPreview.value = URL.createObjectURL(file);
+  cropperSrc.value = URL.createObjectURL(file);
+  (e.target as HTMLInputElement).value = '';
+}
+
+function onCropDone(blob: Blob) {
+  photoFile.value = new File([blob], 'profil.jpg', { type: 'image/jpeg' });
+  photoPreview.value = URL.createObjectURL(blob);
+  cropperSrc.value = '';
 }
 
 async function save() {
@@ -85,10 +110,15 @@ async function save() {
       else if (v !== undefined) fd.append(k, String(v));
     }
     if (photoFile.value) fd.append('photo', photoFile.value);
-    await updateMyProfile(fd as unknown as Parameters<typeof updateMyProfile>[0]);
+    const result = await updateMyProfile(fd as unknown as Parameters<typeof updateMyProfile>[0]);
     saved.value = true;
     setTimeout(() => (saved.value = false), 3000);
-    toast.show('Profil enregistré avec succès', 'success');
+    if ((result as Record<string, unknown>)?.revalidationRequired) {
+      toast.show('Modifications enregistrées — votre profil est en attente de validation.', 'info');
+      if (auth.user?.prestataire) auth.user.prestataire.is_validated = false;
+    } else {
+      toast.show('Profil enregistré avec succès', 'success');
+    }
   } catch {
     error.value = 'Impossible de sauvegarder.';
     toast.show('Erreur lors de la sauvegarde', 'error');
@@ -125,6 +155,8 @@ async function savePassword() {
 </script>
 
 <template>
+  <ImageCropper v-if="cropperSrc" :src="cropperSrc" @crop="onCropDone" @cancel="cropperSrc = ''" />
+
   <div class="profil-page">
     <div class="page-header">
       <p class="page-header-eyebrow">Espace personnel</p>
@@ -149,6 +181,12 @@ async function savePassword() {
     </div>
 
     <form v-else @submit.prevent="save" class="profil-form">
+
+      <!-- Re-validation notice -->
+      <div v-if="auth.user?.prestataire && !auth.user.prestataire.is_validated" class="revalidation-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Votre profil est <strong>en attente de validation</strong> — il n'est pas encore visible sur la plateforme. Notre équipe l'examinera prochainement.</span>
+      </div>
 
       <!-- Photo -->
       <div class="section-card">
@@ -201,15 +239,40 @@ async function savePassword() {
             <span class="section-badge">Prestataire</span>
           </div>
 
+          <!-- Type de profil -->
+          <div class="field">
+            <label>Type de profil</label>
+            <div class="profil-toggle">
+              <button
+                type="button"
+                :class="['profil-btn', { 'profil-btn--on': !form.isEntrepreneur }]"
+                @click="form.isEntrepreneur = false; removeElagage()"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Amateur
+                <small>Particulier ou passionné</small>
+              </button>
+              <button
+                type="button"
+                :class="['profil-btn', { 'profil-btn--on': form.isEntrepreneur }]"
+                @click="form.isEntrepreneur = true"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                Professionnel
+                <small>Auto-entrepreneur ou entreprise</small>
+              </button>
+            </div>
+          </div>
+
           <div class="field">
             <label>Services proposés</label>
             <div class="chip-group">
               <button
-                v-for="cat in categories.categories"
+                v-for="cat in availableCategories"
                 :key="cat._id"
                 type="button"
-                :class="['service-chip', { active: form.prestations.includes(cat.name) }]"
-                @click="togglePrestation(cat.name)"
+                :class="['service-chip', { active: form.prestations.includes(cat._id) }]"
+                @click="togglePrestation(cat._id)"
               >{{ cat.name }}</button>
             </div>
           </div>
@@ -232,11 +295,6 @@ async function savePassword() {
               <input v-model="form.materielOK" type="checkbox" />
               <span class="checkbox-box"></span>
               Matériel disponible
-            </label>
-            <label class="checkbox-item">
-              <input v-model="form.isEntrepreneur" type="checkbox" />
-              <span class="checkbox-box"></span>
-              Auto-entrepreneur / entreprise
             </label>
             <label class="checkbox-item">
               <input v-model="form.qualifElagage" type="checkbox" />
@@ -341,6 +399,14 @@ async function savePassword() {
   padding: 0.15rem 0.55rem; border-radius: 999px;
   border: 1px solid rgba(168,196,122,0.3);
 }
+
+.revalidation-banner {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  background: #fef3c7; border: 1px solid #fcd34d; border-radius: 12px;
+  padding: 0.875rem 1rem; font-size: 0.875rem; color: #92400e;
+  margin-bottom: 0.5rem;
+}
+.revalidation-banner svg { flex-shrink: 0; color: #d97706; margin-top: 1px; }
 
 .loading {
   display: flex; align-items: center; gap: 0.75rem;
@@ -464,6 +530,18 @@ textarea { resize: vertical; }
 }
 
 /* Service chips */
+.profil-toggle { display: flex; gap: 0.75rem; margin-bottom: 0.25rem; }
+.profil-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+  padding: 0.875rem 0.5rem; border: 2px solid #e9e5d6; border-radius: 12px;
+  background: #f5f2eb; color: #515F37; font-size: 0.85rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.profil-btn small { font-size: 0.72rem; font-weight: 400; color: #9ca3af; }
+.profil-btn:hover { border-color: #a8c47a; background: #eef2e8; }
+.profil-btn--on { border-color: #3a5020; background: #eef2e8; color: #3a5020; box-shadow: 0 2px 8px rgba(58,80,32,0.1); }
+.profil-btn--on small { color: #6b8a3a; }
+
 .chip-group { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .service-chip {
   padding: 0.3rem 0.8rem;

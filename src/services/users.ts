@@ -39,10 +39,11 @@ export async function updateMyProfile(formData: FormData): Promise<User> {
   return data.user;
 }
 
-export async function registerPrestataire(formData: FormData): Promise<void> {
-  await api.post('/prestataires/register', formData, {
+export async function registerPrestataire(formData: FormData): Promise<unknown> {
+  const { data } = await api.post('/prestataires/register', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+  return data;
 }
 
 export async function registerClient(data: {

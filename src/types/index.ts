@@ -25,6 +25,11 @@ export interface User {
   prestataire?: PrestataireProfile | null;
   is_validated: boolean;
   createdAt: string;
+  bannedPermanently?: boolean;
+  rejectedTemporarily?: boolean;
+  rejectionReason?: string;
+  rejectedAt?: string;
+  rejectionPingShown?: boolean;
   // Champs hérités pour compat avec les pages publiques (profil, classement)
   prestations?: string[];
   tarifHoraire?: number;

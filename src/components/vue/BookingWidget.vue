@@ -46,7 +46,10 @@ const calDays = computed(() => {
   for (let i = 0; i < firstDay; i++) days.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(calYear.value, calMonth.value, d);
-    const iso = date.toISOString().split('T')[0];
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const iso = `${yyyy}-${mm}-${dd}`;
     days.push({ day: d, date, past: date < today, selected: form.value.desiredAt === iso, isToday: date.getTime() === today.getTime() });
   }
   return days;
@@ -69,7 +72,11 @@ function nextMonth() {
 
 function selectDay(d: { date: Date; past: boolean } | null) {
   if (!d || d.past) return;
-  form.value.desiredAt = d.date.toISOString().split('T')[0];
+  const dd = d.date;
+  const yyyy = dd.getFullYear();
+  const mm = String(dd.getMonth() + 1).padStart(2, '0');
+  const day = String(dd.getDate()).padStart(2, '0');
+  form.value.desiredAt = `${yyyy}-${mm}-${day}`;
 }
 
 const selectedDateLabel = computed(() => {
@@ -83,6 +90,24 @@ const selectedDateLabel = computed(() => {
 const categoryName = computed(() => {
   const map = new Map(categoriesStore.categories.map(c => [c._id, c.name]));
   return (id: string) => map.get(id) ?? id;
+});
+
+// Services disponibles : catégories connues filtrées + prestations inconnues du store
+const availableServices = computed(() => {
+  const knownIds = new Set(categoriesStore.categories.map(c => c._id));
+  const knownNames = new Set(categoriesStore.categories.map(c => c.name));
+
+  // Catégories du store qui correspondent aux prestations du prestataire
+  const matched = categoriesStore.categories.filter(c =>
+    props.prestations.includes(c._id) || props.prestations.includes(c.name)
+  );
+
+  // Prestations du prestataire qui ne correspondent à aucune catégorie connue
+  const unmatched = props.prestations
+    .filter(p => !knownIds.has(p) && !knownNames.has(p))
+    .map(p => ({ _id: p, name: p }));
+
+  return [...matched, ...unmatched];
 });
 
 function toggleService(s: string) {
@@ -104,7 +129,7 @@ async function submitRequest() {
       prestataireId: props.prestataireId,
       ...form.value,
       desiredAt,
-      subject: form.value.prestations.join(', ') || undefined,
+      subject: form.value.prestations.map(id => categoryName.value(id)).join(', ') || undefined,
     });
     formSent.value = true;
   } catch {
@@ -199,9 +224,13 @@ onMounted(() => categoriesStore.load());
         <div class="field">
           <label>Service(s)</label>
           <div class="service-chips">
-            <button v-for="cat in categoriesStore.categories" :key="cat._id" type="button" :class="['service-chip', { active: form.prestations.includes(cat._id) }]" @click="toggleService(cat._id)">
-              {{ cat.name }}
-            </button>
+            <button
+              v-for="svc in availableServices"
+              :key="svc._id"
+              type="button"
+              :class="['service-chip', { active: form.prestations.includes(svc._id) }]"
+              @click="toggleService(svc._id)"
+            >{{ svc.name }}</button>
           </div>
         </div>
         <div class="field">
