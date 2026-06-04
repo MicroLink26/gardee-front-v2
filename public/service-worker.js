@@ -1,5 +1,5 @@
 // Service Worker pour Gardee v2
-// Cache les assets statiques et les réponses API pour offline support
+// Gère le caching intelligent, les notifications push, et le support offline
 
 const CACHE_VERSION = 'v1-2026-06-04';
 const STATIC_CACHE = `gardee-static-${CACHE_VERSION}`;
@@ -12,6 +12,7 @@ const STATIC_ASSETS = [
   '/img/logo_small.png',
   '/img/tondeuse.png',
   '/favicon.ico',
+  '/site.webmanifest',
 ];
 
 // Installation: cache les assets statiques
@@ -123,4 +124,35 @@ self.addEventListener('fetch', (event) => {
         })
     );
   }
+});
+
+// Push notifications
+self.addEventListener('push', (event) => {
+  const data = event.data?.json() ?? {};
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? 'Gardee', {
+      body: data.body ?? '',
+      icon: '/img/logo.png',
+      badge: '/img/logo_small.png',
+      data: { url: data.url ?? '/app/messagerie' },
+      vibrate: [200, 100, 200],
+    })
+  );
+});
+
+// Notification clicks
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url ?? '/app/messagerie';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    })
+  );
 });

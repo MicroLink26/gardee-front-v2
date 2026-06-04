@@ -104,21 +104,6 @@ const fullTitle = `${title} — Gardee`;
   <body>
     <slot />
     <ToastContainer client:only="vue" />
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').then((reg) => {
-          reg.update();
-        });
-
-        let refreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (!refreshing) {
-            refreshing = true;
-            window.location.reload();
-          }
-        });
-      }
-    </script>
     <!-- Scroll reveal animations -->
     <style>
       .reveal {
