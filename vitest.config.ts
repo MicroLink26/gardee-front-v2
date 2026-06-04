@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
+    exclude: ['e2e/**', 'node_modules/**'],
     coverage: {
       provider: 'istanbul',
       include: ['src/services/**/*.ts', 'src/stores/**/*.ts'],
