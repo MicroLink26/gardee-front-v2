@@ -1,0 +1,58 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  width?: number | string;
+  height?: number | string;
+  loading?: 'lazy' | 'eager';
+  class?: string;
+  style?: string;
+  sizes?: string;
+  srcset?: string;
+}
+
+const {
+  src,
+  alt,
+  width,
+  height,
+  loading = 'lazy',
+  class: className,
+  style,
+  sizes,
+  srcset,
+} = Astro.props;
+
+// Determine if image has a WebP version available
+const hasWebP = src.endsWith('.png') || src.endsWith('.jpg') || src.endsWith('.jpeg');
+const webpSrc = hasWebP ? src.replace(/\.(png|jpg|jpeg)$/i, '.webp') : null;
+---
+
+{webpSrc ? (
+  <picture>
+    <source srcset={webpSrc} type="image/webp" {sizes} />
+    <img
+      {src}
+      {alt}
+      {width}
+      {height}
+      {loading}
+      class={className}
+      style={style}
+      {srcset}
+      {sizes}
+    />
+  </picture>
+) : (
+  <img
+    {src}
+    {alt}
+    {width}
+    {height}
+    {loading}
+    class={className}
+    style={style}
+    {srcset}
+    {sizes}
+  />
+)}

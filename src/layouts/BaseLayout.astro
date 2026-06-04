@@ -1,5 +1,6 @@
 ---
 import ToastContainer from '../components/vue/ToastContainer.vue';
+import WebVitalsTracker from '../components/vue/WebVitalsTracker.vue';
 
 interface Props {
   title: string;
@@ -104,6 +105,7 @@ const fullTitle = `${title} — Gardee`;
   <body>
     <slot />
     <ToastContainer client:only="vue" />
+    <WebVitalsTracker client:only="vue" />
     <!-- Scroll reveal animations -->
     <style>
       .reveal {

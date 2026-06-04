@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev --host",
-    "build": "astro build",
+    "build": "node scripts/convert-to-webp.mjs && astro build",
     "preview": "astro preview",
     "type-check": "astro check",
     "test": "vitest run",
@@ -24,7 +24,8 @@
     "pinia-plugin-persistedstate": "^4.1.0",
     "three": "^0.184.0",
     "vue": "^3.5.0",
-    "vue-router": "^4.5.0"
+    "vue-router": "^4.5.0",
+    "web-vitals": "^5.3.0"
   },
   "devDependencies": {
     "@pinia/testing": "^1.0.3",
@@ -35,6 +36,8 @@
     "@vitest/coverage-v8": "^4.1.8",
     "@vue/test-utils": "^2.4.10",
     "happy-dom": "^17.6.1",
+    "imagemin": "^9.0.1",
+    "imagemin-webp": "^8.0.0",
     "typescript": "^5.8.0",
     "vitest": "^3.2.6"
   }
