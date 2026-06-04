@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { searchPrestataires } from '../../services/users';
 import { useCategoriesStore } from '../../stores/categories';
+import { trackSearch, trackViewProfile } from '../../services/analytics';
 import type { User } from '../../types';
 import PrestataireCard from './PrestataireCard.vue';
 
@@ -31,6 +32,9 @@ const SORTS: { key: SortKey; label: string; icon: string }[] = [
 
 async function load() {
   loading.value = true;
+  if (page.value === 1) {
+    trackSearch(query.value);
+  }
   try {
     const params: Parameters<typeof searchPrestataires>[0] = {
       q: query.value || undefined,
