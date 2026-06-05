@@ -167,6 +167,16 @@ export async function getForwardTargets(requestId: string): Promise<{ targets: F
   return data;
 }
 
+export async function archiveRequest(requestId: string): Promise<{ ok: boolean }> {
+  const { data } = await api.patch(`/requests/${requestId}/archive`);
+  return data;
+}
+
+export async function unarchiveRequest(requestId: string): Promise<{ ok: boolean }> {
+  const { data } = await api.patch(`/requests/${requestId}/unarchive`);
+  return data;
+}
+
 export async function getMessages(requestId: string): Promise<{ messages: Message[]; token?: string }> {
   const { data } = await api.get(`/requests/${requestId}/messages`);
   return data;
@@ -186,6 +196,7 @@ export interface ClientThread {
   messages: Message[];
   createdAt: string;
   messageToken?: string;
+  isArchived?: boolean;
 }
 
 export async function listClientThreads(): Promise<{ threads: ClientThread[] }> {
@@ -201,6 +212,7 @@ export interface Thread {
   messageCount: number;
   lastMessage: Message;
   createdAt: string;
+  isArchived?: boolean;
 }
 
 export async function getThreadByToken(token: string): Promise<{ messages: Message[]; prestataireName: string; clientEmail: string }> {

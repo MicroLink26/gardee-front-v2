@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
-import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, pinMessage, unpinMessage, editMessage, deleteMessage, forwardMessage, getForwardTargets, type Thread, type ClientThread, type Message, type ForwardTarget } from '../../../services/requests';
+import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, pinMessage, unpinMessage, editMessage, deleteMessage, forwardMessage, getForwardTargets, archiveRequest, unarchiveRequest, type Thread, type ClientThread, type Message, type ForwardTarget } from '../../../services/requests';
 import { REQUEST_STATUS_LABELS } from '../../../types';
 
 type AnyThread = (Thread & { _type: 'provider' }) | (ClientThread & { _type: 'client' });
@@ -33,6 +33,9 @@ const editingContent = ref('');
 const forwardingMessageId = ref<string | null>(null);
 const forwardTargets = ref<ForwardTarget[]>([]);
 const forwardLoading = ref(false);
+const showArchived = ref(false);
+const archivedThreads = ref<AnyThread[]>([]);
+const activeThreadsView = computed(() => showArchived.value ? archivedThreads.value : threads.value);
 
 onMounted(async () => {
   await auth.fetchMe();
@@ -44,10 +47,20 @@ async function loadThreads() {
   try {
     if (isPrestataire.value) {
       const res = await listThreads();
-      threads.value = res.threads.map(t => ({ ...t, _type: 'provider' as const }));
+      threads.value = res.threads
+        .filter(t => !t.isArchived)
+        .map(t => ({ ...t, _type: 'provider' as const }));
+      archivedThreads.value = res.threads
+        .filter(t => t.isArchived)
+        .map(t => ({ ...t, _type: 'provider' as const }));
     } else {
       const res = await listClientThreads();
-      threads.value = res.threads.map(t => ({ ...t, _type: 'client' as const }));
+      threads.value = res.threads
+        .filter(t => !t.isArchived)
+        .map(t => ({ ...t, _type: 'client' as const }));
+      archivedThreads.value = res.threads
+        .filter(t => t.isArchived)
+        .map(t => ({ ...t, _type: 'client' as const }));
     }
   } finally {
     loading.value = false;
@@ -311,6 +324,25 @@ async function doForward(targetRequestId: string) {
     // Silent fail
   }
 }
+
+async function toggleArchive(thread: AnyThread, event: Event) {
+  event.stopPropagation();
+  try {
+    if (thread.isArchived) {
+      await unarchiveRequest(thread._id);
+      archivedThreads.value = archivedThreads.value.filter(t => t._id !== thread._id);
+      threads.value.push(thread);
+      if (activeThread.value?._id === thread._id) activeThread.value = null;
+    } else {
+      await archiveRequest(thread._id);
+      threads.value = threads.value.filter(t => t._id !== thread._id);
+      archivedThreads.value.push(thread);
+      if (activeThread.value?._id === thread._id) activeThread.value = null;
+    }
+  } catch {
+    // Silent fail
+  }
+}
 </script>
 
 <template>
@@ -326,7 +358,7 @@ async function doForward(targetRequestId: string) {
       Chargement...
     </div>
 
-    <div v-else-if="threads.length === 0" class="empty">
+    <div v-else-if="threads.length === 0 && archivedThreads.length === 0" class="empty">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       <p>Aucun echange pour le moment.</p>
       <p class="empty-sub">Les conversations apparaitront ici apres l'envoi d'un message depuis une demande.</p>
@@ -336,8 +368,23 @@ async function doForward(targetRequestId: string) {
 
       <!-- Liste des fils -->
       <div class="thread-list">
+        <div v-if="archivedThreads.length > 0" class="thread-list-header">
+          <button :class="['archive-toggle', { active: !showArchived }]" @click="showArchived = false">
+            Actives {{ threads.length > 0 ? `(${threads.length})` : '' }}
+          </button>
+          <button :class="['archive-toggle', { active: showArchived }]" @click="showArchived = true">
+            Archivées {{ archivedThreads.length > 0 ? `(${archivedThreads.length})` : '' }}
+          </button>
+        </div>
+
+        <template v-if="activeThreadsView.length === 0">
+          <div class="no-threads-msg">
+            {{ showArchived ? 'Aucune conversation archivée' : 'Aucune conversation active' }}
+          </div>
+        </template>
+
         <button
-          v-for="t in threads"
+          v-for="t in activeThreadsView"
           :key="t._id"
           :class="['thread-item', { active: activeThread?._id === t._id }]"
           @click="openThread(t)"
@@ -347,7 +394,10 @@ async function doForward(targetRequestId: string) {
             <div class="thread-name">{{ threadDisplayName(t) }}</div>
             <div class="thread-last">{{ t.lastMessage?.content?.slice(0, 60) }}{{ (t.lastMessage?.content?.length ?? 0) > 60 ? '...' : '' }}</div>
           </div>
-          <div class="thread-meta">
+          <div class="thread-actions">
+            <button class="archive-btn" @click="toggleArchive(t, $event)" :title="showArchived ? 'Restaurer' : 'Archiver'">
+              {{ showArchived ? '↩️' : '📦' }}
+            </button>
             <span class="thread-count">{{ t.messageCount }}</span>
           </div>
         </button>
@@ -572,7 +622,39 @@ async function doForward(targetRequestId: string) {
 .thread-info { flex: 1; min-width: 0; }
 .thread-name { font-size: 0.875rem; font-weight: 700; color: #1a1a0e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .thread-last { font-size: 0.75rem; color: #9ca3af; margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.thread-meta { flex-shrink: 0; }
+.thread-list-header {
+  display: flex; gap: 0.5rem; padding: 0.5rem 0.625rem 0.625rem;
+  border-bottom: 1px solid #e9e5d6;
+  flex-shrink: 0;
+}
+.archive-toggle {
+  flex: 1; padding: 0.5rem 0.75rem;
+  background: #f5f2eb; border: 1px solid #d6cda4;
+  border-radius: 8px; font-size: 0.75rem; font-weight: 600;
+  color: #7a6000; cursor: pointer;
+  transition: all 0.15s;
+}
+.archive-toggle:hover { background: #eef2e8; border-color: #a8c47a; }
+.archive-toggle.active {
+  background: #3a5020; color: #fff; border-color: #3a5020;
+}
+
+.no-threads-msg {
+  padding: 1.5rem 0.75rem; text-align: center;
+  color: #9ca3af; font-size: 0.85rem;
+}
+
+.thread-actions {
+  display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;
+}
+.archive-btn {
+  width: 24px; height: 24px; padding: 0;
+  background: transparent; border: none; cursor: pointer;
+  font-size: 0.95rem; opacity: 0;
+  transition: opacity 0.15s;
+}
+.thread-item:hover .archive-btn { opacity: 1; }
+
 .thread-count {
   font-size: 0.7rem; font-weight: 700;
   background: #3a5020; color: #fff;
