@@ -75,6 +75,7 @@ export interface Message {
   fromName: string;
   content: string;
   createdAt: string;
+  readBy?: string[];
 }
 
 export async function sendMessage(requestId: string, content: string): Promise<Message[]> {
@@ -85,6 +86,16 @@ export async function sendMessage(requestId: string, content: string): Promise<M
 export async function clientSendMessage(requestId: string, content: string): Promise<Message[]> {
   const { data } = await api.post(`/requests/${requestId}/client/message`, { content });
   return data.messages ?? [];
+}
+
+export async function markMessagesAsRead(requestId: string, messageIds: string[]): Promise<Message[]> {
+  const { data } = await api.post(`/requests/${requestId}/messages/mark-read`, { messageIds });
+  return data.messages;
+}
+
+export async function markMessagesAsReadByToken(token: string, messageIds: string[]): Promise<Message[]> {
+  const { data } = await api.post('/requests/messages/read-by-token', { token, messageIds });
+  return data.messages;
 }
 
 export async function getMessages(requestId: string): Promise<{ messages: Message[]; token?: string }> {
@@ -105,6 +116,7 @@ export interface ClientThread {
   lastMessage: Message;
   messages: Message[];
   createdAt: string;
+  messageToken?: string;
 }
 
 export async function listClientThreads(): Promise<{ threads: ClientThread[] }> {

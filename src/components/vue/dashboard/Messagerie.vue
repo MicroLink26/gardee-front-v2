@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
-import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, type Thread, type ClientThread, type Message } from '../../../services/requests';
+import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, type Thread, type ClientThread, type Message } from '../../../services/requests';
 import { REQUEST_STATUS_LABELS } from '../../../types';
 
 type AnyThread = (Thread & { _type: 'provider' }) | (ClientThread & { _type: 'client' });
@@ -20,6 +20,7 @@ const error = ref('');
 const isTyping = ref(false);
 const messagesContainer = ref<HTMLElement>();
 const typingTimeout = ref<ReturnType<typeof setTimeout>>();
+const currentUserEmail = computed(() => auth.user?.email || '');
 
 onMounted(async () => {
   await auth.fetchMe();
@@ -74,7 +75,31 @@ async function scrollToBottom() {
 
 watch(messages, async () => {
   await scrollToBottom();
+  await markUnreadAsRead();
 }, { deep: true });
+
+async function markUnreadAsRead() {
+  if (!activeThread.value || !currentUserEmail.value) return;
+
+  const unreadMessageIds = messages.value
+    .filter(m => m.fromRole !== (isPrestataire.value ? 'provider' : 'client') && (!m.readBy?.includes(currentUserEmail.value)))
+    .map(m => m._id);
+
+  if (unreadMessageIds.length === 0) return;
+
+  try {
+    if (activeThread.value._type === 'provider') {
+      await markMessagesAsRead(activeThread.value._id, unreadMessageIds);
+    } else {
+      const token = (activeThread.value as ClientThread & { _type: 'client' }).messageToken;
+      if (token) {
+        await markMessagesAsReadByToken(token, unreadMessageIds);
+      }
+    }
+  } catch {
+    // Silent fail - read receipts are not critical
+  }
+}
 
 function handleInput() {
   isTyping.value = true;
@@ -132,6 +157,10 @@ function shouldShowDateGroup(idx: number): boolean {
 
 function statusLabel(s: string) {
   return REQUEST_STATUS_LABELS[s as keyof typeof REQUEST_STATUS_LABELS] ?? s;
+}
+
+function isMessageRead(message: Message): boolean {
+  return message.readBy?.includes(currentUserEmail.value) ?? false;
 }
 </script>
 
@@ -200,7 +229,12 @@ function statusLabel(s: string) {
               <div :class="['msg', m.fromRole === 'provider' ? 'msg--provider' : 'msg--client']">
                 <div class="msg-bubble">
                   <div class="msg-content">{{ m.content }}</div>
-                  <div class="msg-meta">{{ formatTime(m.createdAt) }}</div>
+                  <div class="msg-meta">
+                    {{ formatTime(m.createdAt) }}
+                    <span v-if="m.fromEmail === currentUserEmail" :class="['read-indicator', isMessageRead(m) ? 'read' : 'unread']">
+                      {{ isMessageRead(m) ? '✓✓' : '✓' }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </template>
@@ -349,7 +383,17 @@ function statusLabel(s: string) {
 }
 
 .msg-content { font-size: 0.9rem; line-height: 1.55; white-space: pre-wrap; }
-.msg-meta { font-size: 0.7rem; margin-top: 0.35rem; opacity: 0.6; }
+.msg-meta { font-size: 0.7rem; margin-top: 0.35rem; opacity: 0.6; display: flex; align-items: center; gap: 0.35rem; }
+
+.read-indicator {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.65rem;
+  margin-left: 0.25rem;
+  font-weight: 700;
+}
+.read-indicator.read { color: currentColor; opacity: 0.8; }
+.read-indicator.unread { opacity: 0.5; }
 
 /* Date group divider */
 .date-group {
