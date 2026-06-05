@@ -99,7 +99,7 @@ const isExact = (path: string) => currentPath === path ? 'nav-active' : '';
 
 <script>
   // ── Language toggle ──────────────────────────────────────────────
-  const TRANSLATIONS: Record<string, Record<string, string>> = {
+  const TRANSLATIONS = {
     en: {
       'Accueil': 'Home',
       'Recherchez un jardinier': 'Find a gardener',
@@ -112,7 +112,7 @@ const isExact = (path: string) => currentPath === path ? 'nav-active' : '';
     },
   };
 
-  let currentLang = (localStorage.getItem('gardee-lang') ?? 'fr') as 'fr' | 'en';
+  let currentLang = localStorage.getItem('gardee-lang') ?? 'fr';
 
   function applyLang(lang: 'fr' | 'en') {
     currentLang = lang;
@@ -123,13 +123,13 @@ const isExact = (path: string) => currentPath === path ? 'nav-active' : '';
 
     if (lang === 'en') {
       document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n')!;
-        if (TRANSLATIONS.en[key]) el.textContent = TRANSLATIONS.en[key];
+        const key = el.getAttribute('data-i18n');
+        if (key && TRANSLATIONS.en[key]) el.textContent = TRANSLATIONS.en[key];
       });
     } else {
       document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n')!;
-        el.textContent = key;
+        const key = el.getAttribute('data-i18n');
+        if (key) el.textContent = key;
       });
     }
   }
