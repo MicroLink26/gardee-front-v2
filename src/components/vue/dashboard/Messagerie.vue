@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
-import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, pinMessage, unpinMessage, editMessage, deleteMessage, type Thread, type ClientThread, type Message } from '../../../services/requests';
+import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, pinMessage, unpinMessage, editMessage, deleteMessage, forwardMessage, getForwardTargets, type Thread, type ClientThread, type Message, type ForwardTarget } from '../../../services/requests';
 import { REQUEST_STATUS_LABELS } from '../../../types';
 
 type AnyThread = (Thread & { _type: 'provider' }) | (ClientThread & { _type: 'client' });
@@ -30,6 +30,9 @@ const isSearching = ref(false);
 const searchLoading = ref(false);
 const editingMessageId = ref<string | null>(null);
 const editingContent = ref('');
+const forwardingMessageId = ref<string | null>(null);
+const forwardTargets = ref<ForwardTarget[]>([]);
+const forwardLoading = ref(false);
 
 onMounted(async () => {
   await auth.fetchMe();
@@ -281,6 +284,33 @@ async function handleDelete(messageId: string) {
     // Silent fail
   }
 }
+
+async function openForwardPicker(messageId: string) {
+  forwardingMessageId.value = messageId;
+  forwardLoading.value = true;
+  try {
+    if (activeThread.value) {
+      const res = await getForwardTargets(activeThread.value._id);
+      forwardTargets.value = res.targets;
+    }
+  } catch {
+    forwardTargets.value = [];
+  } finally {
+    forwardLoading.value = false;
+  }
+}
+
+async function doForward(targetRequestId: string) {
+  if (!activeThread.value || !forwardingMessageId.value) return;
+
+  try {
+    await forwardMessage(activeThread.value._id, forwardingMessageId.value, targetRequestId);
+    forwardingMessageId.value = null;
+    forwardTargets.value = [];
+  } catch {
+    // Silent fail
+  }
+}
 </script>
 
 <template>
@@ -423,6 +453,9 @@ async function handleDelete(messageId: string) {
                   <button v-if="m.fromEmail === currentUserEmail && !m.isDeleted" class="msg-delete-btn" @click="handleDelete(m._id)" title="Supprimer">
                     🗑️
                   </button>
+                  <button v-if="!m.isDeleted" class="msg-forward-btn" @click="openForwardPicker(m._id)" title="Transférer">
+                    ↗️
+                  </button>
                   <button v-if="isPrestataire" class="msg-pin-btn" @click="togglePin(m._id)" :title="m.isPinned ? 'Dépingler' : 'Épingler'">
                     {{ m.isPinned ? '📌' : '📍' }}
                   </button>
@@ -434,6 +467,19 @@ async function handleDelete(messageId: string) {
                 <div v-if="reactionPickerMessageId === m._id" class="reaction-picker">
                   <button v-for="emoji in quickEmojis" :key="emoji" class="emoji-btn" @click="toggleReaction(m._id, emoji)">
                     {{ emoji }}
+                  </button>
+                </div>
+
+                <div v-if="forwardingMessageId === m._id" class="forward-picker">
+                  <div class="forward-header">Transférer vers:</div>
+                  <div v-if="forwardLoading" class="forward-loading">
+                    <div class="spinner" style="width: 16px; height: 16px;"></div>
+                  </div>
+                  <div v-else-if="forwardTargets.length === 0" class="forward-empty">
+                    Aucune autre conversation
+                  </div>
+                  <button v-for="target in forwardTargets" :key="target._id" class="forward-target" @click="doForward(target._id)">
+                    {{ target.displayName }}
                   </button>
                 </div>
               </div>
@@ -636,7 +682,7 @@ mark {
 }
 .msg-pin-btn:hover { background: #e8dfd3; border-color: #a8c47a; }
 
-.msg-edit-btn, .msg-delete-btn {
+.msg-edit-btn, .msg-delete-btn, .msg-forward-btn {
   width: 28px; height: 28px;
   background: #f0ede3; border: 1px solid #d6cda4;
   border-radius: 50%; color: #515F37;
@@ -645,7 +691,7 @@ mark {
   line-height: 1;
   display: flex; align-items: center; justify-content: center;
 }
-.msg-edit-btn:hover, .msg-delete-btn:hover { background: #e8dfd3; border-color: #a8c47a; }
+.msg-edit-btn:hover, .msg-delete-btn:hover, .msg-forward-btn:hover { background: #e8dfd3; border-color: #a8c47a; }
 
 .msg--deleted { opacity: 0.6; }
 .msg-edited { font-size: 0.65rem; color: #9ca3af; margin-left: 0.25rem; }
@@ -767,6 +813,38 @@ mark {
   transition: transform 0.15s;
 }
 .emoji-btn:hover { transform: scale(1.2); }
+
+/* Forward picker */
+.forward-picker {
+  position: absolute;
+  bottom: 2rem; right: 0;
+  background: #FCFAF5; border: 1.5px solid #d6cda4;
+  border-radius: 12px; padding: 0.5rem;
+  z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  min-width: 180px;
+}
+.forward-header {
+  font-size: 0.75rem; font-weight: 700;
+  color: #9ca3af; padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid #e9e5d6; margin-bottom: 0.35rem;
+}
+.forward-loading {
+  display: flex; justify-content: center; padding: 0.5rem;
+}
+.forward-empty {
+  font-size: 0.8rem; color: #9ca3af;
+  padding: 0.5rem; text-align: center;
+}
+.forward-target {
+  display: block; width: 100%;
+  padding: 0.4rem 0.5rem; margin-bottom: 0.25rem;
+  background: #f5f2eb; border: 1px solid #e9e5d6;
+  border-radius: 8px; cursor: pointer;
+  font-size: 0.8rem; color: #515F37;
+  text-align: left; font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+.forward-target:hover { background: #eef2e8; border-color: #a8c47a; }
 
 /* Date group divider */
 .date-group {

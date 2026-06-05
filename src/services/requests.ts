@@ -150,6 +150,23 @@ export async function deleteMessage(requestId: string, messageId: string): Promi
   return data.messages;
 }
 
+export interface ForwardTarget {
+  _id: string;
+  status: string;
+  displayName: string;
+  createdAt: string;
+}
+
+export async function forwardMessage(requestId: string, messageId: string, targetRequestId: string): Promise<Message[]> {
+  const { data } = await api.post(`/requests/${requestId}/messages/forward`, { messageId, targetRequestId });
+  return data.messages;
+}
+
+export async function getForwardTargets(requestId: string): Promise<{ targets: ForwardTarget[] }> {
+  const { data } = await api.get(`/requests/${requestId}/messages/forward-targets`);
+  return data;
+}
+
 export async function getMessages(requestId: string): Promise<{ messages: Message[]; token?: string }> {
   const { data } = await api.get(`/requests/${requestId}/messages`);
   return data;
