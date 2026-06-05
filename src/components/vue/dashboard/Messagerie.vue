@@ -15,6 +15,13 @@ const filteredThreads = computed(() => {
   return baseThreads.filter(t => (t.labels ?? []).some(l => l.name === selectedLabelFilter.value));
 });
 
+const currentModalReactions = computed(() => {
+  if (!reactionModalMessageId.value || !reactionModalEmoji.value) return [];
+  const message = messages.value.find(m => m._id === reactionModalMessageId.value);
+  if (!message) return [];
+  return (message.reactions ?? []).filter(r => r.emoji === reactionModalEmoji.value);
+});
+
 const threads = ref<AnyThread[]>([]);
 const loading = ref(true);
 const activeThread = ref<AnyThread | null>(null);
@@ -46,6 +53,9 @@ const selectedLabelFilter = ref<string | null>(null);
 const showLabelModal = ref(false);
 const currentLabelInput = ref('');
 const labelModalThreadId = ref<string | null>(null);
+const showReactionModal = ref(false);
+const reactionModalEmoji = ref<string | null>(null);
+const reactionModalMessageId = ref<string | null>(null);
 
 onMounted(async () => {
   await auth.fetchMe();
@@ -392,6 +402,13 @@ async function removeLabelFromThread(threadId: string, labelName: string, event:
     // Silent fail
   }
 }
+
+function openReactionModal(messageId: string, emoji: string, event: Event) {
+  event.stopPropagation();
+  reactionModalMessageId.value = messageId;
+  reactionModalEmoji.value = emoji;
+  showReactionModal.value = true;
+}
 </script>
 
 <template>
@@ -494,6 +511,28 @@ async function removeLabelFromThread(threadId: string, labelName: string, event:
         </div>
       </div>
 
+      <!-- Reaction History Modal -->
+      <div v-if="showReactionModal" class="reaction-modal-overlay" @click="showReactionModal = false">
+        <div class="reaction-modal" @click.stop>
+          <div class="reaction-modal-header">
+            <h3>{{ reactionModalEmoji }} Réactions</h3>
+            <button class="close-btn" @click="showReactionModal = false">✕</button>
+          </div>
+          <div class="reaction-modal-body">
+            <div v-if="currentModalReactions.length === 0" class="no-reactions">
+              Aucune réaction
+            </div>
+            <div v-for="reaction in currentModalReactions" :key="`${reaction.reactorEmail}-${reaction.createdAt}`" class="reaction-item">
+              <div class="reactor-info">
+                <div class="reactor-name">{{ reaction.reactorEmail.split('@')[0] }}</div>
+                <div class="reactor-email">{{ reaction.reactorEmail }}</div>
+              </div>
+              <div class="reaction-time">{{ formatTime(reaction.createdAt) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Fil de messages -->
       <div class="thread-view">
         <div v-if="!activeThread" class="no-thread">
@@ -582,9 +621,9 @@ async function removeLabelFromThread(threadId: string, labelName: string, event:
                 </div>
 
                 <div v-if="getReactionGroups(m).length > 0" class="reactions">
-                  <span v-for="[emoji, count] in getReactionGroups(m)" :key="emoji" class="reaction">
+                  <button v-for="[emoji, count] in getReactionGroups(m)" :key="emoji" class="reaction" @click="openReactionModal(m._id, emoji, $event)" :title="`Voir qui a réagi avec ${emoji}`">
                     {{ emoji }} <span class="reaction-count">{{ count }}</span>
-                  </span>
+                  </button>
                 </div>
 
                 <div class="msg-actions">
@@ -854,6 +893,51 @@ async function removeLabelFromThread(threadId: string, labelName: string, event:
 }
 .add-btn:hover { background: #2d3a18; }
 
+/* Reaction Modal */
+.reaction-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.3); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+}
+.reaction-modal {
+  background: #FCFAF5; border: 1.5px solid #e9e5d6;
+  border-radius: 16px; width: 90%; max-width: 400px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+.reaction-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem; border-bottom: 1px solid #e9e5d6;
+}
+.reaction-modal-header h3 {
+  font-size: 0.95rem; font-weight: 700; color: #1a1a0e; margin: 0;
+}
+.reaction-modal-body {
+  padding: 1rem 1.25rem; max-height: 400px; overflow-y: auto;
+}
+.no-reactions {
+  color: #9ca3af; font-size: 0.85rem; text-align: center;
+  padding: 1rem 0;
+}
+.reaction-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem; background: #f5f2eb;
+  border-radius: 8px; margin-bottom: 0.5rem;
+}
+.reactor-info {
+  flex: 1; min-width: 0;
+}
+.reactor-name {
+  font-size: 0.85rem; font-weight: 600; color: #1a1a0e;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.reactor-email {
+  font-size: 0.75rem; color: #9ca3af;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.reaction-time {
+  font-size: 0.7rem; color: #9ca3af; margin-left: 1rem; white-space: nowrap;
+}
+
 /* Thread view */
 .thread-view {
   display: flex; flex-direction: column;
@@ -1057,10 +1141,11 @@ mark {
   display: inline-flex; align-items: center; gap: 0.2rem;
   background: #f0ede3; border: 1px solid #d6cda4;
   padding: 0.15rem 0.4rem; border-radius: 12px;
-  font-size: 0.85rem; cursor: pointer;
+  font-size: 0.85rem; cursor: pointer; font-family: inherit;
   transition: background 0.15s, border-color 0.15s;
 }
 .reaction:hover { background: #e8dfd3; border-color: #a8c47a; }
+.reaction:active { transform: scale(0.95); }
 .reaction-count { font-size: 0.7rem; color: #9ca3af; font-weight: 600; }
 
 .msg-react-btn {
