@@ -1,0 +1,62 @@
+/*
+  # Security Headers
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://site--gardee-backend--fg6zdpvl2w9z.code.run; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+  # Prevent clickjacking
+  X-Frame-Options: DENY
+
+  # Prevent MIME type sniffing
+  X-Content-Type-Options: nosniff
+
+  # XSS Protection
+  X-XSS-Protection: 1; mode=block
+
+  # Referrer Policy
+  Referrer-Policy: strict-origin-when-cross-origin
+
+  # Permissions Policy
+  Permissions-Policy: camera=(), microphone=(), geolocation=(self), usb=()
+
+  # HSTS (Force HTTPS)
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+  # Cache control for assets
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  # HTML pages - don't cache
+  Cache-Control: no-cache, no-store, must-revalidate, max-age=0
+
+/*.js
+  # JavaScript - short cache, revalidate
+  Cache-Control: public, max-age=3600
+  Content-Type: application/javascript; charset=UTF-8
+
+/*.css
+  # CSS - short cache
+  Cache-Control: public, max-age=3600
+  Content-Type: text/css; charset=UTF-8
+
+/*.woff2
+  # Fonts - long cache
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: font/woff2; charset=UTF-8
+
+/*.webp
+/*.png
+/*.jpg
+/*.jpeg
+/*.svg
+  # Images - medium cache
+  Cache-Control: public, max-age=2592000
+  Content-Type: image/webp
+
+/sitemap.xml
+  # Sitemap
+  Content-Type: application/xml
+  Cache-Control: public, max-age=86400
+
+/robots.txt
+  # Robots
+  Content-Type: text/plain
+  Cache-Control: public, max-age=86400

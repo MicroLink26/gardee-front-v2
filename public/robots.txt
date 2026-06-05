@@ -1,8 +1,31 @@
+# Robots.txt for Gardee
+# Tells search engines how to crawl the site
+
 User-agent: *
 Allow: /
-
-Allow: /app/login/
 Disallow: /app/
+Disallow: /admin/
+Disallow: /_astro/
+Disallow: /*.js
+Disallow: /*.css
+Disallow: *.json
 Disallow: /api/
 
+# Allow search engines to crawl static assets
+Allow: /_astro/*.js
+Allow: /_astro/*.css
+
+# Crawl delay
+Crawl-delay: 1
+
+# Sitemap location
 Sitemap: https://gardee.fr/sitemap.xml
+
+# Specific rules for Google
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: bingbot
+Allow: /
+Crawl-delay: 1
