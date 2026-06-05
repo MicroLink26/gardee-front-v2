@@ -85,6 +85,9 @@ export interface Message {
   reactions?: Reaction[];
   isPinned?: boolean;
   pinnedAt?: string;
+  editedAt?: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export async function sendMessage(requestId: string, content: string): Promise<Message[]> {
@@ -134,6 +137,16 @@ export async function pinMessage(requestId: string, messageId: string): Promise<
 
 export async function unpinMessage(requestId: string, messageId: string): Promise<Message[]> {
   const { data } = await api.post(`/requests/${requestId}/messages/unpin`, { messageId });
+  return data.messages;
+}
+
+export async function editMessage(requestId: string, messageId: string, content: string): Promise<Message[]> {
+  const { data } = await api.post(`/requests/${requestId}/messages/edit`, { messageId, content });
+  return data.messages;
+}
+
+export async function deleteMessage(requestId: string, messageId: string): Promise<Message[]> {
+  const { data } = await api.post(`/requests/${requestId}/messages/delete`, { messageId });
   return data.messages;
 }
 

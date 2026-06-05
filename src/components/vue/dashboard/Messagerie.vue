@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
-import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, pinMessage, unpinMessage, type Thread, type ClientThread, type Message } from '../../../services/requests';
+import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, pinMessage, unpinMessage, editMessage, deleteMessage, type Thread, type ClientThread, type Message } from '../../../services/requests';
 import { REQUEST_STATUS_LABELS } from '../../../types';
 
 type AnyThread = (Thread & { _type: 'provider' }) | (ClientThread & { _type: 'client' });
@@ -28,6 +28,8 @@ const searchQuery = ref('');
 const searchResults = ref<Message[]>([]);
 const isSearching = ref(false);
 const searchLoading = ref(false);
+const editingMessageId = ref<string | null>(null);
+const editingContent = ref('');
 
 onMounted(async () => {
   await auth.fetchMe();
@@ -247,6 +249,38 @@ async function togglePin(messageId: string) {
     // Silent fail
   }
 }
+
+function startEdit(message: Message) {
+  editingMessageId.value = message._id;
+  editingContent.value = message.content;
+}
+
+async function saveEdit(messageId: string) {
+  if (!activeThread.value || !editingContent.value.trim()) return;
+
+  try {
+    messages.value = await editMessage(activeThread.value._id, messageId, editingContent.value);
+    editingMessageId.value = null;
+    editingContent.value = '';
+  } catch {
+    // Silent fail
+  }
+}
+
+function cancelEdit() {
+  editingMessageId.value = null;
+  editingContent.value = '';
+}
+
+async function handleDelete(messageId: string) {
+  if (!activeThread.value || !confirm('Supprimer ce message?')) return;
+
+  try {
+    messages.value = await deleteMessage(activeThread.value._id, messageId);
+  } catch {
+    // Silent fail
+  }
+}
 </script>
 
 <template>
@@ -356,11 +390,19 @@ async function togglePin(messageId: string) {
                 {{ formatDateGroup(m.createdAt) }}
               </div>
               <div :class="['msg-wrapper', m.fromRole === 'provider' ? 'msg-wrapper--provider' : 'msg-wrapper--client']">
-                <div :class="['msg', m.fromRole === 'provider' ? 'msg--provider' : 'msg--client']">
+                <div v-if="editingMessageId === m._id" class="msg-edit-form">
+                  <textarea v-model="editingContent" rows="3" class="edit-textarea"></textarea>
+                  <div class="edit-actions">
+                    <button class="btn-save-edit" @click="saveEdit(m._id)">Enregistrer</button>
+                    <button class="btn-cancel-edit" @click="cancelEdit">Annuler</button>
+                  </div>
+                </div>
+                <div v-else :class="['msg', m.fromRole === 'provider' ? 'msg--provider' : 'msg--client', m.isDeleted ? 'msg--deleted' : '']">
                   <div class="msg-bubble">
                     <div class="msg-content">{{ m.content }}</div>
                     <div class="msg-meta">
                       {{ formatTime(m.createdAt) }}
+                      <span v-if="m.editedAt" class="msg-edited">(édité)</span>
                       <span v-if="m.fromEmail === currentUserEmail" :class="['read-indicator', isMessageRead(m) ? 'read' : 'unread']">
                         {{ isMessageRead(m) ? '✓✓' : '✓' }}
                       </span>
@@ -375,6 +417,12 @@ async function togglePin(messageId: string) {
                 </div>
 
                 <div class="msg-actions">
+                  <button v-if="m.fromEmail === currentUserEmail && !m.isDeleted" class="msg-edit-btn" @click="startEdit(m)" title="Éditer">
+                    ✏️
+                  </button>
+                  <button v-if="m.fromEmail === currentUserEmail && !m.isDeleted" class="msg-delete-btn" @click="handleDelete(m._id)" title="Supprimer">
+                    🗑️
+                  </button>
                   <button v-if="isPrestataire" class="msg-pin-btn" @click="togglePin(m._id)" :title="m.isPinned ? 'Dépingler' : 'Épingler'">
                     {{ m.isPinned ? '📌' : '📍' }}
                   </button>
@@ -578,16 +626,61 @@ mark {
   display: flex; gap: 0.35rem; align-items: center;
 }
 .msg-pin-btn {
-  display: none;
   width: 28px; height: 28px;
   background: #f0ede3; border: 1px solid #d6cda4;
   border-radius: 50%; color: #7a6000;
   cursor: pointer; font-size: 1rem;
   transition: background 0.15s, border-color 0.15s;
   line-height: 1;
+  display: flex; align-items: center; justify-content: center;
 }
 .msg-pin-btn:hover { background: #e8dfd3; border-color: #a8c47a; }
-.msg-wrapper:hover .msg-pin-btn { display: flex; align-items: center; justify-content: center; }
+
+.msg-edit-btn, .msg-delete-btn {
+  width: 28px; height: 28px;
+  background: #f0ede3; border: 1px solid #d6cda4;
+  border-radius: 50%; color: #515F37;
+  cursor: pointer; font-size: 1rem;
+  transition: background 0.15s, border-color 0.15s;
+  line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.msg-edit-btn:hover, .msg-delete-btn:hover { background: #e8dfd3; border-color: #a8c47a; }
+
+.msg--deleted { opacity: 0.6; }
+.msg-edited { font-size: 0.65rem; color: #9ca3af; margin-left: 0.25rem; }
+
+/* Edit form */
+.msg-edit-form {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: #f5f2eb;
+  border-radius: 12px;
+  border: 1.5px solid #d6cda4;
+}
+.edit-textarea {
+  width: 100%; padding: 0.6rem 0.75rem;
+  border: 1.5px solid #d6cda4; border-radius: 8px;
+  font-size: 0.9rem; font-family: inherit; color: #1a1a0e;
+  background: #FCFAF5; resize: none;
+  margin-bottom: 0.5rem;
+}
+.edit-textarea:focus { outline: none; border-color: #515F37; }
+.edit-actions { display: flex; gap: 0.5rem; }
+.btn-save-edit {
+  padding: 0.4rem 1rem; background: #3a5020; color: #fff;
+  border: none; border-radius: 8px; cursor: pointer;
+  font-weight: 700; font-size: 0.8rem; font-family: inherit;
+  transition: background 0.15s;
+}
+.btn-save-edit:hover { background: #253515; }
+.btn-cancel-edit {
+  padding: 0.4rem 0.875rem; background: none; color: #9ca3af;
+  border: 1.5px solid #e9e5d6; border-radius: 8px;
+  cursor: pointer; font-size: 0.8rem; font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-cancel-edit:hover { border-color: #d6cda4; color: #515F37; }
 
 .messages-list {
   flex: 1; overflow-y: auto;
