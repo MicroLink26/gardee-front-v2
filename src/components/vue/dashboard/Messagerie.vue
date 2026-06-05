@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick, watch } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
 import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, type Thread, type ClientThread, type Message } from '../../../services/requests';
 import { REQUEST_STATUS_LABELS } from '../../../types';
@@ -17,6 +17,9 @@ const loadingMessages = ref(false);
 const newMessage = ref('');
 const sending = ref(false);
 const error = ref('');
+const isTyping = ref(false);
+const messagesContainer = ref<HTMLElement>();
+const typingTimeout = ref<ReturnType<typeof setTimeout>>();
 
 onMounted(async () => {
   await auth.fetchMe();
@@ -49,6 +52,7 @@ async function openThread(thread: AnyThread) {
   if (thread._type === 'client') {
     messages.value = (thread as ClientThread & { _type: 'client' }).messages;
     loadingMessages.value = false;
+    await scrollToBottom();
     return;
   }
   loadingMessages.value = true;
@@ -57,12 +61,34 @@ async function openThread(thread: AnyThread) {
     messages.value = res.messages;
   } finally {
     loadingMessages.value = false;
+    await scrollToBottom();
   }
+}
+
+async function scrollToBottom() {
+  await nextTick();
+  if (messagesContainer.value) {
+    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+  }
+}
+
+watch(messages, async () => {
+  await scrollToBottom();
+}, { deep: true });
+
+function handleInput() {
+  isTyping.value = true;
+  if (typingTimeout.value) clearTimeout(typingTimeout.value);
+  typingTimeout.value = setTimeout(() => {
+    isTyping.value = false;
+  }, 1500);
 }
 
 async function send() {
   if (!newMessage.value.trim() || !activeThread.value) return;
   error.value = '';
+  isTyping.value = false;
+  if (typingTimeout.value) clearTimeout(typingTimeout.value);
   sending.value = true;
   try {
     const content = newMessage.value.trim();
@@ -81,8 +107,27 @@ async function send() {
   }
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+function formatTime(iso: string): string {
+  const date = new Date(iso);
+  return date.toLocaleString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatDateGroup(iso: string): string {
+  const date = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) return 'Aujourd\'hui';
+  if (date.toDateString() === yesterday.toDateString()) return 'Hier';
+  return date.toLocaleString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function shouldShowDateGroup(idx: number): boolean {
+  if (idx === 0) return true;
+  const current = new Date(messages.value[idx].createdAt).toDateString();
+  const prev = new Date(messages.value[idx - 1].createdAt).toDateString();
+  return current !== prev;
 }
 
 function statusLabel(s: string) {
@@ -147,25 +192,38 @@ function statusLabel(s: string) {
             <div class="spinner"></div>
           </div>
 
-          <div v-else class="messages-list">
-            <div
-              v-for="m in messages"
-              :key="m._id"
-              :class="['msg', m.fromRole === 'provider' ? 'msg--provider' : 'msg--client']"
-            >
+          <div v-else ref="messagesContainer" class="messages-list">
+            <template v-for="(m, idx) in messages" :key="m._id">
+              <div v-if="shouldShowDateGroup(idx)" class="date-group">
+                {{ formatDateGroup(m.createdAt) }}
+              </div>
+              <div :class="['msg', m.fromRole === 'provider' ? 'msg--provider' : 'msg--client']">
+                <div class="msg-bubble">
+                  <div class="msg-content">{{ m.content }}</div>
+                  <div class="msg-meta">{{ formatTime(m.createdAt) }}</div>
+                </div>
+              </div>
+            </template>
+
+            <div v-if="isTyping" class="msg msg--client msg-typing">
               <div class="msg-bubble">
-                <div class="msg-content">{{ m.content }}</div>
-                <div class="msg-meta">{{ m.fromName }} · {{ formatDate(m.createdAt) }}</div>
+                <div class="typing-indicator">
+                  <span></span><span></span><span></span>
+                </div>
               </div>
             </div>
           </div>
 
           <div class="compose">
+            <div class="compose-typing" v-if="isTyping">
+              <span class="typing-dot">●</span> En train d'écrire...
+            </div>
             <textarea
               v-model="newMessage"
               rows="3"
               placeholder="Votre message..."
               @keydown.ctrl.enter="send"
+              @input="handleInput"
             ></textarea>
             <div class="compose-footer">
               <p v-if="error" class="error-msg">{{ error }}</p>
@@ -292,6 +350,48 @@ function statusLabel(s: string) {
 
 .msg-content { font-size: 0.9rem; line-height: 1.55; white-space: pre-wrap; }
 .msg-meta { font-size: 0.7rem; margin-top: 0.35rem; opacity: 0.6; }
+
+/* Date group divider */
+.date-group {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin: 0.75rem 0 0.5rem;
+  font-size: 0.75rem; font-weight: 600;
+  color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.date-group::before, .date-group::after {
+  content: ''; flex: 1; height: 1px; background: #e9e5d6;
+}
+
+/* Typing indicator */
+.typing-indicator {
+  display: flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0;
+}
+.typing-indicator span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(0, 0, 0, 0.3);
+  animation: bounce 1.4s infinite;
+}
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
+  30% { transform: translateY(-8px); opacity: 1; }
+}
+
+.msg-typing { opacity: 0.7; }
+
+/* Compose typing indicator */
+.compose-typing {
+  font-size: 0.75rem; color: #9ca3af; margin-bottom: 0.5rem;
+  display: flex; align-items: center; gap: 0.35rem;
+}
+.typing-dot {
+  font-size: 0.6rem; animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
 
 /* Compose */
 .compose {
