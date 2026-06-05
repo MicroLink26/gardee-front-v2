@@ -83,6 +83,8 @@ export interface Message {
   createdAt: string;
   readBy?: string[];
   reactions?: Reaction[];
+  isPinned?: boolean;
+  pinnedAt?: string;
 }
 
 export async function sendMessage(requestId: string, content: string): Promise<Message[]> {
@@ -123,6 +125,16 @@ export async function searchMessages(requestId: string, q: string): Promise<{ re
 export async function searchMessagesByToken(token: string, q: string): Promise<{ results: Message[]; total: number; query: string }> {
   const { data } = await api.get('/requests/messages/search', { params: { token, q } });
   return data;
+}
+
+export async function pinMessage(requestId: string, messageId: string): Promise<Message[]> {
+  const { data } = await api.post(`/requests/${requestId}/messages/pin`, { messageId });
+  return data.messages;
+}
+
+export async function unpinMessage(requestId: string, messageId: string): Promise<Message[]> {
+  const { data } = await api.post(`/requests/${requestId}/messages/unpin`, { messageId });
+  return data.messages;
 }
 
 export async function getMessages(requestId: string): Promise<{ messages: Message[]; token?: string }> {

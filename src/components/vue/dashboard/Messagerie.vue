@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
-import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, type Thread, type ClientThread, type Message } from '../../../services/requests';
+import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, pinMessage, unpinMessage, type Thread, type ClientThread, type Message } from '../../../services/requests';
 import { REQUEST_STATUS_LABELS } from '../../../types';
 
 type AnyThread = (Thread & { _type: 'provider' }) | (ClientThread & { _type: 'client' });
 
 const auth = useAuthStore();
 const isPrestataire = computed(() => auth.user?.isPrestataire === true);
+const pinnedMessages = computed(() => messages.value.filter(m => m.isPinned));
 
 const threads = ref<AnyThread[]>([]);
 const loading = ref(true);
@@ -229,6 +230,23 @@ function highlightText(text: string, query: string): string {
   const regex = new RegExp(`(${query})`, 'gi');
   return text.replace(regex, '<mark>$1</mark>');
 }
+
+async function togglePin(messageId: string) {
+  if (!activeThread.value) return;
+
+  try {
+    if (isPrestataire.value) {
+      const message = messages.value.find(m => m._id === messageId);
+      if (message?.isPinned) {
+        messages.value = await unpinMessage(activeThread.value._id, messageId);
+      } else {
+        messages.value = await pinMessage(activeThread.value._id, messageId);
+      }
+    }
+  } catch {
+    // Silent fail
+  }
+}
 </script>
 
 <template>
@@ -298,6 +316,15 @@ function highlightText(text: string, query: string): string {
             </button>
           </div>
 
+          <div v-if="pinnedMessages.length > 0 && !isSearching" class="pinned-messages">
+            <div class="pinned-header">📌 {{ pinnedMessages.length }} message{{ pinnedMessages.length > 1 ? 's' : '' }} épinglé{{ pinnedMessages.length > 1 ? 's' : '' }}</div>
+            <div v-for="m in pinnedMessages" :key="m._id" class="pinned-msg">
+              <div class="pinned-content">{{ m.content }}</div>
+              <div class="pinned-meta">{{ m.fromName }} • {{ formatTime(m.createdAt) }}</div>
+              <button v-if="isPrestataire" class="unpin-btn" @click="togglePin(m._id)">📌 Dépingler</button>
+            </div>
+          </div>
+
           <div v-if="loadingMessages" class="loading" style="padding:2rem">
             <div class="spinner"></div>
           </div>
@@ -347,9 +374,14 @@ function highlightText(text: string, query: string): string {
                   </span>
                 </div>
 
-                <button class="msg-react-btn" @click="reactionPickerMessageId = reactionPickerMessageId === m._id ? null : m._id">
-                  +
-                </button>
+                <div class="msg-actions">
+                  <button v-if="isPrestataire" class="msg-pin-btn" @click="togglePin(m._id)" :title="m.isPinned ? 'Dépingler' : 'Épingler'">
+                    {{ m.isPinned ? '📌' : '📍' }}
+                  </button>
+                  <button class="msg-react-btn" @click="reactionPickerMessageId = reactionPickerMessageId === m._id ? null : m._id">
+                    +
+                  </button>
+                </div>
 
                 <div v-if="reactionPickerMessageId === m._id" class="reaction-picker">
                   <button v-for="emoji in quickEmojis" :key="emoji" class="emoji-btn" @click="toggleReaction(m._id, emoji)">
@@ -508,6 +540,55 @@ mark {
   color: inherit;
 }
 
+/* Pinned messages */
+.pinned-messages {
+  background: rgba(230, 197, 83, 0.08);
+  border-left: 3px solid rgba(230, 197, 83, 0.5);
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 1.25rem;
+  border-radius: 8px;
+}
+.pinned-header {
+  font-size: 0.75rem; font-weight: 700;
+  color: #7a6000; text-transform: uppercase;
+  letter-spacing: 0.05em; margin-bottom: 0.5rem;
+}
+.pinned-msg {
+  background: #FCFAF5; border: 1px solid rgba(230, 197, 83, 0.3);
+  padding: 0.6rem 0.75rem; border-radius: 8px;
+  margin-bottom: 0.4rem; position: relative;
+}
+.pinned-content {
+  font-size: 0.85rem; color: #1a1a0e;
+  line-height: 1.4; white-space: pre-wrap;
+}
+.pinned-meta {
+  font-size: 0.7rem; color: #9ca3af; margin-top: 0.35rem;
+}
+.unpin-btn {
+  position: absolute; top: 0.5rem; right: 0.5rem;
+  background: none; border: none; cursor: pointer;
+  font-size: 0.85rem; color: #7a6000;
+  opacity: 0.7; transition: opacity 0.15s;
+  font-weight: 600;
+}
+.unpin-btn:hover { opacity: 1; }
+
+.msg-actions {
+  display: flex; gap: 0.35rem; align-items: center;
+}
+.msg-pin-btn {
+  display: none;
+  width: 28px; height: 28px;
+  background: #f0ede3; border: 1px solid #d6cda4;
+  border-radius: 50%; color: #7a6000;
+  cursor: pointer; font-size: 1rem;
+  transition: background 0.15s, border-color 0.15s;
+  line-height: 1;
+}
+.msg-pin-btn:hover { background: #e8dfd3; border-color: #a8c47a; }
+.msg-wrapper:hover .msg-pin-btn { display: flex; align-items: center; justify-content: center; }
+
 .messages-list {
   flex: 1; overflow-y: auto;
   display: flex; flex-direction: column; gap: 0.75rem;
@@ -569,18 +650,15 @@ mark {
 .reaction-count { font-size: 0.7rem; color: #9ca3af; font-weight: 600; }
 
 .msg-react-btn {
-  display: none;
-  position: absolute;
-  bottom: 0; right: -1.75rem;
   width: 28px; height: 28px;
   background: #f0ede3; border: 1px solid #d6cda4;
   border-radius: 50%; color: #515F37;
   cursor: pointer; font-weight: 700; font-size: 1.1rem;
   transition: background 0.15s, border-color 0.15s;
   line-height: 1;
+  display: flex; align-items: center; justify-content: center;
 }
 .msg-react-btn:hover { background: #e8dfd3; border-color: #a8c47a; }
-.msg-wrapper:hover .msg-react-btn { display: flex; align-items: center; justify-content: center; }
 
 .reaction-picker {
   position: absolute;
