@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
-import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, type Thread, type ClientThread, type Message } from '../../../services/requests';
+import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, type Thread, type ClientThread, type Message } from '../../../services/requests';
 import { REQUEST_STATUS_LABELS } from '../../../types';
 
 type AnyThread = (Thread & { _type: 'provider' }) | (ClientThread & { _type: 'client' });
@@ -23,6 +23,10 @@ const typingTimeout = ref<ReturnType<typeof setTimeout>>();
 const currentUserEmail = computed(() => auth.user?.email || '');
 const reactionPickerMessageId = ref<string | null>(null);
 const quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
+const searchQuery = ref('');
+const searchResults = ref<Message[]>([]);
+const isSearching = ref(false);
+const searchLoading = ref(false);
 
 onMounted(async () => {
   await auth.fetchMe();
@@ -190,6 +194,41 @@ function getReactionGroups(message: Message) {
   });
   return Array.from(groups.entries());
 }
+
+async function performSearch() {
+  if (!activeThread.value || searchQuery.value.trim().length < 2) {
+    searchResults.value = [];
+    return;
+  }
+
+  searchLoading.value = true;
+  try {
+    let results;
+    if (activeThread.value._type === 'provider') {
+      const res = await searchMessages(activeThread.value._id, searchQuery.value);
+      results = res.results;
+    } else {
+      const token = (activeThread.value as ClientThread & { _type: 'client' }).messageToken;
+      if (token) {
+        const res = await searchMessagesByToken(token, searchQuery.value);
+        results = res.results;
+      } else {
+        return;
+      }
+    }
+    searchResults.value = results;
+  } catch {
+    searchResults.value = [];
+  } finally {
+    searchLoading.value = false;
+  }
+}
+
+function highlightText(text: string, query: string): string {
+  if (!query) return text;
+  const regex = new RegExp(`(${query})`, 'gi');
+  return text.replace(regex, '<mark>$1</mark>');
+}
 </script>
 
 <template>
@@ -245,8 +284,43 @@ function getReactionGroups(message: Message) {
             <span class="status-badge">{{ statusLabel(activeThread.status) }}</span>
           </div>
 
+          <div class="thread-search">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Chercher dans la conversation..."
+              class="search-input"
+              @input="performSearch"
+              @keydown.escape="isSearching = false"
+            />
+            <button class="search-toggle" @click="isSearching = !isSearching; searchQuery = ''">
+              {{ isSearching ? '✕' : '🔍' }}
+            </button>
+          </div>
+
           <div v-if="loadingMessages" class="loading" style="padding:2rem">
             <div class="spinner"></div>
+          </div>
+
+          <div v-else-if="isSearching && searchQuery" class="messages-list">
+            <div v-if="searchLoading" class="loading">
+              <div class="spinner"></div> Recherche en cours...
+            </div>
+            <div v-else-if="searchResults.length === 0" class="empty">
+              <p>Aucun résultat pour "{{ searchQuery }}"</p>
+            </div>
+            <template v-else v-for="m in searchResults" :key="m._id">
+              <div :class="['msg-wrapper', m.fromRole === 'provider' ? 'msg-wrapper--provider' : 'msg-wrapper--client']">
+                <div :class="['msg', m.fromRole === 'provider' ? 'msg--provider' : 'msg--client']">
+                  <div class="msg-bubble">
+                    <div class="msg-content" v-html="highlightText(m.content, searchQuery)"></div>
+                    <div class="msg-meta">
+                      {{ formatTime(m.createdAt) }} • {{ m.fromName }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
           </div>
 
           <div v-else ref="messagesContainer" class="messages-list">
@@ -402,6 +476,36 @@ function getReactionGroups(message: Message) {
   background: rgba(168,196,122,0.15); color: #3a5020;
   padding: 0.18rem 0.55rem; border-radius: 999px;
   border: 1px solid rgba(168,196,122,0.3);
+}
+
+/* Search */
+.thread-search {
+  display: flex; gap: 0.5rem; align-items: center;
+  padding: 0.75rem 1.25rem; border-bottom: 1px solid #e9e5d6;
+  flex-shrink: 0;
+}
+.search-input {
+  flex: 1; padding: 0.5rem 0.75rem;
+  border: 1.5px solid #d6cda4; border-radius: 8px;
+  font-size: 0.85rem; font-family: inherit; color: #1a1a0e;
+  background: #f5f2eb;
+  transition: border-color 0.15s;
+}
+.search-input:focus { outline: none; border-color: #515F37; }
+.search-toggle {
+  padding: 0.4rem 0.6rem; background: #f5f2eb;
+  border: 1.5px solid #d6cda4; border-radius: 8px;
+  cursor: pointer; font-size: 1rem; transition: all 0.15s;
+  color: #515F37; font-weight: 600;
+}
+.search-toggle:hover { border-color: #a8c47a; background: #eef2e8; }
+
+mark {
+  background: rgba(230, 197, 83, 0.3);
+  padding: 0.1rem 0.2rem;
+  border-radius: 3px;
+  font-weight: 600;
+  color: inherit;
 }
 
 .messages-list {

@@ -115,6 +115,16 @@ export async function addReactionByToken(token: string, messageId: string, emoji
   return data.messages;
 }
 
+export async function searchMessages(requestId: string, q: string): Promise<{ results: Message[]; total: number; query: string }> {
+  const { data } = await api.get(`/requests/${requestId}/messages/search`, { params: { q } });
+  return data;
+}
+
+export async function searchMessagesByToken(token: string, q: string): Promise<{ results: Message[]; total: number; query: string }> {
+  const { data } = await api.get('/requests/messages/search', { params: { token, q } });
+  return data;
+}
+
 export async function getMessages(requestId: string): Promise<{ messages: Message[]; token?: string }> {
   const { data } = await api.get(`/requests/${requestId}/messages`);
   return data;
