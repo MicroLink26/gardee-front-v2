@@ -37,9 +37,11 @@ const loadingMessages = ref(false);
 const newMessage = ref('');
 const sending = ref(false);
 const error = ref('');
-const isTyping = ref(false);
+const typingUser = ref<{ email: string; name: string } | null>(null);
 const messagesContainer = ref<HTMLElement>();
 const typingTimeout = ref<ReturnType<typeof setTimeout>>();
+
+const isTyping = computed(() => typingUser.value !== null);
 const currentUserEmail = computed(() => auth.user?.email || '');
 const reactionPickerMessageId = ref<string | null>(null);
 const quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
@@ -165,17 +167,22 @@ async function markUnreadAsRead() {
 }
 
 function handleInput() {
-  isTyping.value = true;
+  typingUser.value = {
+    email: auth.user?.email || '',
+    name: auth.user?.prenom && auth.user?.nom
+      ? `${auth.user.prenom} ${auth.user.nom}`.trim()
+      : (auth.user?.email?.split('@')[0] || 'User'),
+  };
   if (typingTimeout.value) clearTimeout(typingTimeout.value);
   typingTimeout.value = setTimeout(() => {
-    isTyping.value = false;
+    typingUser.value = null;
   }, 1500);
 }
 
 async function send() {
   if (!newMessage.value.trim() || !activeThread.value) return;
   error.value = '';
-  isTyping.value = false;
+  typingUser.value = null;
   if (typingTimeout.value) clearTimeout(typingTimeout.value);
   sending.value = true;
   try {
@@ -720,6 +727,7 @@ function openEditHistoryModal(messageId: string, event: Event) {
 
             <div v-if="isTyping" class="msg msg--client msg-typing">
               <div class="msg-bubble">
+                <div class="typing-user">{{ typingUser?.name }} est en train d'écrire...</div>
                 <div class="typing-indicator">
                   <span></span><span></span><span></span>
                 </div>
@@ -729,7 +737,7 @@ function openEditHistoryModal(messageId: string, event: Event) {
 
           <div class="compose">
             <div class="compose-typing" v-if="isTyping">
-              <span class="typing-dot">●</span> En train d'écrire...
+              <span class="typing-dot">●</span> {{ typingUser?.name }} est en train d'écrire...
             </div>
             <textarea
               v-model="newMessage"
@@ -1342,6 +1350,11 @@ mark {
 }
 
 /* Typing indicator */
+.typing-user {
+  font-size: 0.85rem; color: #1a1a0e; margin-bottom: 0.3rem;
+  font-weight: 500;
+}
+
 .typing-indicator {
   display: flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0;
 }
