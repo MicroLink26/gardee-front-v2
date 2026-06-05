@@ -68,6 +68,12 @@ export async function clientRefuseProposalByToken(token: string): Promise<void> 
   await api.get('/requests/proposal/refuse', { params: { token } });
 }
 
+export interface Reaction {
+  emoji: string;
+  reactorEmail: string;
+  createdAt: string;
+}
+
 export interface Message {
   _id: string;
   fromRole: 'provider' | 'client';
@@ -76,6 +82,7 @@ export interface Message {
   content: string;
   createdAt: string;
   readBy?: string[];
+  reactions?: Reaction[];
 }
 
 export async function sendMessage(requestId: string, content: string): Promise<Message[]> {
@@ -95,6 +102,16 @@ export async function markMessagesAsRead(requestId: string, messageIds: string[]
 
 export async function markMessagesAsReadByToken(token: string, messageIds: string[]): Promise<Message[]> {
   const { data } = await api.post('/requests/messages/read-by-token', { token, messageIds });
+  return data.messages;
+}
+
+export async function addReaction(requestId: string, messageId: string, emoji: string): Promise<Message[]> {
+  const { data } = await api.post(`/requests/${requestId}/messages/react`, { messageId, emoji });
+  return data.messages;
+}
+
+export async function addReactionByToken(token: string, messageId: string, emoji: string): Promise<Message[]> {
+  const { data } = await api.post('/requests/messages/react', { token, messageId, emoji });
   return data.messages;
 }
 

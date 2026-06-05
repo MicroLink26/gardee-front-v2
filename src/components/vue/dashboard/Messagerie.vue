@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
-import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, type Thread, type ClientThread, type Message } from '../../../services/requests';
+import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, type Thread, type ClientThread, type Message } from '../../../services/requests';
 import { REQUEST_STATUS_LABELS } from '../../../types';
 
 type AnyThread = (Thread & { _type: 'provider' }) | (ClientThread & { _type: 'client' });
@@ -21,6 +21,8 @@ const isTyping = ref(false);
 const messagesContainer = ref<HTMLElement>();
 const typingTimeout = ref<ReturnType<typeof setTimeout>>();
 const currentUserEmail = computed(() => auth.user?.email || '');
+const reactionPickerMessageId = ref<string | null>(null);
+const quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
 
 onMounted(async () => {
   await auth.fetchMe();
@@ -162,6 +164,32 @@ function statusLabel(s: string) {
 function isMessageRead(message: Message): boolean {
   return message.readBy?.includes(currentUserEmail.value) ?? false;
 }
+
+async function toggleReaction(messageId: string, emoji: string) {
+  if (!activeThread.value) return;
+
+  try {
+    if (activeThread.value._type === 'provider') {
+      messages.value = await addReaction(activeThread.value._id, messageId, emoji);
+    } else {
+      const token = (activeThread.value as ClientThread & { _type: 'client' }).messageToken;
+      if (token) {
+        messages.value = await addReactionByToken(token, messageId, emoji);
+      }
+    }
+    reactionPickerMessageId.value = null;
+  } catch {
+    // Silent fail
+  }
+}
+
+function getReactionGroups(message: Message) {
+  const groups = new Map<string, number>();
+  message.reactions?.forEach(r => {
+    groups.set(r.emoji, (groups.get(r.emoji) || 0) + 1);
+  });
+  return Array.from(groups.entries());
+}
 </script>
 
 <template>
@@ -226,15 +254,33 @@ function isMessageRead(message: Message): boolean {
               <div v-if="shouldShowDateGroup(idx)" class="date-group">
                 {{ formatDateGroup(m.createdAt) }}
               </div>
-              <div :class="['msg', m.fromRole === 'provider' ? 'msg--provider' : 'msg--client']">
-                <div class="msg-bubble">
-                  <div class="msg-content">{{ m.content }}</div>
-                  <div class="msg-meta">
-                    {{ formatTime(m.createdAt) }}
-                    <span v-if="m.fromEmail === currentUserEmail" :class="['read-indicator', isMessageRead(m) ? 'read' : 'unread']">
-                      {{ isMessageRead(m) ? '✓✓' : '✓' }}
-                    </span>
+              <div :class="['msg-wrapper', m.fromRole === 'provider' ? 'msg-wrapper--provider' : 'msg-wrapper--client']">
+                <div :class="['msg', m.fromRole === 'provider' ? 'msg--provider' : 'msg--client']">
+                  <div class="msg-bubble">
+                    <div class="msg-content">{{ m.content }}</div>
+                    <div class="msg-meta">
+                      {{ formatTime(m.createdAt) }}
+                      <span v-if="m.fromEmail === currentUserEmail" :class="['read-indicator', isMessageRead(m) ? 'read' : 'unread']">
+                        {{ isMessageRead(m) ? '✓✓' : '✓' }}
+                      </span>
+                    </div>
                   </div>
+                </div>
+
+                <div v-if="getReactionGroups(m).length > 0" class="reactions">
+                  <span v-for="[emoji, count] in getReactionGroups(m)" :key="emoji" class="reaction">
+                    {{ emoji }} <span class="reaction-count">{{ count }}</span>
+                  </span>
+                </div>
+
+                <button class="msg-react-btn" @click="reactionPickerMessageId = reactionPickerMessageId === m._id ? null : m._id">
+                  +
+                </button>
+
+                <div v-if="reactionPickerMessageId === m._id" class="reaction-picker">
+                  <button v-for="emoji in quickEmojis" :key="emoji" class="emoji-btn" @click="toggleReaction(m._id, emoji)">
+                    {{ emoji }}
+                  </button>
                 </div>
               </div>
             </template>
@@ -364,7 +410,15 @@ function isMessageRead(message: Message): boolean {
   padding: 1.25rem;
 }
 
-.msg { display: flex; }
+.msg-wrapper {
+  display: flex;
+  position: relative;
+  margin-bottom: 0.25rem;
+}
+.msg-wrapper--provider { justify-content: flex-end; }
+.msg-wrapper--client { justify-content: flex-start; }
+
+.msg { display: flex; flex: 1; }
 .msg--provider { justify-content: flex-end; }
 .msg--client { justify-content: flex-start; }
 
@@ -394,6 +448,50 @@ function isMessageRead(message: Message): boolean {
 }
 .read-indicator.read { color: currentColor; opacity: 0.8; }
 .read-indicator.unread { opacity: 0.5; }
+
+/* Reactions */
+.reactions {
+  display: flex; gap: 0.35rem; margin-top: 0.35rem; flex-wrap: wrap;
+  padding: 0 0.75rem;
+}
+.reaction {
+  display: inline-flex; align-items: center; gap: 0.2rem;
+  background: #f0ede3; border: 1px solid #d6cda4;
+  padding: 0.15rem 0.4rem; border-radius: 12px;
+  font-size: 0.85rem; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.reaction:hover { background: #e8dfd3; border-color: #a8c47a; }
+.reaction-count { font-size: 0.7rem; color: #9ca3af; font-weight: 600; }
+
+.msg-react-btn {
+  display: none;
+  position: absolute;
+  bottom: 0; right: -1.75rem;
+  width: 28px; height: 28px;
+  background: #f0ede3; border: 1px solid #d6cda4;
+  border-radius: 50%; color: #515F37;
+  cursor: pointer; font-weight: 700; font-size: 1.1rem;
+  transition: background 0.15s, border-color 0.15s;
+  line-height: 1;
+}
+.msg-react-btn:hover { background: #e8dfd3; border-color: #a8c47a; }
+.msg-wrapper:hover .msg-react-btn { display: flex; align-items: center; justify-content: center; }
+
+.reaction-picker {
+  position: absolute;
+  bottom: 2rem; right: 0;
+  background: #FCFAF5; border: 1.5px solid #d6cda4;
+  border-radius: 12px; padding: 0.5rem;
+  display: flex; gap: 0.3rem; flex-wrap: wrap;
+  z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.emoji-btn {
+  background: none; border: none; font-size: 1.5rem;
+  cursor: pointer; padding: 0.25rem;
+  transition: transform 0.15s;
+}
+.emoji-btn:hover { transform: scale(1.2); }
 
 /* Date group divider */
 .date-group {
