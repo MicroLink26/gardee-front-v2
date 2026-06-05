@@ -225,6 +225,45 @@ const isExact = (path: string) => currentPath === path ? 'nav-active' : '';
 
   window.addEventListener('scroll', handleScroll, { passive: true });
   handleScroll();
+
+  // Wait for burger button to be available (for astro-island hydration)
+  function initBurgerMenu() {
+    const burgerBtn = document.getElementById('burger-btn');
+    if (!burgerBtn) {
+      requestAnimationFrame(initBurgerMenu);
+      return;
+    }
+
+    const overlay = document.getElementById('mobile-overlay');
+    const closeBtn = document.getElementById('mobile-close');
+
+    function openMenu() {
+      if (!overlay) return;
+      overlay.style.display = 'block';
+      overlay.offsetHeight;
+      overlay.classList.add('open');
+      burgerBtn?.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeMenu() {
+      if (!overlay) return;
+      overlay.classList.remove('open');
+      burgerBtn?.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+      overlay.addEventListener('transitionend', () => {
+        overlay.style.display = 'none';
+      }, { once: true });
+    }
+
+    burgerBtn?.addEventListener('click', openMenu);
+    closeBtn?.addEventListener('click', closeMenu);
+    overlay?.addEventListener('click', (e) => {
+      if (e.target === overlay) closeMenu();
+    });
+  }
+
+  initBurgerMenu();
 </script>
 
 <style>
