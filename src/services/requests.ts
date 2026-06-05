@@ -74,6 +74,12 @@ export interface Reaction {
   createdAt: string;
 }
 
+export interface EditHistory {
+  previousContent: string;
+  editedAt: string;
+  editedBy: string;
+}
+
 export interface Message {
   _id: string;
   fromRole: 'provider' | 'client';
@@ -86,6 +92,7 @@ export interface Message {
   isPinned?: boolean;
   pinnedAt?: string;
   editedAt?: string;
+  editHistory?: EditHistory[];
   isDeleted?: boolean;
   deletedAt?: string;
 }

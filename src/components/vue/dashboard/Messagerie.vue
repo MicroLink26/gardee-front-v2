@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
-import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, pinMessage, unpinMessage, editMessage, deleteMessage, forwardMessage, getForwardTargets, archiveRequest, unarchiveRequest, addLabel, removeLabel, listLabels, type Thread, type ClientThread, type Message, type ForwardTarget, type Label } from '../../../services/requests';
+import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, pinMessage, unpinMessage, editMessage, deleteMessage, forwardMessage, getForwardTargets, archiveRequest, unarchiveRequest, addLabel, removeLabel, listLabels, type Thread, type ClientThread, type Message, type ForwardTarget, type Label, type EditHistory } from '../../../services/requests';
 import { REQUEST_STATUS_LABELS } from '../../../types';
 
 type AnyThread = (Thread & { _type: 'provider' }) | (ClientThread & { _type: 'client' });
@@ -20,6 +20,13 @@ const currentModalReactions = computed(() => {
   const message = messages.value.find(m => m._id === reactionModalMessageId.value);
   if (!message) return [];
   return (message.reactions ?? []).filter(r => r.emoji === reactionModalEmoji.value);
+});
+
+const currentEditHistory = computed(() => {
+  if (!editHistoryMessageId.value) return [];
+  const message = messages.value.find(m => m._id === editHistoryMessageId.value);
+  if (!message) return [];
+  return message.editHistory ?? [];
 });
 
 const threads = ref<AnyThread[]>([]);
@@ -56,6 +63,8 @@ const labelModalThreadId = ref<string | null>(null);
 const showReactionModal = ref(false);
 const reactionModalEmoji = ref<string | null>(null);
 const reactionModalMessageId = ref<string | null>(null);
+const showEditHistoryModal = ref(false);
+const editHistoryMessageId = ref<string | null>(null);
 
 onMounted(async () => {
   await auth.fetchMe();
@@ -409,6 +418,12 @@ function openReactionModal(messageId: string, emoji: string, event: Event) {
   reactionModalEmoji.value = emoji;
   showReactionModal.value = true;
 }
+
+function openEditHistoryModal(messageId: string, event: Event) {
+  event.stopPropagation();
+  editHistoryMessageId.value = messageId;
+  showEditHistoryModal.value = true;
+}
 </script>
 
 <template>
@@ -533,6 +548,41 @@ function openReactionModal(messageId: string, emoji: string, event: Event) {
         </div>
       </div>
 
+      <!-- Edit History Modal -->
+      <div v-if="showEditHistoryModal" class="edit-history-modal-overlay" @click="showEditHistoryModal = false">
+        <div class="edit-history-modal" @click.stop>
+          <div class="edit-history-modal-header">
+            <h3>Historique des modifications</h3>
+            <button class="close-btn" @click="showEditHistoryModal = false">✕</button>
+          </div>
+          <div class="edit-history-modal-body">
+            <div v-if="currentEditHistory.length === 0" class="no-history">
+              Aucune modification
+            </div>
+            <template v-else v-for="(edit, idx) in currentEditHistory" :key="`${edit.editedAt}-${idx}`">
+              <div class="history-item">
+                <div class="history-header">
+                  <div class="history-editor">{{ edit.editedBy.split('@')[0] }}</div>
+                  <div class="history-time">{{ formatTime(edit.editedAt) }}</div>
+                </div>
+                <div class="history-content">
+                  <div class="content-label">Avant:</div>
+                  <div class="content-text">{{ edit.previousContent }}</div>
+                </div>
+              </div>
+            </template>
+            <div class="current-content-item">
+              <div class="history-header">
+                <div class="history-editor">Version actuelle</div>
+              </div>
+              <div class="history-content">
+                <div class="content-text">{{ messages.find(m => m._id === editHistoryMessageId)?.content }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Fil de messages -->
       <div class="thread-view">
         <div v-if="!activeThread" class="no-thread">
@@ -612,7 +662,10 @@ function openReactionModal(messageId: string, emoji: string, event: Event) {
                     <div class="msg-content">{{ m.content }}</div>
                     <div class="msg-meta">
                       {{ formatTime(m.createdAt) }}
-                      <span v-if="m.editedAt" class="msg-edited">(édité)</span>
+                      <button v-if="m.editedAt && (m.editHistory ?? []).length > 0" class="msg-edited" @click="openEditHistoryModal(m._id, $event)" title="Voir l'historique des modifications">
+                        (édité)
+                      </button>
+                      <span v-else-if="m.editedAt" class="msg-edited">(édité)</span>
                       <span v-if="m.fromEmail === currentUserEmail" :class="['read-indicator', isMessageRead(m) ? 'read' : 'unread']">
                         {{ isMessageRead(m) ? '✓✓' : '✓' }}
                       </span>
@@ -937,6 +990,77 @@ function openReactionModal(messageId: string, emoji: string, event: Event) {
 .reaction-time {
   font-size: 0.7rem; color: #9ca3af; margin-left: 1rem; white-space: nowrap;
 }
+
+/* Edit History Modal */
+.edit-history-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.3); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+}
+.edit-history-modal {
+  background: #FCFAF5; border: 1.5px solid #e9e5d6;
+  border-radius: 16px; width: 90%; max-width: 500px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  max-height: 80vh; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.edit-history-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem; border-bottom: 1px solid #e9e5d6;
+  flex-shrink: 0;
+}
+.edit-history-modal-header h3 {
+  font-size: 0.95rem; font-weight: 700; color: #1a1a0e; margin: 0;
+}
+.edit-history-modal-body {
+  padding: 1rem 1.25rem; overflow-y: auto; flex: 1;
+}
+.no-history {
+  color: #9ca3af; font-size: 0.85rem; text-align: center;
+  padding: 1rem 0;
+}
+.history-item {
+  margin-bottom: 1.5rem; padding-bottom: 1rem;
+  border-bottom: 1px solid #e9e5d6;
+}
+.history-item:last-of-type { border-bottom: none; }
+.history-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.history-editor {
+  font-size: 0.8rem; font-weight: 600; color: #3a5020;
+}
+.history-time {
+  font-size: 0.7rem; color: #9ca3af;
+}
+.history-content {
+  background: #f5f2eb; padding: 0.75rem;
+  border-radius: 8px;
+}
+.content-label {
+  font-size: 0.7rem; color: #9ca3af; font-weight: 600;
+  text-transform: uppercase; margin-bottom: 0.3rem;
+}
+.content-text {
+  font-size: 0.85rem; color: #1a1a0e;
+  line-height: 1.4; white-space: pre-wrap;
+  word-break: break-word;
+}
+.current-content-item {
+  margin-top: 1.5rem; padding: 1rem;
+  background: rgba(168,196,122,0.1); border: 1px solid rgba(168,196,122,0.3);
+  border-radius: 8px;
+}
+.current-content-item .history-header {
+  margin-bottom: 0.75rem;
+}
+
+.msg-edited {
+  color: #7a6000; cursor: pointer; text-decoration: underline;
+  transition: color 0.15s;
+}
+.msg-edited:hover { color: #3a5020; }
 
 /* Thread view */
 .thread-view {
