@@ -302,7 +302,7 @@ const jsonLd = {
   <script>
     // Hero video autoplay — compatible iOS/Android
     (function() {
-      const video = document.getElementById('hero-video') as HTMLVideoElement | null;
+      const video = document.getElementById('hero-video');
       if (!video) return;
       // Attempt play — required on some mobile browsers even with muted+playsinline
       const tryPlay = () => {
