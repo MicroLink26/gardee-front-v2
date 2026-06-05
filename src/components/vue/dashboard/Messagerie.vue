@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
-import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, pinMessage, unpinMessage, editMessage, deleteMessage, forwardMessage, getForwardTargets, archiveRequest, unarchiveRequest, type Thread, type ClientThread, type Message, type ForwardTarget } from '../../../services/requests';
+import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, pinMessage, unpinMessage, editMessage, deleteMessage, forwardMessage, getForwardTargets, archiveRequest, unarchiveRequest, addLabel, removeLabel, listLabels, type Thread, type ClientThread, type Message, type ForwardTarget, type Label } from '../../../services/requests';
 import { REQUEST_STATUS_LABELS } from '../../../types';
 
 type AnyThread = (Thread & { _type: 'provider' }) | (ClientThread & { _type: 'client' });
@@ -9,6 +9,11 @@ type AnyThread = (Thread & { _type: 'provider' }) | (ClientThread & { _type: 'cl
 const auth = useAuthStore();
 const isPrestataire = computed(() => auth.user?.isPrestataire === true);
 const pinnedMessages = computed(() => messages.value.filter(m => m.isPinned));
+const filteredThreads = computed(() => {
+  const baseThreads = activeThreadsView.value;
+  if (!selectedLabelFilter.value) return baseThreads;
+  return baseThreads.filter(t => (t.labels ?? []).some(l => l.name === selectedLabelFilter.value));
+});
 
 const threads = ref<AnyThread[]>([]);
 const loading = ref(true);
@@ -36,11 +41,25 @@ const forwardLoading = ref(false);
 const showArchived = ref(false);
 const archivedThreads = ref<AnyThread[]>([]);
 const activeThreadsView = computed(() => showArchived.value ? archivedThreads.value : threads.value);
+const allLabels = ref<Array<{ name: string; count: number }>>([]);
+const selectedLabelFilter = ref<string | null>(null);
+const showLabelModal = ref(false);
+const currentLabelInput = ref('');
+const labelModalThreadId = ref<string | null>(null);
 
 onMounted(async () => {
   await auth.fetchMe();
-  await loadThreads();
+  await Promise.all([loadThreads(), loadLabels()]);
 });
+
+async function loadLabels() {
+  try {
+    const res = await listLabels();
+    allLabels.value = res.labels;
+  } catch {
+    allLabels.value = [];
+  }
+}
 
 async function loadThreads() {
   loading.value = true;
@@ -343,6 +362,36 @@ async function toggleArchive(thread: AnyThread, event: Event) {
     // Silent fail
   }
 }
+
+async function openLabelModal(threadId: string, event: Event) {
+  event.stopPropagation();
+  labelModalThreadId.value = threadId;
+  showLabelModal.value = true;
+  currentLabelInput.value = '';
+}
+
+async function addLabelToThread() {
+  if (!labelModalThreadId.value || !currentLabelInput.value.trim()) return;
+
+  try {
+    await addLabel(labelModalThreadId.value, currentLabelInput.value);
+    await Promise.all([loadThreads(), loadLabels()]);
+    currentLabelInput.value = '';
+    showLabelModal.value = false;
+  } catch {
+    // Silent fail
+  }
+}
+
+async function removeLabelFromThread(threadId: string, labelName: string, event: Event) {
+  event.stopPropagation();
+  try {
+    await removeLabel(threadId, labelName);
+    await Promise.all([loadThreads(), loadLabels()]);
+  } catch {
+    // Silent fail
+  }
+}
 </script>
 
 <template>
@@ -377,14 +426,23 @@ async function toggleArchive(thread: AnyThread, event: Event) {
           </button>
         </div>
 
-        <template v-if="activeThreadsView.length === 0">
+        <div v-if="allLabels.length > 0" class="label-filter">
+          <button :class="['label-filter-btn', { active: !selectedLabelFilter }]" @click="selectedLabelFilter = null">
+            Tous
+          </button>
+          <button v-for="label in allLabels" :key="label.name" :class="['label-filter-btn', { active: selectedLabelFilter === label.name }]" @click="selectedLabelFilter = label.name">
+            {{ label.name }} ({{ label.count }})
+          </button>
+        </div>
+
+        <template v-if="filteredThreads.length === 0">
           <div class="no-threads-msg">
-            {{ showArchived ? 'Aucune conversation archivée' : 'Aucune conversation active' }}
+            {{ selectedLabelFilter ? `Aucune conversation avec le label "${selectedLabelFilter}"` : (showArchived ? 'Aucune conversation archivée' : 'Aucune conversation active') }}
           </div>
         </template>
 
         <button
-          v-for="t in activeThreadsView"
+          v-for="t in filteredThreads"
           :key="t._id"
           :class="['thread-item', { active: activeThread?._id === t._id }]"
           @click="openThread(t)"
@@ -392,15 +450,48 @@ async function toggleArchive(thread: AnyThread, event: Event) {
           <div class="thread-avatar">{{ threadDisplayName(t)[0]?.toUpperCase() }}</div>
           <div class="thread-info">
             <div class="thread-name">{{ threadDisplayName(t) }}</div>
+            <div v-if="(t.labels ?? []).length > 0" class="thread-labels">
+              <span v-for="label in t.labels" :key="label.name" class="thread-label">{{ label.name }}</span>
+            </div>
             <div class="thread-last">{{ t.lastMessage?.content?.slice(0, 60) }}{{ (t.lastMessage?.content?.length ?? 0) > 60 ? '...' : '' }}</div>
           </div>
           <div class="thread-actions">
+            <button class="label-btn" @click="openLabelModal(t._id, $event)" title="Ajouter/gérer les labels">
+              🏷️
+            </button>
             <button class="archive-btn" @click="toggleArchive(t, $event)" :title="showArchived ? 'Restaurer' : 'Archiver'">
               {{ showArchived ? '↩️' : '📦' }}
             </button>
             <span class="thread-count">{{ t.messageCount }}</span>
           </div>
         </button>
+      </div>
+
+      <!-- Label Modal -->
+      <div v-if="showLabelModal" class="label-modal-overlay" @click="showLabelModal = false">
+        <div class="label-modal" @click.stop>
+          <div class="label-modal-header">
+            <h3>Ajouter/Gérer les labels</h3>
+            <button class="close-btn" @click="showLabelModal = false">✕</button>
+          </div>
+          <div class="label-modal-body">
+            <div v-if="labelModalThreadId" class="current-labels">
+              <div v-if="threads.find(t => t._id === labelModalThreadId)?.labels?.length === 0" class="no-labels">
+                Aucun label
+              </div>
+              <div v-for="label in threads.find(t => t._id === labelModalThreadId)?.labels ?? []" :key="label.name" class="label-item">
+                <span class="label-name">{{ label.name }}</span>
+                <button class="remove-label-btn" @click="removeLabelFromThread(labelModalThreadId, label.name, $event)">
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div class="add-label-input">
+              <input v-model="currentLabelInput" type="text" placeholder="Nouveau label..." @keydown.enter="addLabelToThread">
+              <button class="add-btn" @click="addLabelToThread">Ajouter</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Fil de messages -->
@@ -660,6 +751,108 @@ async function toggleArchive(thread: AnyThread, event: Event) {
   background: #3a5020; color: #fff;
   padding: 0.1rem 0.45rem; border-radius: 999px;
 }
+
+/* Labels */
+.label-filter {
+  display: flex; flex-wrap: wrap; gap: 0.4rem;
+  padding: 0.5rem 0.625rem 0.625rem;
+  border-bottom: 1px solid #e9e5d6;
+  flex-shrink: 0;
+}
+.label-filter-btn {
+  padding: 0.35rem 0.65rem; background: #f5f2eb;
+  border: 1px solid #d6cda4; border-radius: 6px;
+  font-size: 0.7rem; font-weight: 600; color: #7a6000;
+  cursor: pointer; transition: all 0.15s;
+}
+.label-filter-btn:hover { background: #eef2e8; border-color: #a8c47a; }
+.label-filter-btn.active {
+  background: #3a5020; color: #fff; border-color: #3a5020;
+}
+
+.label-btn {
+  width: 24px; height: 24px; padding: 0;
+  background: transparent; border: none; cursor: pointer;
+  font-size: 0.95rem; opacity: 0;
+  transition: opacity 0.15s;
+}
+.thread-item:hover .label-btn { opacity: 1; }
+
+.thread-labels {
+  display: flex; flex-wrap: wrap; gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+.thread-label {
+  display: inline-block; padding: 0.15rem 0.4rem;
+  background: rgba(168,196,122,0.15); color: #3a5020;
+  border-radius: 3px; font-size: 0.65rem; font-weight: 600;
+}
+
+.label-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.3); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+}
+.label-modal {
+  background: #FCFAF5; border: 1.5px solid #e9e5d6;
+  border-radius: 16px; width: 90%; max-width: 350px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+.label-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem; border-bottom: 1px solid #e9e5d6;
+}
+.label-modal-header h3 {
+  font-size: 0.95rem; font-weight: 700; color: #1a1a0e; margin: 0;
+}
+.close-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 1.25rem; color: #9ca3af; padding: 0;
+}
+.label-modal-body {
+  padding: 1rem 1.25rem;
+}
+.current-labels {
+  margin-bottom: 1rem;
+}
+.no-labels {
+  color: #9ca3af; font-size: 0.85rem; text-align: center;
+  padding: 0.75rem 0;
+}
+.label-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.5rem 0.75rem; background: #f5f2eb;
+  border-radius: 8px; margin-bottom: 0.5rem;
+}
+.label-name {
+  font-size: 0.85rem; font-weight: 600; color: #3a5020;
+}
+.remove-label-btn {
+  background: none; border: none; cursor: pointer;
+  color: #9ca3af; font-size: 1rem; padding: 0;
+  transition: color 0.15s;
+}
+.remove-label-btn:hover { color: #d32f2f; }
+
+.add-label-input {
+  display: flex; gap: 0.5rem;
+}
+.add-label-input input {
+  flex: 1; padding: 0.5rem 0.75rem;
+  border: 1.5px solid #d6cda4; border-radius: 8px;
+  font-size: 0.85rem; font-family: inherit; color: #1a1a0e;
+  background: #f5f2eb;
+}
+.add-label-input input:focus {
+  outline: none; border-color: #3a5020;
+}
+.add-btn {
+  padding: 0.5rem 1rem; background: #3a5020;
+  color: #fff; border: none; border-radius: 8px;
+  font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.add-btn:hover { background: #2d3a18; }
 
 /* Thread view */
 .thread-view {

@@ -177,6 +177,21 @@ export async function unarchiveRequest(requestId: string): Promise<{ ok: boolean
   return data;
 }
 
+export async function addLabel(requestId: string, labelName: string): Promise<{ ok: boolean; labels: Label[] }> {
+  const { data } = await api.post(`/requests/${requestId}/labels/add`, { labelName });
+  return data;
+}
+
+export async function removeLabel(requestId: string, labelName: string): Promise<{ ok: boolean; labels: Label[] }> {
+  const { data } = await api.post(`/requests/${requestId}/labels/remove`, { labelName });
+  return data;
+}
+
+export async function listLabels(): Promise<{ labels: Array<{ name: string; count: number }> }> {
+  const { data } = await api.get('/requests/labels');
+  return data;
+}
+
 export async function getMessages(requestId: string): Promise<{ messages: Message[]; token?: string }> {
   const { data } = await api.get(`/requests/${requestId}/messages`);
   return data;
@@ -197,11 +212,18 @@ export interface ClientThread {
   createdAt: string;
   messageToken?: string;
   isArchived?: boolean;
+  labels?: Label[];
 }
 
 export async function listClientThreads(): Promise<{ threads: ClientThread[] }> {
   const { data } = await api.get('/requests/messages/client-threads');
   return data;
+}
+
+export interface Label {
+  name: string;
+  color?: string;
+  createdAt: string;
 }
 
 export interface Thread {
@@ -213,6 +235,7 @@ export interface Thread {
   lastMessage: Message;
   createdAt: string;
   isArchived?: boolean;
+  labels?: Label[];
 }
 
 export async function getThreadByToken(token: string): Promise<{ messages: Message[]; prestataireName: string; clientEmail: string }> {
