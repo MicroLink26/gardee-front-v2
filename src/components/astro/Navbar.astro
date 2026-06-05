@@ -153,8 +153,8 @@ const isExact = (path: string) => currentPath === path ? 'nav-active' : '';
       if (raw) {
         const { accessToken } = JSON.parse(raw);
         if (accessToken) {
-          const navBtn = document.getElementById('nav-auth-btn') as HTMLAnchorElement | null;
-          const mobBtn = document.getElementById('mobile-auth-btn') as HTMLAnchorElement | null;
+          const navBtn = document.getElementById('nav-auth-btn');
+          const mobBtn = document.getElementById('mobile-auth-btn');
           if (navBtn) { navBtn.textContent = 'Mon espace'; navBtn.href = '/app/dashboard'; }
           if (mobBtn) { mobBtn.textContent = 'Mon espace'; mobBtn.href = '/app/dashboard'; }
         }
@@ -164,8 +164,8 @@ const isExact = (path: string) => currentPath === path ? 'nav-active' : '';
   updateAuthButton();
 
   // Dropdown
-  const dropdownTrigger = document.querySelector('.dropdown-trigger') as HTMLButtonElement | null;
-  const dropdownMenu = document.querySelector('.dropdown-menu') as HTMLElement | null;
+  const dropdownTrigger = document.querySelector('.dropdown-trigger');
+  const dropdownMenu = document.querySelector('.dropdown-menu');
 
   function closeDropdown() {
     dropdownMenu?.classList.remove('open');

@@ -325,7 +325,7 @@ const jsonLd = {
 
   <script>
     // Apply saved language on page load
-    const PAGE_TRANSLATIONS: Record<string, Record<string, string>> = {
+    const PAGE_TRANSLATIONS = {
       en: {
         'hero-title': 'Your garden deserves<br>the <em>best</em>',
         'hero-sub': 'Verified professional gardeners, near you. Compare, book, enjoy.',
@@ -335,8 +335,8 @@ const jsonLd = {
     const lang = localStorage.getItem('gardee-lang') ?? 'fr';
     if (lang === 'en') {
       document.querySelectorAll('[data-i18n-key]').forEach(el => {
-        const key = el.getAttribute('data-i18n-key')!;
-        if (PAGE_TRANSLATIONS.en[key]) el.innerHTML = PAGE_TRANSLATIONS.en[key];
+        const key = el.getAttribute('data-i18n-key');
+        if (key && PAGE_TRANSLATIONS.en[key]) el.innerHTML = PAGE_TRANSLATIONS.en[key];
       });
     }
   </script>
