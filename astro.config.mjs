@@ -10,5 +10,21 @@ export default defineConfig({
     define: {
       'process.env': {},
     },
+    build: {
+      minify: 'esbuild',
+      cssMinify: true,
+      target: 'esnext',
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['vue', 'vue-router', 'pinia'],
+            leaflet: ['leaflet', 'leaflet.markercluster'],
+          },
+        },
+      },
+    },
+  },
+  image: {
+    service: { entrypoint: 'astro/assets/services/sharp' },
   },
 });
