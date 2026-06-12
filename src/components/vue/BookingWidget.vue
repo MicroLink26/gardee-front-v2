@@ -132,8 +132,9 @@ async function submitRequest() {
       subject: form.value.prestations.map(id => categoryName.value(id)).join(', ') || undefined,
     });
     formSent.value = true;
-  } catch {
-    formError.value = 'Une erreur est survenue. Veuillez réessayer.';
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { error?: string } } };
+    formError.value = err.response?.data?.error || 'Une erreur est survenue. Veuillez réessayer.';
   } finally {
     sending.value = false;
   }
@@ -235,7 +236,7 @@ onMounted(() => categoriesStore.load());
         </div>
         <div class="field">
           <label>Description</label>
-          <textarea v-model="form.description" rows="3" placeholder="Superficie, accès, précisions..."></textarea>
+          <textarea v-model="form.description" rows="3" maxlength="5000" placeholder="Superficie, accès, précisions..."></textarea>
         </div>
 
         <p v-if="formError" class="form-error">{{ formError }}</p>

@@ -48,8 +48,9 @@ async function send() {
       createdAt: new Date().toISOString(),
     });
     sent.value = true;
-  } catch {
-    error.value = 'Impossible d\'envoyer. Le lien a peut-etre expire.';
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { error?: string } } };
+    error.value = err.response?.data?.error || 'Impossible d\'envoyer. Le lien a peut-etre expire.';
   } finally {
     sending.value = false;
   }
@@ -102,7 +103,7 @@ function formatDate(iso: string) {
         </div>
 
         <div class="compose">
-          <textarea v-model="newMessage" rows="4" placeholder="Votre reponse..."></textarea>
+          <textarea v-model="newMessage" rows="4" maxlength="5000" placeholder="Votre reponse..."></textarea>
           <p v-if="error" class="error-msg">{{ error }}</p>
           <div class="compose-row">
             <div class="account-hint">

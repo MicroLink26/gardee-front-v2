@@ -23,8 +23,9 @@ async function submit() {
   try {
     await api.post('/contact', form.value);
     sent.value = true;
-  } catch {
-    error.value = 'Une erreur est survenue. Veuillez réessayer.';
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { error?: string } } };
+    error.value = err.response?.data?.error || 'Une erreur est survenue. Veuillez réessayer.';
   } finally {
     loading.value = false;
   }
@@ -155,7 +156,7 @@ async function submit() {
           <!-- Message -->
           <div class="field">
             <label class="field-label">Message <span class="req">*</span></label>
-            <textarea v-model="form.message" rows="6" placeholder="Décrivez votre demande en détail…"></textarea>
+            <textarea v-model="form.message" rows="6" maxlength="5000" placeholder="Décrivez votre demande en détail…"></textarea>
           </div>
 
           <!-- Error -->

@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import { getRanking } from '../../services/users';
 import { useCategoriesStore } from '../../stores/categories';
 import { useCategoryName } from '../../composables/useCategoryName';
+import { getAvatar } from '../../composables/useAvatar';
 import AvatarImage from './AvatarImage.vue';
 import type { User } from '../../types';
 

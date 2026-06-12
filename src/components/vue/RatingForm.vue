@@ -127,6 +127,7 @@ async function submit() {
             id="comment"
             v-model="comment"
             rows="4"
+            maxlength="1000"
             placeholder="Partagez votre expérience en détail..."
           ></textarea>
         </div>
