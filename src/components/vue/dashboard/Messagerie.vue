@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
 import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, pinMessage, unpinMessage, editMessage, deleteMessage, forwardMessage, getForwardTargets, archiveRequest, unarchiveRequest, addLabel, removeLabel, listLabels, type Thread, type ClientThread, type Message, type ForwardTarget, type Label, type EditHistory } from '../../../services/requests';
 import { REQUEST_STATUS_LABELS } from '../../../types';
@@ -68,9 +68,29 @@ const reactionModalMessageId = ref<string | null>(null);
 const showEditHistoryModal = ref(false);
 const editHistoryMessageId = ref<string | null>(null);
 
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+async function refreshActiveThread() {
+  if (!activeThread.value || activeThread.value._type === 'client') return;
+  try {
+    const res = await getMessages(activeThread.value._id);
+    const incoming = res.messages as Message[];
+    if (incoming.length > messages.value.length) {
+      messages.value = incoming;
+      await scrollToBottom();
+    }
+  } catch { /* silencieux */ }
+}
+
 onMounted(async () => {
   await auth.fetchMe();
   await Promise.all([loadThreads(), loadLabels()]);
+  // Rafraîchit la conversation active toutes les 30s
+  pollTimer = setInterval(refreshActiveThread, 30_000);
+});
+
+onUnmounted(() => {
+  if (pollTimer) clearInterval(pollTimer);
 });
 
 async function loadLabels() {
