@@ -43,7 +43,7 @@
     "happy-dom": "^17.6.1",
     "imagemin": "^9.0.1",
     "imagemin-webp": "^8.0.0",
-    "typescript": "^5.8.0",
+    "typescript": "^6.0.3",
     "vitest": "^3.2.6"
   }
 }
