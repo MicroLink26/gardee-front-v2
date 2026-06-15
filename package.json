@@ -44,6 +44,6 @@
     "imagemin": "^9.0.1",
     "imagemin-webp": "^8.0.0",
     "typescript": "^5.8.0",
-    "vitest": "^3.2.6"
+    "vitest": "^4.1.9"
   }
 }
