@@ -71,13 +71,23 @@ const editHistoryMessageId = ref<string | null>(null);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 async function refreshActiveThread() {
-  if (!activeThread.value || activeThread.value._type === 'client') return;
+  if (!activeThread.value) return;
   try {
-    const res = await getMessages(activeThread.value._id);
-    const incoming = res.messages as Message[];
-    if (incoming.length > messages.value.length) {
-      messages.value = incoming;
-      await scrollToBottom();
+    if (activeThread.value._type === 'client') {
+      // Les messages clients sont embarqués dans listClientThreads
+      const res = await listClientThreads();
+      const updated = res.threads.find(t => t._id === activeThread.value!._id);
+      if (updated && updated.messages.length > messages.value.length) {
+        messages.value = updated.messages;
+        await scrollToBottom();
+      }
+    } else {
+      const res = await getMessages(activeThread.value._id);
+      const incoming = res.messages as Message[];
+      if (incoming.length > messages.value.length) {
+        messages.value = incoming;
+        await scrollToBottom();
+      }
     }
   } catch { /* silencieux */ }
 }
