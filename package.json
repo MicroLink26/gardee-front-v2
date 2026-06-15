@@ -40,7 +40,7 @@
     "@vitest/coverage-istanbul": "^3.2.6",
     "@vue/test-utils": "^2.4.10",
     "basic-ftp": "^6.0.1",
-    "happy-dom": "^17.6.1",
+    "happy-dom": "^17.6.3",
     "imagemin": "^9.0.1",
     "imagemin-webp": "^8.0.0",
     "typescript": "^5.8.0",
