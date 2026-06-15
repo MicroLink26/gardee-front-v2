@@ -36,7 +36,7 @@
     "@playwright/test": "^1.60.0",
     "@types/leaflet": "^1.9.14",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@vitejs/plugin-vue": "^5.2.4",
+    "@vitejs/plugin-vue": "^6.0.7",
     "@vitest/coverage-istanbul": "^3.2.6",
     "@vue/test-utils": "^2.4.10",
     "basic-ftp": "^6.0.1",
