@@ -10,6 +10,16 @@ updates:
     open-pull-requests-limit: 5
     labels: [dependencies]
     ignore:
-      # Ne pas mettre à jour astro 5→6 sans migration volontaire
+      # Mises à jour majeures nécessitant une migration dédiée
       - dependency-name: astro
+        update-types: [version-update:semver-major]
+      - dependency-name: vue-router
+        update-types: [version-update:semver-major]
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      - dependency-name: happy-dom
+        update-types: [version-update:semver-major]
+      - dependency-name: "@vitest/coverage-istanbul"
+        update-types: [version-update:semver-major]
+      - dependency-name: "@typescript-eslint/eslint-plugin"
         update-types: [version-update:semver-major]
