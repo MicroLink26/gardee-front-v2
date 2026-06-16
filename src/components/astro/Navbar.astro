@@ -163,28 +163,29 @@ const isExact = (path: string) => currentPath === path ? 'nav-active' : '';
   }
   updateAuthButton();
 
-  // Dropdown
-  const dropdownTrigger = document.querySelector('.dropdown-trigger');
-  const dropdownMenu = document.querySelector('.dropdown-menu');
+  // Dropdown — event delegation pour compatibilité client:only Vue wrapping
+  // (le script module s'exécute avant l'hydratation de l'ErrorBoundary qui
+  // enveloppe le slot, donc querySelector retourne null au moment de l'exécution)
+  document.addEventListener('click', (e) => {
+    const target = e.target as Element;
+    const trigger = target.closest('.dropdown-trigger');
+    const menu = document.querySelector('.dropdown-menu');
 
-  function closeDropdown() {
-    dropdownMenu?.classList.remove('open');
-    dropdownTrigger?.setAttribute('aria-expanded', 'false');
-  }
-
-  dropdownTrigger?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isOpen = dropdownMenu?.classList.contains('open');
-    if (isOpen) {
-      closeDropdown();
-    } else {
-      dropdownMenu?.classList.add('open');
-      dropdownTrigger.setAttribute('aria-expanded', 'true');
+    if (trigger) {
+      e.stopPropagation();
+      const isOpen = menu?.classList.contains('open');
+      if (isOpen) {
+        menu?.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      } else {
+        menu?.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    } else if (!target.closest('.dropdown-menu')) {
+      document.querySelector('.dropdown-menu')?.classList.remove('open');
+      document.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
     }
   });
-
-  document.addEventListener('click', closeDropdown);
-  dropdownMenu?.addEventListener('click', (e) => e.stopPropagation());
 
   // Burger / mobile menu
   const burgerBtn = document.getElementById('burger-btn');
