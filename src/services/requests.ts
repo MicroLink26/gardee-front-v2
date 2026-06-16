@@ -68,6 +68,10 @@ export async function clientRefuseProposalByToken(token: string): Promise<void> 
   await api.get('/requests/proposal/refuse', { params: { token } });
 }
 
+export async function clientRefuseProposal(id: string): Promise<void> {
+  await api.post(`/requests/${id}/client/refuse-proposal`);
+}
+
 export interface Reaction {
   emoji: string;
   reactorEmail: string;

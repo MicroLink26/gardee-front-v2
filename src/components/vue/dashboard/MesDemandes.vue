@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
-import { listMyRequests, listMyClientRequests, providerAccept, providerRefuse, providerCancel, providerPropose, markComplete, sendMessage, clientSendMessage } from '../../../services/requests';
+import { listMyRequests, listMyClientRequests, providerAccept, providerRefuse, providerCancel, providerPropose, markComplete, sendMessage, clientSendMessage, clientAcceptProposal, clientRefuseProposal } from '../../../services/requests';
 import { useCategoryName } from '../../../composables/useCategoryName';
 import type { ServiceRequest } from '../../../types';
 import { REQUEST_STATUS_LABELS } from '../../../types';
@@ -77,6 +77,18 @@ async function cancel(id: string) {
 async function complete(id: string) {
   if (!confirm('Marquer cette prestation comme terminée ? Un email sera envoyé au client pour l\'évaluer.')) return;
   await markComplete(id);
+  load();
+}
+
+async function acceptProposal(id: string) {
+  if (!confirm('Accepter cette proposition de date ?')) return;
+  await clientAcceptProposal(id);
+  load();
+}
+
+async function refuseProposal(id: string) {
+  if (!confirm('Refuser cette proposition de date ? Le prestataire sera notifié.')) return;
+  await clientRefuseProposal(id);
   load();
 }
 
@@ -266,6 +278,17 @@ onMounted(async () => {
             Marquer comme terminée
           </button>
           <button class="btn-refuse" @click="cancel(req._id)">Annuler</button>
+        </div>
+
+        <div v-if="req._perspective === 'client' && req.status === 'provider_proposed'" class="request-actions">
+          <button class="btn-accept" @click="acceptProposal(req._id)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Accepter la date
+          </button>
+          <button class="btn-refuse" @click="refuseProposal(req._id)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Refuser
+          </button>
         </div>
 
         <!-- Messagerie inline -->
