@@ -20,7 +20,7 @@ const TIMEOUT = 40000;
 const PAGES = [
   { path: '/', expect: {} },
   { path: '/recherche/', expect: {} },
-  { path: '/classement/', expect: { 'img': 3 } },
+  { path: '/classement/', expect: { 'img,.avatar-initials': 3 } },
   { path: '/carte/', expect: { '.leaflet-marker-icon': 1 } },
   { path: '/postuler/', expect: {} },
   { path: '/contact/', expect: { 'textarea': 1 } },
