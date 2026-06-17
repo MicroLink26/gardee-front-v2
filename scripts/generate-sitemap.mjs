@@ -20,10 +20,8 @@ const staticPages = [
 ];
 
 // Dynamic routes (generated from prestataires)
-// In production, these would come from the database
-const dynamicRoutes = [
-  // These will be fetched from API in a full implementation
-];
+// Will be fetched from API
+let dynamicRoutes = [];
 
 function getPagePriority(filePath) {
   if (filePath.includes('/app/')) return 0.5; // App pages are private, lower priority
@@ -88,6 +86,13 @@ function generateSitemap(pages) {
     }
   }
 
+  // Add dynamic routes (prestataires)
+  for (const route of dynamicRoutes) {
+    if (!paths.has(route.path)) {
+      allPages.push(route);
+    }
+  }
+
   // Sort by path
   allPages.sort((a, b) => a.path.localeCompare(b.path));
 
@@ -109,9 +114,48 @@ function generateSitemap(pages) {
   return xml;
 }
 
+async function fetchPrestataires() {
+  try {
+    const API_URL = process.env.PUBLIC_API_URL || 'https://site--gardee-backend--fg6zdpvl2w9z.code.run/api';
+    let allPrestataires = [];
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore && page <= 10) {
+      const response = await fetch(`${API_URL}/prestataires/search?page=${page}&pageSize=100`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      const data = await response.json();
+
+      if (data.items && Array.isArray(data.items)) {
+        allPrestataires = allPrestataires.concat(data.items);
+        hasMore = data.items.length === 100 && page < Math.ceil(data.total / 100);
+        page++;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    return allPrestataires.map(p => ({
+      path: `/prestataires/${p._id || p.userId?._id}`,
+      priority: 0.8,
+      changefreq: 'weekly',
+    })).filter(p => p.path !== '/prestataires/undefined');
+  } catch (error) {
+    console.warn('⚠ Could not fetch prestataires from API, using empty list:', error.message);
+  }
+  return [];
+}
+
 async function main() {
   try {
     const pages = scanPages(pagesDir);
+
+    // Fetch prestataires from API
+    console.log('Fetching prestataires from API...');
+    dynamicRoutes = await fetchPrestataires();
+    console.log(`✓ Fetched ${dynamicRoutes.length} prestataires`);
+
     const sitemap = generateSitemap(pages);
 
     // Write to dist (for built version)
@@ -123,7 +167,8 @@ async function main() {
     // Also write to public for Astro to copy
     fs.writeFileSync(path.join(__dirname, '../public/sitemap.xml'), sitemap);
 
-    console.log(`✓ Sitemap generated with ${scanPages(pagesDir).length} pages`);
+    const totalPages = scanPages(pagesDir).length + dynamicRoutes.length;
+    console.log(`✓ Sitemap generated with ${totalPages} pages`);
   } catch (error) {
     console.error('Error generating sitemap:', error);
     process.exit(1);
