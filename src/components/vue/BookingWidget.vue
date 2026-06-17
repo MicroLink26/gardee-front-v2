@@ -119,6 +119,8 @@ function toggleService(s: string) {
 async function submitRequest() {
   if (!form.value.requesterEmail) { formError.value = 'Votre email est requis.'; return; }
   if (!form.value.desiredAt) { formError.value = 'Veuillez choisir une date.'; return; }
+  if (!desiredTime.value) { formError.value = 'Veuillez sélectionner une heure.'; return; }
+  if (!form.value.prestations.length) { formError.value = 'Veuillez sélectionner au moins un service.'; return; }
   formError.value = '';
   sending.value = true;
   try {
