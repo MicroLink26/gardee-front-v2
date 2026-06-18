@@ -1,7 +1,7 @@
 // Service Worker pour Gardee v2
 // Gère le caching intelligent, les notifications push, et le support offline
 
-const CACHE_VERSION = 'v1-2026-06-04';
+const CACHE_VERSION = 'v1-2026-06-18';
 const STATIC_CACHE = `gardee-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `gardee-dynamic-${CACHE_VERSION}`;
 const API_CACHE = `gardee-api-${CACHE_VERSION}`;
