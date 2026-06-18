@@ -3,9 +3,10 @@ import { ref, onMounted } from 'vue';
 import { verifyEmail, resendVerification } from '../../services/auth';
 import { useAuthStore } from '../../stores/auth';
 
-const props = defineProps<{ userId: string; redirect?: string; code?: string }>();
+const props = defineProps<{ redirect?: string }>();
 const auth = useAuthStore();
 
+const userId = ref('');
 const digits = ref(['', '', '', '', '', '']);
 const loading = ref(false);
 const error = ref('');
@@ -14,14 +15,23 @@ const resendSuccess = ref(false);
 
 const inputRefs = ref<HTMLInputElement[]>([]);
 
-onMounted(() => {
-  if (props.code && props.code.length === 6) {
-    const codeDigits = props.code.split('');
+function parseHashParams() {
+  const hash = window.location.hash.substring(1); // Remove leading #
+  const params = new URLSearchParams(hash);
+  userId.value = params.get('userId') ?? '';
+  const code = params.get('code') ?? '';
+
+  if (code && code.length === 6) {
+    const codeDigits = code.split('');
     for (let i = 0; i < 6; i++) {
       digits.value[i] = codeDigits[i] ?? '';
     }
     setTimeout(() => submit(), 500);
   }
+}
+
+onMounted(() => {
+  parseHashParams();
 });
 
 function onDigit(i: number, e: Event) {
@@ -48,10 +58,11 @@ function onPaste(e: ClipboardEvent) {
 async function submit() {
   const code = digits.value.join('');
   if (code.length < 6) { error.value = 'Entrez les 6 chiffres du code.'; return; }
+  if (!userId.value) { error.value = 'Paramètres manquants.'; return; }
   loading.value = true;
   error.value = '';
   try {
-    const res = await verifyEmail(props.userId, code);
+    const res = await verifyEmail(userId.value, code);
     auth.accessToken = res.accessToken;
     auth.user = res.user;
     window.location.href = props.redirect ?? '/app/login';
@@ -66,10 +77,11 @@ async function submit() {
 }
 
 async function resend() {
+  if (!userId.value) { error.value = 'Paramètres manquants.'; return; }
   resendLoading.value = true;
   resendSuccess.value = false;
   try {
-    await resendVerification(props.userId);
+    await resendVerification(userId.value);
     resendSuccess.value = true;
     setTimeout(() => (resendSuccess.value = false), 5000);
   } finally {
