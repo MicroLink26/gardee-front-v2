@@ -54,7 +54,7 @@ async function submit() {
     const res = await verifyEmail(props.userId, code);
     auth.accessToken = res.accessToken;
     auth.user = res.user;
-    window.location.href = props.redirect ?? '/app/dashboard';
+    window.location.href = props.redirect ?? '/app/login';
   } catch (e: unknown) {
     const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
     error.value = msg ?? 'Code invalide. Veuillez réessayer.';
