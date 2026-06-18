@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EmailVerificationScreen from '../../components/vue/EmailVerificationScreen.vue';
+
+const { userId } = Astro.url.searchParams;
+const redirect = Astro.url.searchParams.get('redirect') ?? '/app/dashboard';
+---
+<BaseLayout title="Vérifier votre email" noindex={true}>
+  <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f5f2eb;">
+    <EmailVerificationScreen
+      client:load
+      userId={userId || ''}
+      redirect={redirect}
+    />
+  </div>
+</BaseLayout>
