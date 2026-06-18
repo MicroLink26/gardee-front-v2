@@ -20,7 +20,7 @@ onMounted(() => {
     for (let i = 0; i < 6; i++) {
       digits.value[i] = codeDigits[i] ?? '';
     }
-    setTimeout(() => submit(), 300);
+    setTimeout(() => submit(), 500);
   }
 });
 
@@ -36,14 +36,13 @@ function onKeydown(i: number, e: KeyboardEvent) {
   if (e.key === 'Backspace' && !digits.value[i] && i > 0) {
     inputRefs.value[i - 1]?.focus();
   }
-  if (e.key === 'v' && (e.ctrlKey || e.metaKey)) return;
 }
 
 function onPaste(e: ClipboardEvent) {
   e.preventDefault();
   const text = e.clipboardData?.getData('text').replace(/\D/g, '').slice(0, 6) ?? '';
   for (let i = 0; i < 6; i++) digits.value[i] = text[i] ?? '';
-  if (text.length > 0) submit();
+  if (text.length === 6) setTimeout(() => submit(), 100);
 }
 
 async function submit() {
