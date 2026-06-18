@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { verifyEmail, resendVerification } from '../../services/auth';
 import { useAuthStore } from '../../stores/auth';
 
-const props = defineProps<{ userId: string; redirect?: string }>();
+const props = defineProps<{ userId: string; redirect?: string; code?: string }>();
 const auth = useAuthStore();
 
 const digits = ref(['', '', '', '', '', '']);
@@ -13,6 +13,16 @@ const resendLoading = ref(false);
 const resendSuccess = ref(false);
 
 const inputRefs = ref<HTMLInputElement[]>([]);
+
+onMounted(() => {
+  if (props.code && props.code.length === 6) {
+    const codeDigits = props.code.split('');
+    for (let i = 0; i < 6; i++) {
+      digits.value[i] = codeDigits[i] ?? '';
+    }
+    setTimeout(() => submit(), 300);
+  }
+});
 
 function onDigit(i: number, e: Event) {
   const val = (e.target as HTMLInputElement).value.replace(/\D/g, '').slice(-1);
