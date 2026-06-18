@@ -1,0 +1,14 @@
+---
+// Dynamic SSR page for newly validated prestataires (fallback when static page doesn't exist)
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PrestaDetail from '../../components/vue/PrestaDetail.vue';
+
+const { id } = Astro.params;
+if (!id) return Astro.redirect('/');
+---
+
+<BaseLayout title="Profil jardinier" noindex={true}>
+  <PrestaDetail client:load userId={id} />
+</BaseLayout>
