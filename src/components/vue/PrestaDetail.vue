@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { api } from '../../services/api';
+import BookingWidget from './BookingWidget.vue';
 import type { User } from '../../types';
 
 const props = defineProps<{ userId: string }>();
@@ -48,6 +49,14 @@ const defaultAvatars = ['/img/default-avatar.png', '/img/default-avatar2.png', '
         </div>
       </div>
       <div v-if="prest()?.description" class="description">{{ prest()?.description }}</div>
+      <BookingWidget
+        :prestataireId="user._id"
+        :prenom="user.prenom"
+        :tarifHoraire="prest()?.tarifHoraire as number | undefined"
+        :averageRating="prest()?.averageRating as number | undefined"
+        :numberOfReviews="prest()?.numberOfReviews as number | undefined"
+        :prestations="(prest()?.prestations ?? []) as string[]"
+      />
     </div>
   </div>
 </template>
@@ -56,10 +65,10 @@ const defaultAvatars = ['/img/default-avatar.png', '/img/default-avatar2.png', '
 .prest-detail { padding: 2rem; }
 .loading, .error { text-align: center; padding: 2rem; }
 .error { color: #b91c1c; }
-.detail-content { max-width: 800px; margin: 0 auto; }
-.header { display: flex; gap: 2rem; margin-bottom: 2rem; }
-.avatar { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; }
+.detail-content { max-width: 1000px; margin: 0 auto; }
+.header { display: flex; gap: 2rem; margin-bottom: 3rem; }
+.avatar { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
 .info h1 { margin: 0; font-size: 1.8rem; }
 .location, .price { margin: 0.5rem 0 0; color: #6b7280; }
-.description { line-height: 1.6; color: #374151; }
+.description { line-height: 1.6; color: #374151; margin-bottom: 3rem; }
 </style>
