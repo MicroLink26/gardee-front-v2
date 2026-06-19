@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, onUnmounted } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
 import { getAvatar } from '../../../composables/useAvatar';
 import { subscribeToPush } from '../../../composables/usePushNotifications';
 import { api } from '../../../services/api';
 import OptimizedImage from '../OptimizedImage.vue';
 import NotificationBadge from '../notifications/NotificationBadge.vue';
+import { startNotificationPolling, stopNotificationPolling } from '../../../services/notificationAlerts';
 
 const auth = useAuthStore();
 const props = defineProps<{ requireRole?: 'prestataire' | 'staff' | 'admin' }>();
@@ -36,6 +37,11 @@ onMounted(async () => {
     api.get('/admin/reviews/pending?pageSize=1').then(r => { pendingReviewsCount.value = r.data.total ?? 0; }).catch(() => {});
   }
   subscribeToPush().catch(() => {});
+  startNotificationPolling(5000).catch(() => {});
+});
+
+onUnmounted(() => {
+  stopNotificationPolling();
 });
 
 async function dismissRejectionPing() {

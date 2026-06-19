@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
 import { api } from '../../../services/api';
+import NotificationPreferences from '../settings/NotificationPreferences.vue';
 
 const auth = useAuthStore();
 
@@ -52,6 +53,11 @@ async function deleteAccount() {
     </div>
 
     <p v-if="error" class="error-msg">{{ error }}</p>
+
+    <!-- Notifications -->
+    <div class="settings-card">
+      <NotificationPreferences />
+    </div>
 
     <!-- Profil prestataire -->
     <div v-if="auth.isPrestataire" class="settings-card danger-zone">
