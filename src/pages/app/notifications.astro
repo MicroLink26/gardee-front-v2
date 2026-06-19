@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AppShell from '../../components/vue/dashboard/AppShell.vue';
+import NotificationsList from '../../components/vue/notifications/NotificationsList.vue';
+---
+
+<BaseLayout title="Notifications" noindex={true}>
+  <AppShell client:load requireRole="user">
+    <NotificationsList client:load />
+  </AppShell>
+</BaseLayout>

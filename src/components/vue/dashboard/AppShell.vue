@@ -5,6 +5,7 @@ import { getAvatar } from '../../../composables/useAvatar';
 import { subscribeToPush } from '../../../composables/usePushNotifications';
 import { api } from '../../../services/api';
 import OptimizedImage from '../OptimizedImage.vue';
+import NotificationBadge from '../notifications/NotificationBadge.vue';
 
 const auth = useAuthStore();
 const props = defineProps<{ requireRole?: 'prestataire' | 'staff' | 'admin' }>();
@@ -93,6 +94,10 @@ const userAvatarUrl = computed(() =>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6m-6 4h4"/></svg>
           {{ auth.isPrestataire || auth.isStaff ? 'Mes demandes' : 'Mes réservations' }}
         </a>
+        <a href="/app/notifications" :class="['nav-item', { active: isActive('/app/notifications') }]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Notifications
+        </a>
         <a v-if="auth.isPrestataire" href="/app/messagerie" :class="['nav-item', { active: isActive('/app/messagerie') }]">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Messagerie
@@ -146,10 +151,13 @@ const userAvatarUrl = computed(() =>
       <a href="/" class="mobile-header-logo">
         <img src="/img/logo.png" alt="Gardee" height="32" />
       </a>
-      <div v-if="auth.user" class="mobile-header-user">
-        <span class="mobile-header-name">{{ auth.user.prenom }}</span>
-        <div class="mobile-header-avatar">
-          <img :src="userAvatarUrl" :alt="auth.user.prenom" />
+      <div v-if="auth.user" class="mobile-header-right">
+        <NotificationBadge />
+        <div class="mobile-header-user">
+          <span class="mobile-header-name">{{ auth.user.prenom }}</span>
+          <div class="mobile-header-avatar">
+            <img :src="userAvatarUrl" :alt="auth.user.prenom" />
+          </div>
         </div>
       </div>
     </header>
@@ -199,6 +207,10 @@ const userAvatarUrl = computed(() =>
       <a href="/app/mes-demandes" :class="['mbn-item', { active: isActive('/app/mes-demandes') }]">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6m-6 4h4"/></svg>
         <span>Demandes</span>
+      </a>
+      <a href="/app/notifications" :class="['mbn-item', { active: isActive('/app/notifications') }]">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span>Notif</span>
       </a>
       <a v-if="auth.isPrestataire" href="/app/messagerie" :class="['mbn-item', { active: isActive('/app/messagerie') }]">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
