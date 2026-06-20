@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { searchPrestataires } from '../../services/users';
 import { useCategoriesStore } from '../../stores/categories';
 import { trackSearch, trackViewProfile } from '../../services/analytics';
 import type { User } from '../../types';
 import PrestataireCard from './PrestataireCard.vue';
+import SearchFilters from './SearchFilters.vue';
 
 const categoriesStore = useCategoriesStore();
 const props = defineProps<{ initialQuery?: string }>();
@@ -21,6 +22,13 @@ const sortBy = ref<SortKey>('rating');
 const userCoords = ref<{ lat: number; lng: number } | null>(null);
 const geoLoading = ref(false);
 const geoError = ref('');
+
+interface Filters {
+  categories: string[];
+  minRating: number;
+  maxPrice: number;
+}
+const filters = ref<Filters>({ categories: [], minRating: 0, maxPrice: 200 });
 
 const totalPages = computed(() => Math.ceil(total.value / PAGE_SIZE));
 
@@ -46,12 +54,58 @@ async function load() {
       params.lat = userCoords.value.lat;
       params.lng = userCoords.value.lng;
     }
-    const data = await searchPrestataires(params);
+    let data = await searchPrestataires(params);
+
+    // Apply filters client-side
+    if (filters.value.categories.length > 0 || filters.value.minRating > 0 || filters.value.maxPrice < 200) {
+      data.items = data.items.filter(prest => {
+        // Category filter
+        if (filters.value.categories.length > 0) {
+          const prestCats = (prest.prestataire?.prestations ?? []) as string[];
+          const hasMatch = filters.value.categories.some(cat =>
+            prestCats.some(pc => pc.toLowerCase().includes(cat.toLowerCase()))
+          );
+          if (!hasMatch) return false;
+        }
+        // Rating filter
+        if (filters.value.minRating > 0) {
+          const rating = (prest.prestataire?.averageRating ?? 0) as number;
+          if (rating < filters.value.minRating) return false;
+        }
+        // Price filter
+        if (filters.value.maxPrice < 200) {
+          const price = (prest.prestataire?.tarifHoraire ?? 200) as number;
+          if (price > filters.value.maxPrice) return false;
+        }
+        return true;
+      });
+      data.total = data.items.length;
+    }
+
     results.value = data.items;
     total.value = data.total;
+    updateUrlParams();
   } finally {
     loading.value = false;
   }
+}
+
+function updateUrlParams() {
+  const params = new URLSearchParams();
+  if (query.value) params.set('q', query.value);
+  if (filters.value.categories.length > 0) params.set('categories', filters.value.categories.join(','));
+  if (filters.value.minRating > 0) params.set('minRating', filters.value.minRating.toString());
+  if (filters.value.maxPrice < 200) params.set('maxPrice', filters.value.maxPrice.toString());
+  window.history.replaceState({}, '', `?${params.toString()}`);
+}
+
+function loadFiltersFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  query.value = params.get('q') ?? '';
+  const categories = params.get('categories')?.split(',') ?? [];
+  const minRating = parseInt(params.get('minRating') ?? '0');
+  const maxPrice = parseInt(params.get('maxPrice') ?? '200');
+  filters.value = { categories, minRating, maxPrice };
 }
 
 function search() {
@@ -120,9 +174,16 @@ function formatDist(user: User): string | null {
 
 onMounted(() => {
   if (!props.initialQuery) {
-    query.value = new URLSearchParams(window.location.search).get('q') ?? '';
+    loadFiltersFromUrl();
   }
   categoriesStore.load();
+  load();
+});
+
+// Watch filters and reload
+const watchFilters = computed(() => JSON.stringify(filters.value));
+watch(watchFilters, () => {
+  page.value = 1;
   load();
 });
 </script>
@@ -228,6 +289,10 @@ onMounted(() => {
     <!-- ══ RESULTS ════════════════════════════════════════════════ -->
     <div class="results-section">
       <div class="results-inner">
+        <!-- Filters Sidebar (desktop) -->
+        <aside class="filters-sidebar">
+          <SearchFilters v-model="filters" :maxPriceLimit="200" />
+        </aside>
 
         <!-- Skeleton -->
         <template v-if="loading">
@@ -311,8 +376,14 @@ onMounted(() => {
 .search-hero {
   position: relative;
   background: linear-gradient(155deg, #141f0b 0%, #253515 55%, #3a5020 100%);
-  padding: 4rem 0 3.5rem;
+  padding: 2.5rem 0 2rem;
   overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .search-hero {
+    padding: 3rem 0 2.5rem;
+  }
 }
 
 .hero-deco { position: absolute; inset: 0; pointer-events: none; }
@@ -454,7 +525,27 @@ onMounted(() => {
 
 /* ══ RESULTS ══════════════════════════════════════════════════════ */
 .results-section { padding: 2rem 0 6rem; }
-.results-inner { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+.results-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+}
+
+.filters-sidebar {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .filters-sidebar {
+    display: block;
+    position: sticky;
+    top: 180px;
+    height: fit-content;
+  }
+}
 
 .meta-count { font-size: 0.82rem; color: #9ca3af; margin: 0 0 1.25rem; }
 .meta-count strong { color: #1a1a0e; font-weight: 700; }
@@ -532,8 +623,13 @@ onMounted(() => {
 .pag-num--on { background: #3a5020; border-color: #3a5020; color: #fff; font-weight: 700; }
 
 /* Responsive */
+@media (max-width: 1023px) {
+  .results-inner {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
-  .search-hero { padding: 3rem 0 2.5rem; }
   .hero-inner { gap: 1.25rem; }
   .filter-bar-inner { padding: 0.625rem 1rem; }
   .results-inner { padding: 0 1rem; }
