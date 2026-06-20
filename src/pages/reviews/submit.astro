@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ReviewSubmission from '../../components/vue/reviews/ReviewSubmission.vue';
+
+const token = Astro.url.searchParams.get('token') ?? '';
+---
+
+<BaseLayout title="Donner un avis" noindex={true}>
+  <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f5f2eb;">
+    <ReviewSubmission client:load :token={token} />
+  </div>
+</BaseLayout>

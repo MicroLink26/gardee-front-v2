@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { api } from '../../services/api';
 import BookingWidget from './BookingWidget.vue';
+import ReviewsList from './reviews/ReviewsList.vue';
 import type { User } from '../../types';
 
 const props = defineProps<{ userId: string }>();
@@ -57,6 +58,7 @@ const defaultAvatars = ['/img/default-avatar.png', '/img/default-avatar2.png', '
         :numberOfReviews="prest()?.numberOfReviews as number | undefined"
         :prestations="(prest()?.prestations ?? []) as string[]"
       />
+      <ReviewsList :prestataireId="user._id" />
     </div>
   </div>
 </template>
