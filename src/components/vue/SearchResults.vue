@@ -6,6 +6,7 @@ import { trackSearch, trackViewProfile } from '../../services/analytics';
 import type { User } from '../../types';
 import PrestataireCard from './PrestataireCard.vue';
 import SearchFilters from './SearchFilters.vue';
+import SearchAutocomplete from './SearchAutocomplete.vue';
 
 const categoriesStore = useCategoriesStore();
 const props = defineProps<{ initialQuery?: string }>();
@@ -112,6 +113,19 @@ function search() {
   const params = new URLSearchParams();
   if (query.value) params.set('prestation', query.value);
   window.location.href = `/carte${params.size ? '?' + params.toString() : ''}`;
+}
+
+function handleAutocompleteSelect(suggestion: any) {
+  // If it's a service, update filter and reload
+  if (suggestion.type === 'service') {
+    filters.value.categories = [suggestion.value];
+  }
+  // If it's a city, search by city name
+  if (suggestion.type === 'city') {
+    query.value = suggestion.value;
+  }
+  page.value = 1;
+  load();
 }
 
 function selectService(name: string) {
@@ -224,7 +238,13 @@ watch(watchFilters, () => {
           <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <input v-model="query" type="search" placeholder="Service, ville, nom…" autocomplete="off" />
+          <div class="search-input-wrapper">
+            <SearchAutocomplete
+              :modelValue="query"
+              @update:modelValue="query = $event"
+              @select="handleAutocompleteSelect"
+            />
+          </div>
           <button type="submit">Rechercher</button>
         </form>
 
@@ -421,14 +441,21 @@ watch(watchFilters, () => {
 /* Search bar */
 .search-bar {
   display: flex; align-items: center;
-  background: #FCFAF5; border-radius: 18px; overflow: hidden;
+  background: #FCFAF5; border-radius: 18px; overflow: visible;
   box-shadow: 0 14px 44px rgba(0,0,0,0.3);
   transition: box-shadow 0.2s;
+  position: relative;
 }
 .search-bar:focus-within {
   box-shadow: 0 14px 44px rgba(0,0,0,0.32), 0 0 0 3px rgba(168,196,122,0.45);
 }
 .sb-icon { width: 18px; height: 18px; color: #9ca3af; flex-shrink: 0; margin-left: 1.25rem; }
+
+.search-input-wrapper {
+  flex: 1;
+  position: relative;
+}
+
 .search-bar input {
   flex: 1; padding: 1.1rem 0.875rem; border: none; outline: none;
   font-size: 1rem; color: #1a1a0e; background: transparent; font-family: inherit;
