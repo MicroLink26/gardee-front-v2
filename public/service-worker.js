@@ -85,12 +85,11 @@ self.addEventListener('fetch', (event) => {
     );
   }
 
-  // Assets (images, CSS, JS): Cache first
+  // Assets (images, CSS, JS): Network first with cache fallback
   if (/\.(png|jpg|jpeg|svg|css|js|woff|woff2)$/i.test(url.pathname)) {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((response) => {
+      fetch(request)
+        .then((response) => {
           if (!response || response.status !== 200) {
             return response;
           }
@@ -99,8 +98,8 @@ self.addEventListener('fetch', (event) => {
             cache.put(request, responseToCache);
           });
           return response;
-        }).catch(() => new Response('Asset not available', { status: 503 }));
-      })
+        })
+        .catch(() => caches.match(request))
     );
   }
 
