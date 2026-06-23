@@ -213,14 +213,17 @@ const year = new Date().getFullYear();
   .footer-bottom-links a:hover { color: rgba(255,255,255,0.6); }
 
   .status-badge {
-    display: inline-flex;
+    display: none;
     align-items: center;
     gap: 0.4rem;
     font-size: 0.75rem;
     color: rgba(255,255,255,0.6);
     padding: 0.25rem 0.5rem;
   }
-  .status-badge.offline { color: #fca5a5; }
+  .status-badge.offline {
+    display: inline-flex;
+    color: #fca5a5;
+  }
 
   @media (max-width: 768px) {
     .footer-inner { grid-template-columns: 1fr 1fr; }
@@ -257,15 +260,14 @@ const year = new Date().getFullYear();
     if (footerBtn) footerBtn.style.display = 'none';
   });
 
-  // Online/Offline indicator
+  // Online/Offline indicator (show only offline)
   function updateStatus() {
     if (statusIndicator) {
-      if (navigator.onLine) {
-        statusIndicator.textContent = '🟢 Online';
-        statusIndicator.classList.remove('offline');
-      } else {
+      if (!navigator.onLine) {
         statusIndicator.textContent = '🔴 Offline';
         statusIndicator.classList.add('offline');
+      } else {
+        statusIndicator.classList.remove('offline');
       }
     }
   }
