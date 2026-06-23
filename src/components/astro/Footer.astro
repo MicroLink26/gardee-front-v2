@@ -67,6 +67,7 @@ const year = new Date().getFullYear();
     <div class="footer-bottom-links">
       <a href="/mentions-legales">Mentions légales</a>
       <a href="/contact">Contact</a>
+      <span id="status-indicator" class="status-badge" title="Statut connexion">🟢 Online</span>
     </div>
   </div>
 </footer>
@@ -211,6 +212,16 @@ const year = new Date().getFullYear();
   }
   .footer-bottom-links a:hover { color: rgba(255,255,255,0.6); }
 
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.6);
+    padding: 0.25rem 0.5rem;
+  }
+  .status-badge.offline { color: #fca5a5; }
+
   @media (max-width: 768px) {
     .footer-inner { grid-template-columns: 1fr 1fr; }
     .footer-brand { grid-column: 1 / -1; }
@@ -225,8 +236,10 @@ const year = new Date().getFullYear();
 
 <script>
   const footerBtn = document.getElementById('footer-pwa-btn');
+  const statusIndicator = document.getElementById('status-indicator');
   let prompt: any = null;
 
+  // PWA install prompt
   window.addEventListener('beforeinstallprompt', (e) => {
     prompt = e;
     if (footerBtn) footerBtn.style.display = 'inline-flex';
@@ -243,4 +256,21 @@ const year = new Date().getFullYear();
   window.addEventListener('appinstalled', () => {
     if (footerBtn) footerBtn.style.display = 'none';
   });
+
+  // Online/Offline indicator
+  function updateStatus() {
+    if (statusIndicator) {
+      if (navigator.onLine) {
+        statusIndicator.textContent = '🟢 Online';
+        statusIndicator.classList.remove('offline');
+      } else {
+        statusIndicator.textContent = '🔴 Offline';
+        statusIndicator.classList.add('offline');
+      }
+    }
+  }
+
+  updateStatus();
+  window.addEventListener('online', updateStatus);
+  window.addEventListener('offline', updateStatus);
 </script>

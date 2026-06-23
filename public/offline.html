@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gardee - Mode Offline</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(155deg, #141f0b 0%, #253515 55%, #3a5020 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      padding: 2rem;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 500px;
+    }
+
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      font-weight: 900;
+    }
+
+    .status {
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .status-badge {
+      display: inline-block;
+      background: rgba(220, 38, 38, 0.2);
+      border: 1.5px solid #dc2626;
+      color: #fca5a5;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      font-weight: 600;
+      margin: 1rem 0;
+    }
+
+    .info {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .btn {
+      padding: 0.9rem 1.8rem;
+      border: 1.5px solid #a8c47a;
+      border-radius: 12px;
+      background: transparent;
+      color: #a8c47a;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      background: #a8c47a;
+      color: #141f0b;
+    }
+
+    .footer {
+      margin-top: 3rem;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">🔴</div>
+
+    <h1>Hors ligne</h1>
+
+    <div class="status">
+      Gardee est actuellement indisponible
+      <div class="status-badge">Mode Offline</div>
+    </div>
+
+    <div class="info">
+      <p>🌐 Vérifiez votre connexion Internet</p>
+      <p style="margin-top: 1rem;">Gardee revient bientôt. Nous vous remercions de votre patience!</p>
+    </div>
+
+    <div class="links">
+      <button class="btn" onclick="location.reload()">
+        🔄 Réessayer
+      </button>
+      <a href="https://twitter.com/GardeeApp" class="btn" target="_blank">
+        📢 Statut (Twitter)
+      </a>
+    </div>
+
+    <div class="footer">
+      <p>Gardee v2 • Mode offline</p>
+      <p style="margin-top: 0.5rem;">Maintenance ou problème serveur</p>
+    </div>
+  </div>
+</body>
+</html>
