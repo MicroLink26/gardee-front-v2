@@ -28,6 +28,7 @@ const locationGateLoading = ref(false);
 // Mobile state
 const mobileView = ref<'carte' | 'liste'>('carte');
 const showFilterDrawer = ref(false);
+const sidebarExpanded = ref(true);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let map: any = null;
@@ -457,9 +458,21 @@ function stars(n: number) {
     </div>
 
     <!-- ── DESKTOP SIDEBAR ── -->
-    <aside class="sidebar">
+    <aside class="sidebar" :class="{ 'sidebar--collapsed': !sidebarExpanded }">
       <div class="filters">
-        <h2>Trouver un jardinier</h2>
+        <div class="filters-header">
+          <h2>Trouver un jardinier</h2>
+          <button
+            class="filters-toggle-btn"
+            @click="sidebarExpanded = !sidebarExpanded"
+            :title="sidebarExpanded ? 'Réduire les filtres' : 'Afficher tous les filtres'"
+            aria-label="Toggle filters"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+              <polyline :points="sidebarExpanded ? '9 18 15 12 9 6' : '15 18 9 12 15 6'"></polyline>
+            </svg>
+          </button>
+        </div>
 
         <div class="filter-group">
           <label class="filter-label">Ville ou code postal</label>

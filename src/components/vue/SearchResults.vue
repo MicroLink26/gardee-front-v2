@@ -17,6 +17,7 @@ const page = ref(1);
 const query = ref(props.initialQuery ?? '');
 const loading = ref(false);
 const PAGE_SIZE = 12;
+const heroCollapsed = ref(false);
 
 type SortKey = 'rating' | 'price_asc' | 'distance';
 const sortBy = ref<SortKey>('rating');
@@ -206,7 +207,18 @@ watch(watchFilters, () => {
   <div class="search-page">
 
     <!-- ══ HERO ═══════════════════════════════════════════════════ -->
-    <section class="search-hero">
+    <section class="search-hero" :class="{ 'search-hero--collapsed': heroCollapsed }">
+      <button
+        class="hero-collapse-btn"
+        @click="heroCollapsed = !heroCollapsed"
+        :title="heroCollapsed ? 'Afficher la recherche' : 'Replier la recherche'"
+        aria-label="Toggle search"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+          <polyline :points="heroCollapsed ? '9 18 15 12 9 6' : '15 18 9 12 15 6'"></polyline>
+        </svg>
+      </button>
+
       <div class="hero-deco" aria-hidden="true">
         <svg class="leaf leaf-a" viewBox="0 0 220 300" xmlns="http://www.w3.org/2000/svg">
           <path d="M110,8 C175,8 212,65 212,150 C212,235 175,292 110,292 C45,292 8,235 8,150 C8,65 45,8 110,8Z" fill="rgba(168,196,122,0.07)"/>
@@ -221,18 +233,20 @@ watch(watchFilters, () => {
         <div class="deco-ring deco-ring-b"></div>
       </div>
 
-      <div class="hero-inner">
-        <p class="hero-eyebrow">Annuaire des jardiniers</p>
-        <h1 class="hero-title">
-          Trouvez votre<br>
-          <span class="hero-accent">jardinier idéal</span>
-        </h1>
-        <p class="hero-sub">
-          <template v-if="loading">Recherche en cours…</template>
-          <template v-else>
-            <strong>{{ total }}</strong> professionnel{{ total !== 1 ? 's' : '' }} vérifié{{ total !== 1 ? 's' : '' }} partout en France
-          </template>
-        </p>
+      <div class="hero-inner" :class="{ 'hero-inner--collapsed': heroCollapsed }">
+        <div v-if="!heroCollapsed" class="hero-content">
+          <p class="hero-eyebrow">Annuaire des jardiniers</p>
+          <h1 class="hero-title">
+            Trouvez votre<br>
+            <span class="hero-accent">jardinier idéal</span>
+          </h1>
+          <p class="hero-sub">
+            <template v-if="loading">Recherche en cours…</template>
+            <template v-else>
+              <strong>{{ total }}</strong> professionnel{{ total !== 1 ? 's' : '' }} vérifié{{ total !== 1 ? 's' : '' }} partout en France
+            </template>
+          </p>
+        </div>
 
         <form class="search-bar" @submit.prevent="search">
           <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -248,7 +262,7 @@ watch(watchFilters, () => {
           <button type="submit">Rechercher</button>
         </form>
 
-        <div class="chip-scroll">
+        <div v-if="!heroCollapsed" class="chip-scroll">
           <div class="chip-track">
             <button
               v-for="cat in categoriesStore.categories"
@@ -398,11 +412,41 @@ watch(watchFilters, () => {
   background: linear-gradient(155deg, #141f0b 0%, #253515 55%, #3a5020 100%);
   padding: 2.5rem 0 2rem;
   overflow: hidden;
+  transition: padding 0.35s ease;
+}
+
+.search-hero--collapsed {
+  padding: 1rem 0;
 }
 
 @media (max-width: 768px) {
   .search-hero {
     padding: 3rem 0 2.5rem;
+  }
+  .search-hero--collapsed {
+    padding: 0.75rem 0;
+  }
+}
+
+.hero-collapse-btn {
+  position: absolute; top: 1.25rem; right: 2rem; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px; color: #fff; cursor: pointer;
+  transition: all 0.2s; font-family: inherit;
+}
+.hero-collapse-btn:hover {
+  background: rgba(255,255,255,0.18);
+  border-color: rgba(255,255,255,0.3);
+}
+.hero-collapse-btn:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .hero-collapse-btn {
+    top: 1rem; right: 1rem;
   }
 }
 
@@ -422,6 +466,26 @@ watch(watchFilters, () => {
   position: relative; z-index: 1;
   max-width: 740px; margin: 0 auto; padding: 0 2rem;
   display: flex; flex-direction: column; gap: 1.5rem;
+  transition: gap 0.35s ease;
+}
+
+.hero-inner--collapsed {
+  gap: 0.75rem;
+}
+
+.hero-content {
+  animation: slideUp 0.3s ease forwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    max-height: 200px;
+  }
+  to {
+    opacity: 0;
+    max-height: 0;
+  }
 }
 
 .hero-eyebrow {
