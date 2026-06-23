@@ -15,12 +15,8 @@
     "test:e2e:debug": "playwright test --debug"
   },
   "dependencies": {
-<<<<<<< HEAD
-    "@astrojs/vue": "^7.0.0",
-=======
     "@astrojs/node": "^9.0.0",
-    "@astrojs/vue": "^5.0.0",
->>>>>>> parent of f8f5ab7 (Merge PR #11)
+    "@astrojs/vue": "^6.0.1",
     "@types/leaflet.markercluster": "^1.5.6",
     "astro": "^5.7.0",
     "axios": "^1.7.2",
