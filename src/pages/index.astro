@@ -157,7 +157,7 @@ const jsonLd = {
       <p class="eyebrow eyebrow--dark">COMMENT ÇA MARCHE</p>
       <div style="position: relative;">
         <h2 class="section-title">Simple comme bonjour</h2>
-        <img src="/video/0623.gif" alt="Tutoriel animation" style="position: absolute; top: 0; right: 0; width: 200px; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: block;" />
+        <img src="/video/0623.gif" alt="Tutoriel animation" class="gif-how" style="position: absolute; top: 0; right: 0; width: 200px; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: block;" />
       </div>
       <div class="how-grid">
 
@@ -221,7 +221,7 @@ const jsonLd = {
         <p class="eyebrow">VOS QUESTIONS</p>
         <h2>Questions fréquentes</h2>
         <p class="faq-sub">Tout ce que vous voulez savoir sur Gardee</p>
-        <img src="/video/0622.gif" alt="Tutoriel animation" style="position: absolute; top: 0; right: 0; width: 150px; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: block;" />
+        <img src="/video/0622.gif" alt="Tutoriel animation" class="gif-faq" style="position: absolute; top: 0; right: 0; width: 150px; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: block;" />
       </div>
 
       <div class="faq-list">
@@ -978,6 +978,11 @@ const jsonLd = {
   .trust-item { padding: 1.5rem 1.5rem; }
 }
 
+@media (max-width: 768px) {
+  .gif-how { width: 120px !important; }
+  .gif-faq { width: 90px !important; }
+}
+
 @media (max-width: 600px) {
   .container { padding: 0 1.5rem; }
   .services-section, .how-section, .faq-section { padding: 4rem 0; }
@@ -987,5 +992,7 @@ const jsonLd = {
   .trust-item { padding: 1.25rem 2rem; }
   .search-pills { display: none; }
   .hero-deco-ring--3 { display: none; }
+  .gif-how { width: 100px !important; }
+  .gif-faq { width: 75px !important; }
 }
 </style>
