@@ -1,7 +1,7 @@
 // Service Worker pour Gardee v2
 // Gère le caching intelligent, les notifications push, et le support offline
 
-const CACHE_VERSION = 'v1-2026-06-18';
+const CACHE_VERSION = 'v1-2026-06-23';
 const STATIC_CACHE = `gardee-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `gardee-dynamic-${CACHE_VERSION}`;
 const API_CACHE = `gardee-api-${CACHE_VERSION}`;
@@ -89,7 +89,8 @@ self.addEventListener('fetch', (event) => {
   if (/\.(png|jpg|jpeg|svg|css|js|woff|woff2)$/i.test(url.pathname)) {
     event.respondWith(
       caches.match(request).then((cached) => {
-        return cached || fetch(request).then((response) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
           if (!response || response.status !== 200) {
             return response;
           }
@@ -98,7 +99,7 @@ self.addEventListener('fetch', (event) => {
             cache.put(request, responseToCache);
           });
           return response;
-        });
+        }).catch(() => new Response('Asset not available', { status: 503 }));
       })
     );
   }
