@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
 import { useAuthStore } from '../../../stores/auth';
+import { useSocket } from '../../../composables/useSocket';
 import { listThreads, listClientThreads, getMessages, sendMessage, clientSendMessage, markMessagesAsRead, markMessagesAsReadByToken, addReaction, addReactionByToken, searchMessages, searchMessagesByToken, pinMessage, unpinMessage, editMessage, deleteMessage, forwardMessage, getForwardTargets, archiveRequest, unarchiveRequest, addLabel, removeLabel, listLabels, type Thread, type ClientThread, type Message, type ForwardTarget, type Label, type EditHistory } from '../../../services/requests';
 import { REQUEST_STATUS_LABELS } from '../../../types';
 
@@ -92,15 +93,51 @@ async function refreshActiveThread() {
   } catch { /* silencieux */ }
 }
 
+const socket = useSocket();
+
 onMounted(async () => {
   await auth.fetchMe();
   await Promise.all([loadThreads(), loadLabels()]);
-  // Rafraîchit la conversation active toutes les 30s
-  pollTimer = setInterval(refreshActiveThread, 30_000);
+
+  // Initialize WebSocket
+  socket.connect();
+
+  // Listen for real-time messages
+  socket.onMessageReceived((message) => {
+    if (activeThread.value && message.thread === activeThread.value._id) {
+      messages.value.push(message);
+      scrollToBottom();
+    }
+  });
+
+  // Listen for typing indicators
+  socket.onUserTyping(({ threadId, typingUsers }) => {
+    if (activeThread.value && threadId === activeThread.value._id) {
+      typingUser.value = typingUsers.length > 0 ? typingUsers[0] : null;
+    }
+  });
+
+  // Listen for read receipts
+  socket.onMessagesRead(({ threadId, userId, messageIds }) => {
+    if (activeThread.value && threadId === activeThread.value._id) {
+      messageIds.forEach(mid => {
+        const msg = messages.value.find(m => m._id === mid);
+        if (msg) {
+          msg.readBy = msg.readBy || [];
+          if (!msg.readBy.includes(userId)) {
+            msg.readBy.push(userId);
+          }
+        }
+      });
+    }
+  });
 });
 
 onUnmounted(() => {
-  if (pollTimer) clearInterval(pollTimer);
+  if (activeThread.value) {
+    socket.leaveThread(activeThread.value._id);
+  }
+  socket.disconnect();
 });
 
 async function loadLabels() {
@@ -145,6 +182,7 @@ function threadDisplayName(t: AnyThread): string {
 
 async function openThread(thread: AnyThread) {
   activeThread.value = thread;
+  socket.joinThread(thread._id);
   if (thread._type === 'client') {
     messages.value = (thread as ClientThread & { _type: 'client' }).messages;
     loadingMessages.value = false;
