@@ -14,6 +14,23 @@ const year = new Date().getFullYear();
     </div>
   </div>
 
+  <div class="newsletter-section">
+    <div class="newsletter-content">
+      <h3>Restez informé 📬</h3>
+      <p>Recevez chaque semaine les top prestataires et conseils d'entretien</p>
+      <form id="newsletter-form" class="newsletter-form">
+        <input
+          type="email"
+          placeholder="Votre email..."
+          required
+          class="newsletter-input"
+        />
+        <button type="submit" class="newsletter-btn">S'abonner</button>
+      </form>
+      <p class="newsletter-info">Sans spam, désinscription facile</p>
+    </div>
+  </div>
+
   <div class="footer-inner">
 
     <div class="footer-brand">
@@ -225,6 +242,81 @@ const year = new Date().getFullYear();
     color: #fca5a5;
   }
 
+  .newsletter-section {
+    background: linear-gradient(135deg, rgba(95, 122, 57, 0.15) 0%, rgba(168, 196, 122, 0.08) 100%);
+    border-top: 1px solid rgba(168, 196, 122, 0.2);
+    border-bottom: 1px solid rgba(168, 196, 122, 0.2);
+    padding: 2.5rem;
+  }
+  .newsletter-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    align-items: center;
+  }
+  .newsletter-section h3 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: rgba(255,255,255,0.95);
+    margin: 0 0 0.5rem;
+  }
+  .newsletter-section p {
+    color: rgba(255,255,255,0.7);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+  .newsletter-info {
+    font-size: 0.75rem !important;
+    color: rgba(255,255,255,0.5) !important;
+    margin-top: 0.75rem !important;
+  }
+  .newsletter-form {
+    display: flex;
+    gap: 0.5rem;
+    width: fit-content;
+  }
+  .newsletter-input {
+    padding: 0.75rem 1rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.9rem;
+    min-width: 250px;
+  }
+  .newsletter-input::placeholder {
+    color: rgba(255,255,255,0.5);
+  }
+  .newsletter-input:focus {
+    outline: none;
+    border-color: rgba(168, 196, 122, 0.6);
+    background: rgba(255,255,255,0.15);
+  }
+  .newsletter-btn {
+    padding: 0.75rem 1.5rem;
+    background: #a8c47a;
+    color: #0f1a0a;
+    border: none;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .newsletter-btn:hover {
+    background: #bfd499;
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 768px) {
+    .newsletter-section { padding: 2rem; }
+    .newsletter-content { grid-template-columns: 1fr; }
+    .newsletter-form { width: 100%; }
+    .newsletter-input { min-width: 100%; }
+  }
+
   @media (max-width: 768px) {
     .footer-inner { grid-template-columns: 1fr 1fr; }
     .footer-brand { grid-column: 1 / -1; }
@@ -275,4 +367,48 @@ const year = new Date().getFullYear();
   updateStatus();
   window.addEventListener('online', updateStatus);
   window.addEventListener('offline', updateStatus);
+
+  // Newsletter signup
+  const form = document.getElementById('newsletter-form');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = form.querySelector('input[type="email"]').value;
+      const btn = form.querySelector('button');
+      const originalText = btn.textContent;
+
+      btn.textContent = 'Inscription...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/newsletter/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          btn.textContent = '✓ Abonné!';
+          form.reset();
+          setTimeout(() => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+          }, 3000);
+        } else {
+          btn.textContent = '✗ Erreur';
+          setTimeout(() => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+          }, 2000);
+        }
+      } catch (err) {
+        btn.textContent = '✗ Erreur';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }, 2000);
+      }
+    });
+  }
 </script>
