@@ -78,6 +78,16 @@ onMounted(async () => {
         </div>
         <span class="action-arrow">↗</span>
       </a>
+      <a href="/app/admin/newsletter" class="action-card">
+        <div class="action-icon action-icon--purple">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
+        </div>
+        <div>
+          <div class="action-label">Envoyer une newsletter</div>
+          <div class="action-desc">Gérer les abonnés et les envois</div>
+        </div>
+        <span class="action-arrow">→</span>
+      </a>
     </div>
   </div>
 </template>
@@ -146,6 +156,7 @@ onMounted(async () => {
 .action-icon--green { background: rgba(168,196,122,0.18); color: #3a5020; }
 .action-icon--orange { background: rgba(230,197,83,0.15); color: #7a6000; }
 .action-icon--blue { background: #eef2e8; color: #515F37; }
+.action-icon--purple { background: rgba(168,196,122,0.25); color: #5f7a39; }
 
 .action-label { font-size: 0.875rem; font-weight: 700; color: #1a1a0e; }
 .action-desc { font-size: 0.775rem; color: #9ca3af; margin-top: 0.1rem; }

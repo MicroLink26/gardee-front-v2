@@ -1,0 +1,17 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import AdminNewsletter from '../../../components/vue/admin/AdminNewsletter.vue';
+---
+
+<BaseLayout title="Newsletter - Admin">
+  <div class="app-shell">
+    <AdminNewsletter client:load />
+  </div>
+</BaseLayout>
+
+<style>
+  .app-shell {
+    background: #f9fafb;
+    min-height: 100vh;
+  }
+</style>
