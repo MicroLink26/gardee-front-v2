@@ -214,6 +214,36 @@ const jsonLd = {
     </div>
   </section>
 
+  <!-- ══ TESTIMONIALS ══════════════════════════════════════════════ -->
+  <section class="testimonials-section reveal">
+    <div class="container">
+      <p class="eyebrow">CE QU'ILS EN DISENT</p>
+      <h2 class="section-title">Avis de nos clients</h2>
+      <div class="testimonials-grid">
+        <div class="testimonial-card">
+          <div class="stars">★★★★★</div>
+          <p class="quote">"Service impeccable, jardinier très professionnel et ponctuel. Mon jardin n'a jamais été aussi beau !"</p>
+          <p class="author">— Marie P., Lyon</p>
+        </div>
+        <div class="testimonial-card">
+          <div class="stars">★★★★★</div>
+          <p class="quote">"Plateforme facile à utiliser, j'ai trouvé le jardinier parfait en 5 minutes. À recommander !"</p>
+          <p class="author">— Jean D., Paris</p>
+        </div>
+        <div class="testimonial-card">
+          <div class="stars">★★★★★</div>
+          <p class="quote">"Excellent rapport qualité-prix. Le prestataire a vraiment écouté mes demandes et livré du très bon travail."</p>
+          <p class="author">— Sophie M., Marseille</p>
+        </div>
+        <div class="testimonial-card">
+          <div class="stars">★★★★★</div>
+          <p class="quote">"Enfin une plateforme de confiance ! Tous les jardiniers sont vérifiés, c'est rassurant."</p>
+          <p class="author">— Pierre L., Toulouse</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ══ FAQ ════════════════════════════════════════════════════════ -->
   <section class="faq-section reveal">
     <div class="container">
@@ -978,9 +1008,57 @@ const jsonLd = {
   .trust-item { padding: 1.5rem 1.5rem; }
 }
 
+/* ══ TESTIMONIALS ══════════════════════════════════════════════════ */
+.testimonials-section {
+  padding: 6rem 0;
+  background: linear-gradient(135deg, rgba(168, 196, 122, 0.05) 0%, rgba(95, 122, 57, 0.03) 100%);
+}
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+.testimonial-card {
+  background: #fff;
+  border: 1px solid rgba(95, 122, 57, 0.1);
+  border-radius: 16px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.testimonial-card:hover {
+  border-color: rgba(95, 122, 57, 0.3);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+.testimonial-card .stars {
+  font-size: 1.1rem;
+  color: #a8c47a;
+  letter-spacing: 0.1em;
+}
+.testimonial-card .quote {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #444;
+  font-style: italic;
+  margin: 0.5rem 0 0 0;
+}
+.testimonial-card .author {
+  font-size: 0.85rem;
+  color: #999;
+  margin: 0;
+  font-weight: 600;
+}
+
 @media (max-width: 768px) {
   .gif-how { width: 120px !important; }
   .gif-faq { width: 90px !important; }
+  .testimonials-grid { grid-template-columns: 1fr; }
+  .testimonials-section { padding: 4rem 0; }
 }
 
 @media (max-width: 600px) {
