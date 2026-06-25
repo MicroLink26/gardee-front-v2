@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { api } from '../../../services/api';
 
-const activeTab = ref<'subscribers' | 'compose' | 'history' | 'settings'>('subscribers');
+const activeTab = ref<'subscribers' | 'compose' | 'history'>('subscribers');
 const subscribers = ref<any[]>([]);
 const history = ref<any[]>([]);
 const loading = ref(false);
@@ -19,16 +19,10 @@ const compose = ref({
   segmentType: 'all' as 'all' | 'client' | 'prestataire',
 });
 
-// Settings
-const settings = ref({
-  notificationPollingInterval: 600000, // 600 seconds
-});
-const settingsLoading = ref(false);
 
 onMounted(async () => {
   await loadSubscribers();
   await loadHistory();
-  await loadSettings();
 });
 
 const loadSubscribers = async () => {
@@ -85,34 +79,6 @@ const subscriberCount = (type?: string) => {
   return subscribers.value.filter(s => s.userType === type).length;
 };
 
-const loadSettings = async () => {
-  try {
-    const res = await api.get('/settings');
-    settings.value = res.data;
-  } catch (err) {
-    console.error('Error loading settings:', err);
-  }
-};
-
-const updateSettings = async () => {
-  if (settings.value.notificationPollingInterval < 1000 || settings.value.notificationPollingInterval > 3600000) {
-    alert('L\'intervalle doit être entre 1000 et 3600000 ms (1 sec à 1 heure)');
-    return;
-  }
-
-  try {
-    settingsLoading.value = true;
-    await api.patch('/settings', {
-      notificationPollingInterval: settings.value.notificationPollingInterval,
-    });
-    alert('Paramètres mis à jour!');
-  } catch (err) {
-    alert('Erreur lors de la mise à jour');
-    console.error(err);
-  } finally {
-    settingsLoading.value = false;
-  }
-};
 </script>
 
 <template>
@@ -125,15 +91,14 @@ const updateSettings = async () => {
 
     <div class="tabs">
       <button
-        v-for="tab in ['subscribers', 'compose', 'history', 'settings']"
+        v-for="tab in ['subscribers', 'compose', 'history']"
         :key="tab"
         :class="['tab-btn', { active: activeTab === tab }]"
         @click="activeTab = tab as any"
       >
         <span v-if="tab === 'subscribers'">📧 Abonnés ({{ subscribers.length }})</span>
         <span v-else-if="tab === 'compose'">✍️ Composer</span>
-        <span v-else-if="tab === 'history'">📊 Historique</span>
-        <span v-else>⚙️ Paramètres</span>
+        <span v-else>📊 Historique</span>
       </button>
     </div>
 
@@ -267,36 +232,6 @@ const updateSettings = async () => {
       </div>
     </div>
 
-    <!-- SETTINGS TAB -->
-    <div v-if="activeTab === 'settings'" class="tab-content">
-      <div class="settings-form">
-        <div class="settings-card">
-          <h3>Paramètres des notifications</h3>
-          <p class="settings-desc">Configurez le comportement de l'application</p>
-
-          <div class="form-group">
-            <label for="polling-interval">Intervalle de polling des notifications (en ms)</label>
-            <input
-              id="polling-interval"
-              v-model.number="settings.notificationPollingInterval"
-              type="number"
-              min="1000"
-              max="3600000"
-              placeholder="600000"
-            >
-            <p class="form-help">
-              Temps entre chaque vérification de nouvelles notifications.
-              <br>Min: 1000 ms (1 sec) | Max: 3600000 ms (1 heure)
-              <br>Valeur actuelle: {{ (settings.notificationPollingInterval / 1000).toFixed(0) }} secondes
-            </p>
-          </div>
-
-          <button @click="updateSettings" :disabled="settingsLoading" class="btn-save">
-            {{ settingsLoading ? '⏳ Sauvegarde...' : '💾 Sauvegarder les paramètres' }}
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -588,65 +523,6 @@ td {
   gap: 2rem;
   font-size: 0.9rem;
   color: #6b7280;
-}
-
-/* SETTINGS */
-.settings-form {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 2rem;
-  max-width: 800px;
-}
-
-.settings-card {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 2rem;
-}
-
-.settings-card h3 {
-  margin: 0 0 0.5rem;
-  color: #1f2937;
-  font-size: 1.2rem;
-}
-
-.settings-desc {
-  margin: 0 0 2rem;
-  color: #6b7280;
-  font-size: 0.95rem;
-}
-
-.form-help {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-top: 0.5rem;
-  line-height: 1.5;
-}
-
-.btn-save {
-  width: 100%;
-  padding: 1rem;
-  background: linear-gradient(135deg, #5f7a39 0%, #515F37 100%);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 800;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-top: 1.5rem;
-}
-
-.btn-save:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(95, 122, 57, 0.35);
-}
-
-.btn-save:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
