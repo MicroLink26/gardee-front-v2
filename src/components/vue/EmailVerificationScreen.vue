@@ -7,26 +7,35 @@ const props = defineProps<{ redirect?: string }>();
 const auth = useAuthStore();
 
 const userId = ref('');
+const userIdInput = ref('');
 const digits = ref(['', '', '', '', '', '']);
 const loading = ref(false);
 const error = ref('');
 const resendLoading = ref(false);
 const resendSuccess = ref(false);
+const showUserIdInput = ref(false);
 
 const inputRefs = ref<HTMLInputElement[]>([]);
 
 function parseHashParams() {
   const hash = window.location.hash.substring(1); // Remove leading #
   const params = new URLSearchParams(hash);
-  userId.value = params.get('userId') ?? '';
+  const hashUserId = params.get('userId') ?? '';
   const code = params.get('code') ?? '';
+
+  userId.value = hashUserId;
+  userIdInput.value = hashUserId;
+  showUserIdInput.value = !hashUserId; // Show input if no userId in URL
 
   if (code && code.length === 6) {
     const codeDigits = code.split('');
     for (let i = 0; i < 6; i++) {
       digits.value[i] = codeDigits[i] ?? '';
     }
-    setTimeout(() => submit(), 500);
+    // Only auto-submit if userId is present
+    if (hashUserId) {
+      setTimeout(() => submit(), 500);
+    }
   }
 }
 
@@ -58,11 +67,14 @@ function onPaste(e: ClipboardEvent) {
 async function submit() {
   const code = digits.value.join('');
   if (code.length < 6) { error.value = 'Entrez les 6 chiffres du code.'; return; }
-  if (!userId.value) { error.value = 'Paramètres manquants.'; return; }
+
+  const finalUserId = userIdInput.value || userId.value;
+  if (!finalUserId) { error.value = 'Veuillez entrer votre ID utilisateur.'; return; }
+
   loading.value = true;
   error.value = '';
   try {
-    const res = await verifyEmail(userId.value, code);
+    const res = await verifyEmail(finalUserId, code);
     auth.accessToken = res.accessToken;
     auth.user = res.user;
     window.location.href = props.redirect ?? '/app/login';
@@ -77,11 +89,12 @@ async function submit() {
 }
 
 async function resend() {
-  if (!userId.value) { error.value = 'Paramètres manquants.'; return; }
+  const finalUserId = userIdInput.value || userId.value;
+  if (!finalUserId) { error.value = 'Veuillez entrer votre ID utilisateur.'; return; }
   resendLoading.value = true;
   resendSuccess.value = false;
   try {
-    await resendVerification(userId.value);
+    await resendVerification(finalUserId);
     resendSuccess.value = true;
     setTimeout(() => (resendSuccess.value = false), 5000);
   } finally {
@@ -101,6 +114,16 @@ async function resend() {
       </div>
       <h2>Vérifiez votre email</h2>
       <p>Un code à 6 chiffres a été envoyé à votre adresse email. Saisissez-le ci-dessous pour activer votre compte.</p>
+
+      <div v-if="showUserIdInput" class="userid-input-group">
+        <label>ID Utilisateur (trouvé dans le lien du mail)</label>
+        <input
+          v-model="userIdInput"
+          type="text"
+          placeholder="ex: 6a3d1e64b01610bf7568c1e4"
+          class="userid-input"
+        />
+      </div>
 
       <div class="code-inputs" @paste="onPaste">
         <input
@@ -158,6 +181,24 @@ async function resend() {
 }
 .verify-card h2 { font-size: 1.25rem; font-weight: 900; color: #1a1a0e; margin: 0 0 0.75rem; }
 .verify-card p { font-size: 0.875rem; color: #6b7280; line-height: 1.65; margin: 0 0 1.5rem; }
+
+.userid-input-group {
+  margin-bottom: 1.5rem; text-align: left;
+}
+.userid-input-group label {
+  display: block; font-size: 0.8rem; font-weight: 600; color: #1a1a0e;
+  margin-bottom: 0.5rem;
+}
+.userid-input {
+  width: 100%; padding: 0.75rem; font-size: 0.85rem;
+  border: 2px solid #e9e5d6; border-radius: 8px;
+  background: #f5f2eb; color: #1a1a0e; font-family: monospace;
+  outline: none; transition: border-color 0.15s;
+}
+.userid-input:focus {
+  border-color: #3a5020; background: #FCFAF5;
+  box-shadow: 0 0 0 3px rgba(58,80,32,0.1);
+}
 
 .code-inputs {
   display: flex; gap: 0.5rem; justify-content: center;
