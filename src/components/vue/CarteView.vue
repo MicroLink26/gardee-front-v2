@@ -539,7 +539,20 @@ function stars(n: number) {
     </aside>
 
     <!-- ── CARDS SIDEBAR ── -->
-    <aside class="cards-sidebar" :class="{ 'cards-sidebar--hidden': !sidebarExpanded }">
+    <aside class="cards-sidebar">
+      <div v-if="!sidebarExpanded" class="cards-header-collapsed">
+        <button
+          class="reopen-filters-btn"
+          @click="sidebarExpanded = true"
+          :title="'Afficher les filtres'"
+          :aria-label="'Afficher les filtres'"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Filtres
+        </button>
+      </div>
       <div class="cards-list">
         <template v-if="loading">
           <div v-for="i in 4" :key="i" class="skel-card">
@@ -756,9 +769,39 @@ function stars(n: number) {
   transition: width 0.3s ease;
 }
 
-.cards-sidebar.cards-sidebar--hidden {
-  width: 0;
-  border-right: none;
+.cards-header-collapsed {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e9e5d6;
+  background: #faf8f2;
+  flex-shrink: 0;
+}
+
+.reopen-filters-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1.5px solid #e9e5d6;
+  background: #fff;
+  color: #3a5020;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reopen-filters-btn:hover {
+  background: #f0f5e8;
+  border-color: #a8c47a;
+  box-shadow: 0 2px 8px rgba(58, 80, 32, 0.1);
+}
+
+.reopen-filters-btn svg {
+  transition: transform 0.3s ease;
+  transform: rotate(180deg);
 }
 
 .filters-toggle-btn {
