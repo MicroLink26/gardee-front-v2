@@ -1,11 +1,11 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const status = Astro.url.searchParams.get('status');
 const reason = Astro.url.searchParams.get('reason');
 ---
 
-<Layout title="Désabonnement Newsletter">
+<BaseLayout title="Désabonnement Newsletter">
   <div class="unsubscribe-page">
     <div class="container">
       <div class="content">
@@ -47,7 +47,7 @@ const reason = Astro.url.searchParams.get('reason');
       </div>
     </div>
   </div>
-</Layout>
+</BaseLayout>
 
 <style>
   .unsubscribe-page {
