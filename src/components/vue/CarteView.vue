@@ -465,11 +465,11 @@ function stars(n: number) {
           <button
             class="filters-toggle-btn"
             @click="sidebarExpanded = !sidebarExpanded"
-            :title="sidebarExpanded ? 'Réduire les filtres' : 'Afficher tous les filtres'"
-            aria-label="Toggle filters"
+            :title="sidebarExpanded ? 'Réduire les filtres' : 'Afficher les filtres'"
+            :aria-label="`${sidebarExpanded ? 'Réduire' : 'Afficher'} les filtres`"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-              <polyline :points="sidebarExpanded ? '9 18 15 12 9 6' : '15 18 9 12 15 6'"></polyline>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18" :class="{ 'chevron-rotated': !sidebarExpanded }">
+              <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
           </button>
         </div>
@@ -734,6 +734,43 @@ function stars(n: number) {
   overflow: hidden;
   border-right: 1px solid #e9e5d6;
   background: #faf8f2;
+  transition: width 0.3s ease, margin-left 0.3s ease;
+}
+
+.sidebar.sidebar--collapsed {
+  width: 0;
+}
+
+.filters-toggle-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.filters-toggle-btn:hover {
+  background: rgba(58, 80, 32, 0.08);
+  color: #3a5020;
+}
+
+.filters-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+.filters-toggle-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.chevron-rotated {
+  transform: rotate(180deg);
 }
 
 .filters {

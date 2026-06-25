@@ -451,6 +451,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://gardee.fr/prestataires/6a3d1e64b01610bf7568c1e4</loc>
+    <lastmod>2026-06-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://gardee.fr/recherche</loc>
     <lastmod>2026-06-25</lastmod>
     <changefreq>daily</changefreq>
