@@ -1,0 +1,8 @@
+---
+import AppShell from '../../../components/vue/dashboard/AppShell.vue';
+import AdminSettings from '../../../components/vue/admin/AdminSettings.vue';
+---
+
+<AppShell requireRole="admin">
+  <AdminSettings client:load />
+</AppShell>
