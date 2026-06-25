@@ -1,8 +1,11 @@
 ---
+import AppLayout from '../../../layouts/AppLayout.astro';
 import AppShell from '../../../components/vue/dashboard/AppShell.vue';
 import AdminSettings from '../../../components/vue/admin/AdminSettings.vue';
 ---
 
-<AppShell requireRole="admin">
-  <AdminSettings client:load />
-</AppShell>
+<AppLayout title="Paramètres - Admin">
+  <AppShell client:load requireRole="admin">
+    <AdminSettings client:load />
+  </AppShell>
+</AppLayout>
