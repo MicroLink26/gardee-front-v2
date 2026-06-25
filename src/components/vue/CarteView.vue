@@ -536,7 +536,10 @@ function stars(n: number) {
           <span class="sort-dir-icon" v-if="sortBy === s.val">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
         </button>
       </div>
+    </aside>
 
+    <!-- ── CARDS SIDEBAR ── -->
+    <aside class="cards-sidebar" :class="{ 'cards-sidebar--hidden': !sidebarExpanded }">
       <div class="cards-list">
         <template v-if="loading">
           <div v-for="i in 4" :key="i" class="skel-card">
@@ -739,6 +742,23 @@ function stars(n: number) {
 
 .sidebar.sidebar--collapsed {
   width: 0;
+}
+
+/* ── CARDS SIDEBAR ── */
+.cards-sidebar {
+  width: 380px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid #e9e5d6;
+  background: #faf8f2;
+  transition: width 0.3s ease;
+}
+
+.cards-sidebar.cards-sidebar--hidden {
+  width: 0;
+  border-right: none;
 }
 
 .filters-toggle-btn {
