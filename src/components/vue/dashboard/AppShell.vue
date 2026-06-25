@@ -37,7 +37,7 @@ onMounted(async () => {
     api.get('/admin/reviews/pending?pageSize=1').then(r => { pendingReviewsCount.value = r.data.total ?? 0; }).catch(() => {});
   }
   subscribeToPush().catch(() => {});
-  startNotificationPolling(5000).catch(() => {});
+  startNotificationPolling().catch(() => {});
 });
 
 onUnmounted(() => {

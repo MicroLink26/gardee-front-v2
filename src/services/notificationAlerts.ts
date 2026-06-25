@@ -16,11 +16,19 @@ interface StoredNotification {
 let lastCheckedId: string | null = null;
 let pollingInterval: number | null = null;
 
-export async function startNotificationPolling(checkIntervalMs = 5000): Promise<void> {
+export async function startNotificationPolling(defaultCheckIntervalMs = 600000): Promise<void> {
   // Initialize audio on first interaction
   await initializeAudio().catch(() => {});
 
   if (pollingInterval) return;
+
+  let checkIntervalMs = defaultCheckIntervalMs;
+  try {
+    const settings = await api.get('/settings');
+    checkIntervalMs = settings.data.notificationPollingInterval || defaultCheckIntervalMs;
+  } catch (error) {
+    // Use default if settings fetch fails
+  }
 
   pollingInterval = window.setInterval(async () => {
     try {

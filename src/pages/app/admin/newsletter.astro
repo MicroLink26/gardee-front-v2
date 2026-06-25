@@ -1,17 +1,11 @@
 ---
-import BaseLayout from '../../../layouts/BaseLayout.astro';
+import AppLayout from '../../../layouts/AppLayout.astro';
+import AppShell from '../../../components/vue/dashboard/AppShell.vue';
 import AdminNewsletter from '../../../components/vue/admin/AdminNewsletter.vue';
 ---
 
-<BaseLayout title="Newsletter - Admin">
-  <div class="app-shell">
+<AppLayout title="Newsletter - Admin">
+  <AppShell client:load requireRole="staff">
     <AdminNewsletter client:load />
-  </div>
-</BaseLayout>
-
-<style>
-  .app-shell {
-    background: #f9fafb;
-    min-height: 100vh;
-  }
-</style>
+  </AppShell>
+</AppLayout>

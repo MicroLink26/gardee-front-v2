@@ -348,12 +348,51 @@ const year = new Date().getFullYear();
     .footer-inner { grid-template-columns: 1fr; }
     .footer-bottom { flex-direction: column; }
   }
+
+  .notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+    max-width: 400px;
+    word-wrap: break-word;
+  }
+
+  .notification--show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .notification--success {
+    background-color: #10b981;
+    color: white;
+  }
+
+  .notification--error {
+    background-color: #ef4444;
+    color: white;
+  }
+
+  @media (max-width: 480px) {
+    .notification {
+      top: 10px;
+      right: 10px;
+      left: 10px;
+      max-width: none;
+    }
+  }
 </style>
 
 <script>
   const footerBtn = document.getElementById('footer-pwa-btn');
   const statusIndicator = document.getElementById('status-indicator');
-  let prompt: any = null;
+  let prompt = null;
 
   // PWA install prompt
   window.addEventListener('beforeinstallprompt', (e) => {
@@ -389,10 +428,19 @@ const year = new Date().getFullYear();
   window.addEventListener('online', updateStatus);
   window.addEventListener('offline', updateStatus);
 
-  // Newsletter signup
-  const form = document.getElementById('newsletter-form');
-  if (form) {
-    form.addEventListener('submit', async (e) => {
+  // Newsletter handler - inline
+  console.log('=== NEWSLETTER SCRIPT RUNNING ===');
+  function initNewsletter() {
+    const form = document.getElementById('newsletter-form');
+    console.log('Newsletter form:', form ? 'FOUND' : 'NOT FOUND');
+    if (!form) {
+      console.log('Form not found, retrying in 100ms...');
+      setTimeout(initNewsletter, 100);
+      return;
+    }
+
+    form.addEventListener('submit', async function(e) {
+      console.log('=== FORM SUBMITTED ===');
       e.preventDefault();
       const email = form.querySelector('input[type="email"]').value;
       const btn = form.querySelector('button');
@@ -402,7 +450,7 @@ const year = new Date().getFullYear();
       btn.disabled = true;
 
       try {
-        const res = await fetch('/api/newsletter/subscribe', {
+        const res = await fetch('https://site--gardee-backend--fg6zdpvl2w9z.code.run/api/newsletter/subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email }),
@@ -412,24 +460,35 @@ const year = new Date().getFullYear();
         if (res.ok) {
           btn.textContent = '✓ Abonné!';
           form.reset();
+          alert(`Merci! Un email a été envoyé à ${email}`);
           setTimeout(() => {
             btn.textContent = originalText;
             btn.disabled = false;
           }, 3000);
         } else {
           btn.textContent = '✗ Erreur';
+          alert(data.error || 'Erreur');
           setTimeout(() => {
             btn.textContent = originalText;
             btn.disabled = false;
           }, 2000);
         }
       } catch (err) {
+        console.error(err);
         btn.textContent = '✗ Erreur';
+        alert('Erreur de connexion');
         setTimeout(() => {
           btn.textContent = originalText;
           btn.disabled = false;
         }, 2000);
       }
     });
+    console.log('Newsletter listener ATTACHED');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initNewsletter);
+  } else {
+    initNewsletter();
   }
 </script>

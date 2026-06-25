@@ -1,0 +1,136 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const status = Astro.url.searchParams.get('status');
+const reason = Astro.url.searchParams.get('reason');
+---
+
+<Layout title="Désabonnement Newsletter">
+  <div class="unsubscribe-page">
+    <div class="container">
+      <div class="content">
+        {status === 'success' && (
+          <div class="success-box">
+            <h1>✓ Désabonnement confirmé</h1>
+            <p>Vous avez été désabonné de la newsletter Gardee.</p>
+            <p>Vous ne recevrez plus d'emails de notre part.</p>
+            <a href="/" class="btn">Retour à l'accueil</a>
+          </div>
+        )}
+
+        {status === 'error' && (
+          <div class="error-box">
+            <h1>Erreur de désabonnement</h1>
+            {reason === 'missing-token' && (
+              <p>Le lien de désabonnement n'est pas valide (token manquant).</p>
+            )}
+            {reason === 'not-found' && (
+              <p>Aucun abonnement trouvé avec ce lien.</p>
+            )}
+            {reason === 'internal' && (
+              <p>Une erreur interne s'est produite. Veuillez réessayer plus tard.</p>
+            )}
+            {!reason && (
+              <p>Une erreur s'est produite lors du désabonnement.</p>
+            )}
+            <a href="/" class="btn">Retour à l'accueil</a>
+          </div>
+        )}
+
+        {!status && (
+          <div class="info-box">
+            <h1>Désabonnement Newsletter</h1>
+            <p>Veuillez cliquer sur le lien de désabonnement reçu dans votre email pour confirmer.</p>
+            <a href="/" class="btn">Retour à l'accueil</a>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .unsubscribe-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f2efe6 0%, #e9dfd2 100%);
+    padding: 2rem;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .content {
+    background: white;
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+    text-align: center;
+  }
+
+  .success-box,
+  .error-box,
+  .info-box {
+    text-align: center;
+  }
+
+  .success-box h1 {
+    color: #059669;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .error-box h1 {
+    color: #dc2626;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .info-box h1 {
+    color: #1f2937;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .success-box p,
+  .error-box p,
+  .info-box p {
+    color: #6b7280;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #5f7a39 0%, #515f37 100%);
+    color: white;
+    padding: 0.875rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    transition: all 0.2s;
+    margin-top: 1.5rem;
+  }
+
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(95, 122, 57, 0.35);
+  }
+
+  @media (max-width: 480px) {
+    .content {
+      padding: 2rem 1.5rem;
+    }
+
+    .success-box h1,
+    .error-box h1,
+    .info-box h1 {
+      font-size: 1.5rem;
+    }
+  }
+</style>
