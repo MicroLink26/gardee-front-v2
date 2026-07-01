@@ -131,7 +131,7 @@ async function submitRequest() {
   if (!form.value.addressCity) { formError.value = 'La ville est requise.'; return; }
   if (!form.value.desiredAt) { formError.value = 'Veuillez choisir une date.'; return; }
   if (!desiredTime.value) { formError.value = 'Veuillez sélectionner une heure.'; return; }
-  if (!form.value.prestations.length) { formError.value = 'Veuillez sélectionner au least un service.'; return; }
+  if (!form.value.prestations.length) { formError.value = 'Veuillez sélectionner au moins un service.'; return; }
   formError.value = '';
   sending.value = true;
   try {
@@ -175,7 +175,13 @@ function starsArr(n: number) {
 
 const DAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
-onMounted(() => categoriesStore.load());
+onMounted(async () => {
+  await categoriesStore.load();
+  // Auto-select service if only one available
+  if (availableServices.value.length === 1 && !form.value.prestations.length) {
+    form.value.prestations = [availableServices.value[0]._id];
+  }
+});
 </script>
 
 <template>
@@ -256,7 +262,7 @@ onMounted(() => categoriesStore.load());
           </div>
         </div>
         <div class="field">
-          <label>Service(s)</label>
+          <label>Service(s) <span style="color: #dc2626;">*</span></label>
           <div class="service-chips">
             <button
               v-for="svc in availableServices"
