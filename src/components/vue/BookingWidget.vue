@@ -138,10 +138,16 @@ async function submitRequest() {
     const desiredAt = form.value.desiredAt
       ? form.value.desiredAt + 'T' + (desiredTime.value || '12:00') + ':00'
       : undefined;
-    // Combine address parts into a single string for the backend
-    const address = [form.value.addressNumber, form.value.addressStreet, form.value.addressZipCode, form.value.addressCity]
+    // Format address with proper line breaks
+    const addressLine1 = [form.value.addressNumber, form.value.addressStreet]
       .filter(v => v?.trim())
-      .join(', ');
+      .join(' ');
+    const addressLine2 = [form.value.addressZipCode, form.value.addressCity]
+      .filter(v => v?.trim())
+      .join(' ');
+    const address = [addressLine1, addressLine2]
+      .filter(v => v?.trim())
+      .join('\n');
     await createRequest({
       prestataireId: props.prestataireId,
       requesterEmail: form.value.requesterEmail,
@@ -380,10 +386,22 @@ input:focus, textarea:focus { border-color: #3a5020; background: #FCFAF5; box-sh
 textarea { resize: vertical; }
 
 .address-grid {
-  display: grid; grid-template-columns: 1fr 2fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.75rem;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  grid-template-rows: auto auto;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
+.address-grid input:nth-child(1) { grid-column: 1; grid-row: 1; }
+.address-grid input:nth-child(2) { grid-column: 2; grid-row: 1; }
+.address-grid input:nth-child(3) { grid-column: 1; grid-row: 2; }
+.address-grid input:nth-child(4) { grid-column: 2; grid-row: 2; }
 @media (max-width: 640px) {
   .address-grid { grid-template-columns: 1fr; }
+  .address-grid input:nth-child(1),
+  .address-grid input:nth-child(2),
+  .address-grid input:nth-child(3),
+  .address-grid input:nth-child(4) { grid-column: 1; }
 }
 
 .service-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
