@@ -22,7 +22,10 @@ const form = ref({
   requesterEmail: '',
   requesterPrenom: '',
   requesterNom: '',
-  address: '',
+  addressNumber: '',
+  addressStreet: '',
+  addressZipCode: '',
+  addressCity: '',
   prestations: [] as string[],
   description: '',
   desiredAt: '',
@@ -123,18 +126,30 @@ function toggleService(s: string) {
 
 async function submitRequest() {
   if (!form.value.requesterEmail) { formError.value = 'Votre email est requis.'; return; }
+  if (!form.value.addressStreet) { formError.value = 'L\'adresse de la rue est requise.'; return; }
+  if (!form.value.addressZipCode) { formError.value = 'Le code postal est requis.'; return; }
+  if (!form.value.addressCity) { formError.value = 'La ville est requise.'; return; }
   if (!form.value.desiredAt) { formError.value = 'Veuillez choisir une date.'; return; }
   if (!desiredTime.value) { formError.value = 'Veuillez sélectionner une heure.'; return; }
-  if (!form.value.prestations.length) { formError.value = 'Veuillez sélectionner au moins un service.'; return; }
+  if (!form.value.prestations.length) { formError.value = 'Veuillez sélectionner au least un service.'; return; }
   formError.value = '';
   sending.value = true;
   try {
     const desiredAt = form.value.desiredAt
       ? form.value.desiredAt + 'T' + (desiredTime.value || '12:00') + ':00'
       : undefined;
+    // Combine address parts into a single string for the backend
+    const address = [form.value.addressNumber, form.value.addressStreet, form.value.addressZipCode, form.value.addressCity]
+      .filter(v => v?.trim())
+      .join(', ');
     await createRequest({
       prestataireId: props.prestataireId,
-      ...form.value,
+      requesterEmail: form.value.requesterEmail,
+      requesterPrenom: form.value.requesterPrenom,
+      requesterNom: form.value.requesterNom,
+      address,
+      prestations: form.value.prestations,
+      description: form.value.description,
       desiredAt,
       subject: form.value.prestations.map(id => categoryName.value(id)).join(', ') || undefined,
     });
@@ -227,7 +242,12 @@ onMounted(() => categoriesStore.load());
         </div>
         <div class="field">
           <label>Adresse du chantier</label>
-          <input v-model="form.address" type="text" placeholder="12 rue des Lilas, 06240 Beausoleil" />
+          <div class="address-grid">
+            <input v-model="form.addressNumber" type="text" placeholder="Numéro" />
+            <input v-model="form.addressStreet" type="text" placeholder="Rue *" />
+            <input v-model="form.addressZipCode" type="text" placeholder="Code postal *" />
+            <input v-model="form.addressCity" type="text" placeholder="Ville *" />
+          </div>
         </div>
         <div class="field">
           <label>Service(s)</label>
@@ -358,6 +378,13 @@ input, textarea {
 }
 input:focus, textarea:focus { border-color: #3a5020; background: #FCFAF5; box-shadow: 0 0 0 3px rgba(58,80,32,0.08); }
 textarea { resize: vertical; }
+
+.address-grid {
+  display: grid; grid-template-columns: 1fr 2fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.75rem;
+}
+@media (max-width: 640px) {
+  .address-grid { grid-template-columns: 1fr; }
+}
 
 .service-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 .service-chip {
