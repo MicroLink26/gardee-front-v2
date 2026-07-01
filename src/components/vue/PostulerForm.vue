@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { registerPrestataire } from '../../services/users';
 import { useCategoriesStore } from '../../stores/categories';
-import EmailVerificationScreen from './EmailVerificationScreen.vue';
 import ImageCropper from './ImageCropper.vue';
 
 const categoriesStore = useCategoriesStore();
@@ -11,7 +10,6 @@ const DRAFT_STORAGE_KEY = 'gardee-postuler-draft';
 const step = ref(1);
 const loading = ref(false);
 const done = ref(false);
-const pendingVerificationUserId = ref<string | null>(null);
 const error = ref('');
 
 const ELAGAGE_NAMES = ['élagage', 'elagage', 'Élagage'];
@@ -217,13 +215,8 @@ async function submit() {
     }
     if (form.value.photo) fd.append('photo', form.value.photo);
     const result = await registerPrestataire(fd);
-    if ((result as Record<string, unknown>)?.requiresVerification) {
-      pendingVerificationUserId.value = (result as Record<string, unknown>).userId as string;
-      clearDraft();
-    } else {
-      done.value = true;
-      clearDraft();
-    }
+    done.value = true;
+    clearDraft();
   } catch (e: unknown) {
     const err = e as { response?: { data?: { error?: string }; status?: number } };
     const msg = err.response?.data?.error;
@@ -259,9 +252,7 @@ const BENEFITS = [
 </script>
 
 <template>
-  <EmailVerificationScreen v-if="pendingVerificationUserId" :userId="pendingVerificationUserId" redirect="/app/profil" />
-
-  <ImageCropper v-else-if="cropperSrc" :src="cropperSrc" @crop="onCropDone" @cancel="cancelCrop" />
+  <ImageCropper v-if="cropperSrc" :src="cropperSrc" @crop="onCropDone" @cancel="cancelCrop" />
 
   <div v-else class="postuler-layout">
 
@@ -314,8 +305,9 @@ const BENEFITS = [
         <div class="success-circle">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#515F37" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         </div>
-        <h2>Dossier envoyé !</h2>
-        <p>Votre candidature est en cours de validation par notre équipe. Vous recevrez un email dès qu'elle sera approuvée.</p>
+        <h2>Merci pour votre inscription !</h2>
+        <p>Un email de confirmation a été envoyé à votre adresse. Veuillez vérifier votre boîte mail (et vos spams) pour valider votre compte.</p>
+        <p style="font-size: 0.9rem; color: #6b7280; margin-top: 1rem;">Notre équipe examinera votre profil et vous contactera si des informations supplémentaires sont nécessaires.</p>
         <a href="/" class="btn-primary">Retour à l'accueil</a>
       </div>
 
