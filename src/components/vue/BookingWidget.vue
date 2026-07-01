@@ -32,8 +32,13 @@ const desiredTime = ref('');
 
 const today = new Date();
 today.setHours(0, 0, 0, 0);
-const calYear = ref(today.getFullYear());
-const calMonth = ref(today.getMonth());
+
+// Minimum date is tomorrow
+const minDate = new Date(today);
+minDate.setDate(minDate.getDate() + 1);
+
+const calYear = ref(minDate.getFullYear());
+const calMonth = ref(minDate.getMonth());
 
 const calMonthLabel = computed(() =>
   new Date(calYear.value, calMonth.value).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
@@ -50,13 +55,13 @@ const calDays = computed(() => {
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const dd = String(date.getDate()).padStart(2, '0');
     const iso = `${yyyy}-${mm}-${dd}`;
-    days.push({ day: d, date, past: date < today, selected: form.value.desiredAt === iso, isToday: date.getTime() === today.getTime() });
+    days.push({ day: d, date, past: date < minDate, selected: form.value.desiredAt === iso, isToday: date.getTime() === today.getTime() });
   }
   return days;
 });
 
 const canGoPrev = computed(() =>
-  calYear.value > today.getFullYear() || calMonth.value > today.getMonth()
+  calYear.value > minDate.getFullYear() || (calYear.value === minDate.getFullYear() && calMonth.value > minDate.getMonth())
 );
 
 function prevMonth() {
