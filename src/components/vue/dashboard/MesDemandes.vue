@@ -143,6 +143,13 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+function decodeHtmlEntities(text: string | undefined): string {
+  if (!text) return '';
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+}
+
 onMounted(async () => {
   categoriesStore.load();
   await auth.fetchMe();
@@ -227,14 +234,14 @@ onMounted(async () => {
           </span>
         </div>
 
-        <p v-if="req.subject" class="request-subject">{{ req.subject }}</p>
-        <p v-if="req.description" class="request-desc">{{ req.description }}</p>
+        <p v-if="req.subject" class="request-subject">{{ decodeHtmlEntities(req.subject) }}</p>
+        <p v-if="req.description" class="request-desc">{{ decodeHtmlEntities(req.description) }}</p>
 
         <div v-if="req.proposals?.length" class="proposals">
           <div v-for="(p, i) in req.proposals" :key="i" class="proposal-item">
             <span class="proposal-by">{{ p.by === 'provider' ? 'Prestataire' : 'Client' }}</span>
             <span>propose le {{ formatDate(p.date) }}</span>
-            <span v-if="p.comment" class="proposal-comment">— {{ p.comment }}</span>
+            <span v-if="p.comment" class="proposal-comment">— {{ decodeHtmlEntities(p.comment) }}</span>
           </div>
         </div>
 
